@@ -14,7 +14,7 @@
     </center>
 </body>
 <script>
-//version 0.1
+//Mouse Simulator 2D v0.2
 //states
 var cur_page=0;
 var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0]};
@@ -61,7 +61,7 @@ var pages=[{
 {
 	//test page
 	map:[
-	[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+	[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,2,2,2,0,2,2,2,0,0,2,2,0,2,2,2,0,2,0,0,0,18,18,18,18,18,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,2,0,0,2,0,0,0,2,0,0,0,0,2,0,0,2,0,0,18,13,13,13,13,13,18,14,0,0,0,0,0,0,0,0,0,0,1],
@@ -73,6 +73,9 @@ var pages=[{
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+	[2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+	[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
@@ -82,15 +85,18 @@ var pages=[{
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+	[1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 	],
 	entities:[
 		//entities
-		{id:1, char:7, x:1,y:1},{id:2, char:9, x:2, y:9, item: [1,120]},//dropped item,branch
-        {id:2, char:12, x:3, y:9, item: [2,120]}//hay
+		{id:1, char:4, x:24,y:5, brain: {no_ai:1}, health:20, destination:{type:1,dest_x:7,dest_y:9}},//npc
+        {id:2, char:9, x:2, y:9, item: [1,120]},//dropped item,branch
+        {id:2, char:12, x:3, y:9, item: [2,120]},//hay
+        {id:3, char:20, x:17, y:13, direction:-1, decay:20, damage:1000, item_drop:[0,0]},
+        {id:3, char:20, x:18, y:13, direction:3, decay:-1, damage:1000, item_drop:[0,0]},
+        {id:3, char:20, x:16, y:13, direction:2, decay:-1, damage:1000, item_drop:[0,0]},
+        {id:3, char:20, x:17, y:12, direction:0, decay:-1, damage:1000, item_drop:[0,0]},
+        {id:3, char:20, x:17, y:14, direction:1, decay:-1, damage:1000, item_drop:[0,0]},
 	],
 	holes:[
 		//holes
@@ -143,18 +149,18 @@ var font=[
 1,1,0,0,0,0,1,1,
 1,1,1,0,0,1,1,1,
 1,1,1,1,1,1,1,1,
-0,1,1,1,1,1,1,0,165,42,42,255,255,255
+0,1,1,1,1,1,1,0,185,122,87,255,255,255
 ],
-//4	
+//4	Enemy?
 [
 0,1,1,1,1,1,1,0,
-1,0,0,0,0,0,0,1,
-1,0,1,0,0,1,0,1,
-1,0,0,0,0,0,0,1,
-1,0,0,1,1,0,0,1,
-1,0,1,1,1,1,0,1,
-1,0,0,0,0,0,0,1,
-0,1,1,1,1,1,1,0,255,255,255,0,0,0
+1,1,1,1,1,1,1,1,
+1,1,0,1,1,0,1,1,
+1,1,1,1,1,1,1,1,
+1,1,1,0,0,1,1,1,
+1,1,0,0,0,0,1,1,
+1,1,1,1,1,1,1,1,
+0,1,1,1,1,1,1,0,185,122,87,255,255,255
 ],
 //5	
 [
@@ -310,17 +316,29 @@ var font=[
 1,1,1,1,1,1,1,1,
 1,0,0,0,0,0,0,1,185,122,87,255,255,255
 ],
-//19, attack indicator
+//19, attack indicator/projectile
+[
+0,0,0,1,1,0,0,0,
+0,1,0,1,1,0,1,0,
+0,0,1,1,1,1,0,0,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,
+0,0,1,1,1,1,0,0,
+0,1,0,1,1,0,1,0,
+0,0,0,1,1,0,0,0,255,0,0,255,255,255
+],
+//20, raygun ring
 [
 0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-1,0,0,0,0,0,0,1,
-1,0,0,0,0,0,0,0,
-1,1,1,1,1,1,1,0,
-1,0,0,0,0,0,0,0,
-1,1,0,0,0,0,0,0,
-1,0,0,0,0,0,0,0,0,0,0,255,255,255
+0,0,0,1,1,0,0,0,
+0,0,1,0,0,1,0,0,
+0,1,0,0,0,0,1,0,
+0,1,0,0,0,0,1,0,
+0,0,1,0,0,1,0,0,
+0,0,0,1,1,0,0,0,
+0,0,0,0,0,0,0,0,0,255,0,255,255,255
 ],
+
 ];
 var walkable=[0,6,7,8,9,10,11,13,14,15,16,17];
 //items
@@ -616,33 +634,156 @@ case 5:
     player.inv[player.inv[10]][1]--;
     inv_cleanup();
     break;
+case 6:
+    pages[cur_page].map[player.y][player.x]=18;
+    player.inv[player.inv[10]][1]--;
+    inv_cleanup();
+    break;
 }
 }
 
+function entity_player_collide(){
+    for(var i=0;i<pages[cur_page].entities.length;i++){
+        if(player.x==pages[cur_page].entities[i].x && player.y==pages[cur_page].entities[i].y){
+            return i;
+        }
+    }
+    return -1;
+}
+
+function entity_collide(ptr){//find if specified entity shares same coords as another one.
+    for(var i=0;i<pages[cur_page].entities.length;i++){
+        if(i==ptr){continue;}
+        if(pages[cur_page].entities[ptr].x==pages[cur_page].entities[i].x && pages[cur_page].entities[ptr].y==pages[cur_page].entities[i].y){
+            return i;
+        }
+    }
+    return -1;
+}
+
+function hit_bounds(x,y){//bounds check for screen edge.
+    return (x<0 || x>39 || y<0 || y>24);
+}
+
+function char_entity_on(ptr){//what type of character is the selected entity on?
+    return pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x];
+}
+
+function char_value(x,y){
+    return pages[cur_page].map[y][x];
+}
+
+function is_walkable(x){
+    for(var i=0;i<walkable.length;i++){
+        if(walkable[i]==x){
+            return true;
+        }
+    }
+    return false;
+}
+
+function projectile(ptr){//Code for making projectiles move and interact with ThInGs
+    switch(pages[cur_page].entities[ptr].direction){
+        case -1:
+            break;
+        case 0://up
+            pages[cur_page].entities[ptr].y--;
+            break;
+        case 1://down
+            pages[cur_page].entities[ptr].y++;
+            break;
+        case 2://left
+            pages[cur_page].entities[ptr].x--;
+            break;
+        case 3://right
+            pages[cur_page].entities[ptr].x++;
+            break;
+    }
+    pages[cur_page].entities[ptr].decay--;
+    if(pages[cur_page].entities[ptr].decay==0){
+        pages[cur_page].entities[ptr].id=-1;
+        entity_cleanup();
+        return;
+    }
+    var collided=entity_collide(ptr);
+    if(collided!=-1){
+        if(pages[cur_page].entities[collided].health!=undefined){
+            pages[cur_page].entities[collided].health-=pages[cur_page].entities[ptr].damage;
+            pages[cur_page].entities[ptr].id=-1;
+            entity_cleanup();
+            if(pages[cur_page].entities[collided].health<=0){
+                pages[cur_page].entities[collided].id=-1;
+                entity_cleanup();
+            }
+        }
+    }
+    collided=entity_player_collide();
+    if(collided==ptr){
+        player.health-=pages[cur_page].entities[ptr].damage;
+        pages[cur_page].entities[ptr].id=-1;
+        entity_cleanup();
+    }
+    if(hit_bounds(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)){//hits screen edges
+        pages[cur_page].entities[ptr].id=-1;
+        entity_cleanup();
+        return;
+    }
+    if(!is_walkable(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y))){//encounters non walkable block
+        pages[cur_page].entities[ptr].id=-1;
+        entity_cleanup();
+        return;
+    }
+}
+
+var removable=[18];
+
+function remove_char(x,y){
+    switch(char_value(x,y)){
+        case 18:
+            if(player.inv[player.inv[10]][0]==0){
+                player.inv[player.inv[10]][0]=6;
+                pages[cur_page].map[y][x]=0;
+            }
+            if(player.inv[player.inv[10]][0]==6){
+                player.inv[player.inv[10]][1]++;
+                pages[cur_page].map[y][x]=0;
+            }
+            break
+    }
+}
+
 function attack(x){
+if(player.brain.mode==1){
 switch(x){
     case "up":
-        get_font(19);
-        ctx.putImageData(char,(player.x)*8,(player.y-1)*8);
+        pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:19, direction:-1, damage:1, decay:2});
         break;
     case "down":
-        get_font(19);
-        ctx.putImageData(char,player.x*8,(player.y+1)*8);
+        pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:19, direction:-1, damage:1, decay:2});
         break;
     case "left":
-        get_font(19);
-        ctx.putImageData(char,(player.x-1)*8,player.y*8);
+        pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:19, direction:-1, damage:1, decay:2});
         break;
     case "right":
-        get_font(19);
-        ctx.putImageData(char,(player.x+1)*8,player.y*8);
+        pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:19, direction:-1, damage:1, decay:2});
         break;
 }
-if(player.brain.mode==1){
-0;
 }
 if(player.brain.mode==-1){
-alert("break");
+switch(x){
+    case "up":
+        remove_char(player.x,player.y-1);
+        break;
+    case "down":
+        remove_char(player.x,player.y+1);
+        break;
+    case "left":
+        remove_char(player.x-1,player.y);
+        break;
+    case "right":
+        remove_char(player.x+1,player.y);
+        break;
+}
 }
 }
 
@@ -650,7 +791,7 @@ alert("break");
 function key_manager(key){
 //console.log(key);
 if(key==87){//up
-if(player.y<1){
+if(hit_bounds(player.x,player.y)){
 	return;
 }
 for(var i=0;i<walkable.length;i++){
@@ -661,7 +802,7 @@ if(pages[cur_page].map[player.y-1][player.x]==walkable[i]){
 }
 }
 if(key==83){//down
-if(player.y>23){
+if(hit_bounds(player.x,player.y)){
 	return;
 }
 for(var i=0;i<walkable.length;i++){
@@ -672,7 +813,7 @@ if(pages[cur_page].map[player.y+1][player.x]==walkable[i]){
 }
 }
 if(key==65){//left
-if(player.x<1){
+if(hit_bounds(player.x,player.y)){
 	return;
 }
 for(var i=0;i<walkable.length;i++){
@@ -683,7 +824,7 @@ if(pages[cur_page].map[player.y][player.x-1]==walkable[i]){
 }
 }
 if(key==68){//right
-if(player.x>39){
+if(hit_bounds(player.x,player.y)){
 	return;
 }
 for(var i=0;i<walkable.length;i++){
@@ -753,8 +894,23 @@ if(key==69){//e, toggle modes
 }
 }
 
+function death(){
+    alert("BOOM! You are DEAD!");
+    clearInterval(interval);
+    key_manager=function(){};
+}
+
 function tick(){
-0;
+    if(player.health<=0){
+        death();
+    }
+    for(var i=0;i<pages[cur_page].entities.length;i++){
+        switch(pages[cur_page].entities[i].id){
+            case 3:
+                projectile(i);
+                break;
+        }
+    }
 }
 //random_tick(player.x,player.y);
 function random_tick(random_x=Math.floor((Math.random()*100))%40,random_y=Math.floor((Math.random()*100))%25,action=Math.floor((Math.random()*10))%2){
@@ -780,7 +936,7 @@ if(pages[cur_page].map[random_y][random_x]==13){//grass
                 x++;
                 break;
         }
-        if(x<1 || x>39 || y<1 || y>23){
+        if(hit_bounds(x,y)){
             return;        
         }
         if(pages[cur_page].map[y][x]==0){
@@ -809,7 +965,7 @@ if(pages[cur_page].map[random_y][random_x]==16){//brown mushroom growth
                 x++;
                 break;
         }
-        if(x<1 || x>39 || y<1 || y>23){
+        if(hit_bounds(x,y)){
             return;        
         }
         if(pages[cur_page].map[y][x]==0){
@@ -834,7 +990,7 @@ if(pages[cur_page].map[random_y][random_x]==17){//red mushroom growth
                 x++;
                 break;
         }
-        if(x<1 || x>39 || y<1 || y>23){
+        if(hit_bounds(x,y)){
             return;        
         }
         if(pages[cur_page].map[y][x]==0){
@@ -843,8 +999,9 @@ if(pages[cur_page].map[random_y][random_x]==17){//red mushroom growth
 }
 }
 
-var tick1=0;
-var tick2=0;
+//var tick1=0;
+//var tick2=0;
+var tick1=0;//0 to 65535
 function refresh(){//Dang it, no multiple setintervals...
 //return 0;
 draw_map(pages[cur_page]);
@@ -866,17 +1023,25 @@ for(var i=0;i<10;i++){
 }
 document.getElementById("status").textContent=status_bar;
 tick1++;
-tick2++;
-if(tick1==20){
-tick1=0;
-//alert("tick");
+if(tick1>=65536){tick=0;}
+if(tick1%2==0){//projectiles and path finding
 tick();
 }
-if(tick2==10){
-//alert("Random Tick");
-tick2=0;
+if(tick1%10==0){
 random_tick();
 }
+//tick1++;
+//tick2++;
+//if(tick1==20){
+//tick1=0;
+//alert("tick");
+//tick();
+//}
+//if(tick2==10){
+//alert("Random Tick");
+//tick2=0;
+//random_tick();
+//}
 }
 const interval = setInterval(function (){refresh();},67);
 window.onload=function(){
