@@ -14,7 +14,7 @@
     </center>
 </body>
 <script>
-//Mouse Simulator 2D v0.2
+//Mouse Simulator 2D v0.21
 //states
 var cur_page=0;
 var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0]};
@@ -51,7 +51,9 @@ var pages=[{
 	],
 	entities:[
 		//{id:1, char:6, x:1, y:0, dest_page:0},//hole for exiting and entering nest
-        {id:2, char:9, x:4, y:10, item: [1,2]}
+        {id:2, char:9, x:4, y:10, item: [1,10]},//branch
+        {id:2, char:12, x:5, y:10, item: [2,10]},//hay
+        {id:2, char:27, x:5, y:11, item: [12,10]}//stew
 	],
 	holes:[
 		//holes
@@ -62,17 +64,17 @@ var pages=[{
 	//test page
 	map:[
 	[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,18,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,2,2,2,0,2,2,2,0,0,2,2,0,2,2,2,0,2,0,0,0,18,18,18,18,18,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,2,0,0,2,0,0,0,2,0,0,0,0,2,0,0,2,0,0,18,13,13,13,13,13,18,14,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,2,0,0,2,2,0,0,0,2,0,0,0,2,0,0,2,0,0,18,13,13,13,13,13,18,15,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,2,0,0,2,0,0,0,0,0,2,0,0,2,0,0,0,0,0,18,13,13,13,13,13,18,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,2,0,0,2,2,2,0,2,2,0,0,0,2,0,0,2,0,0,18,13,13,13,13,13,18,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,18,13,13,13,13,13,18,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,18,0,0,0,18,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,14,14,14,14,14,0,0,0,0,0,0,0,0,0,0,0,0,0,0,18,0,0,0,18,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,15,15,15,15,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,14,14,14,14,14,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,15,15,15,15,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 	[2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
 	[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
@@ -90,13 +92,14 @@ var pages=[{
 	entities:[
 		//entities
 		{id:1, char:4, x:24,y:5, brain: {no_ai:1}, health:20, destination:{type:1,dest_x:7,dest_y:9}},//npc
-        {id:2, char:9, x:2, y:9, item: [1,120]},//dropped item,branch
-        {id:2, char:12, x:3, y:9, item: [2,120]},//hay
+        //{id:2, char:9, x:2, y:9, item: [1,120]},//dropped item,branch
+        //{id:2, char:12, x:3, y:9, item: [2,120]},//hay
         {id:3, char:20, x:17, y:13, direction:-1, decay:20, damage:1000, item_drop:[0,0]},
         {id:3, char:20, x:18, y:13, direction:3, decay:-1, damage:1000, item_drop:[0,0]},
         {id:3, char:20, x:16, y:13, direction:2, decay:-1, damage:1000, item_drop:[0,0]},
         {id:3, char:20, x:17, y:12, direction:0, decay:-1, damage:1000, item_drop:[0,0]},
         {id:3, char:20, x:17, y:14, direction:1, decay:-1, damage:1000, item_drop:[0,0]},
+        {id:1, char:4, x:1,y:1, brain: {no_ai:1}, health:20, destination:{type:1,dest_x:1,dest_y:1}},
 	],
 	holes:[
 		//holes
@@ -338,18 +341,100 @@ var font=[
 0,0,0,1,1,0,0,0,
 0,0,0,0,0,0,0,0,0,255,0,255,255,255
 ],
-
+//21, stick
+[
+0,0,0,0,0,0,0,0,
+0,1,1,0,0,0,0,0,
+0,1,1,1,0,0,0,0,
+0,0,1,1,1,0,0,0,
+0,0,0,1,1,1,0,0,
+0,0,0,0,1,1,1,0,
+0,0,0,0,0,1,1,0,
+0,0,0,0,0,0,0,0,185,122,87,255,255,255
+],
+//22, String
+[
+0,0,0,0,0,0,0,0,
+0,0,0,1,1,0,0,0,
+0,0,1,0,0,1,0,0,
+0,1,0,0,0,0,0,0,
+0,0,1,1,1,0,0,0,
+0,0,0,0,0,1,0,0,
+0,0,0,0,0,1,1,0,
+0,0,0,0,0,0,0,0,0,0,0,255,255,255
+],
+//23, Bow
+[
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,255,255,255
+],
+//24, Sapling.
+[
+0,1,0,0,1,0,1,0,
+0,1,0,0,1,0,1,0,
+0,0,1,1,1,1,0,0,
+1,0,0,1,1,0,0,1,
+0,1,1,1,1,1,1,0,
+0,0,1,1,1,0,0,0,
+0,0,0,1,1,0,0,0,
+0,0,0,1,1,0,0,0,0,255,0,255,255,255
+],
+//25, Leaves
+[
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,1,1,1,0,0,0,
+0,0,1,1,1,1,0,0,
+0,0,1,1,1,1,0,0,
+0,0,0,1,1,1,0,0,
+0,0,0,0,0,0,1,0,
+0,0,0,0,0,0,0,0,0,255,0,255,255,255
+],
+//26, Bowl
+[
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,1,0,0,0,0,1,0,
+0,1,0,0,0,0,1,0,
+0,0,1,0,0,1,0,0,
+0,0,0,1,1,0,0,0,0,0,0,255,255,255
+],
+//27, Mushroom Stew
+[
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,0,
+0,0,1,1,1,1,0,0,
+0,0,0,1,1,0,0,0,0,0,0,255,255,255
+],
 ];
-var walkable=[0,6,7,8,9,10,11,13,14,15,16,17];
+var walkable=[0,6,7,8,9,10,11,13,14,15,16,17,24];
 //items
 var item_char=[
-0,//Nothing
-9,//Branch
-12,//Hay
-13,//Grass
-16,//Brown Mushroom
-17,//Red Mushroom
-18//Fence
+0,//Nothing,0
+9,//Branch,1
+12,//Hay,2
+13,//Grass,3
+16,//Brown Mushroom,4
+17,//Red Mushroom,5
+18,//Fence,6
+21,//stick,7
+22,//string,8
+24,//Sapling,9
+25,//Leaves,10
+26,//Bowl,11
+27,//Mushroom Stew,12
 ];
 
 var item_names=[
@@ -359,16 +444,30 @@ var item_names=[
 "Grass",
 "Brown Mushroom",
 "Red Mushroom",
-"Fence"
+"Fence",
+"Stick",
+"String",
+"Sapling",
+"Leaves",
+"Bowl",
+"Mushroom Stew"
 ];
 //crafting
 var recipes_input=[
-[[1,1]],//branch to hay
-[[2,1]]//hay to branch
+[[1,1]],//branch to stick+leaves,0
+[[2,1]],//hay to string,1
+[[7,1],[8,1]],//string+stick to fence,2
+[[8,1],[7,1]],//string+stick to fence (items reversed),3
+[[10,1],[8,1]],//string+leaves to bowl,4
+[[11,1],[4,1]],//bowl+brown mushroom to bowl,5
 ];
 var recipes_output=[
-[[2,1]],//branch to hay
-[[1,1]]//hay to branch
+[[7,1],[10,1]],//branch to stick+leaves,0
+[[8,1]],//hay to string,1
+[[6,1]],//Fence,2
+[[6,1]],//Fence,3
+[[11,1]],//Bowl,4
+[[12,1]],//Mushroom Stew,5
 ];
 
 var ctx=document.getElementById("cga").getContext("2d");
@@ -612,35 +711,31 @@ if(!x){//drop all
 }
 }
 
-function place_char(){
-if(pages[cur_page].map[player.y][player.x]!=0){
-    return;
-}
-//alert("place_char");
+/*function place_char(){
 var item_id=player.inv[player.inv[10]][0];
 switch(item_id){
-case 3:
+case 3://grass
     pages[cur_page].map[player.y][player.x]=13;
     player.inv[player.inv[10]][1]--;
     inv_cleanup();
     break;
-case 4:
+case 4://Brown Mushroom
     pages[cur_page].map[player.y][player.x]=16;
     player.inv[player.inv[10]][1]--;
     inv_cleanup();
     break;
-case 5:
+case 5://Red Mushroom
     pages[cur_page].map[player.y][player.x]=17;
     player.inv[player.inv[10]][1]--;
     inv_cleanup();
     break;
-case 6:
+case 6://Fence
     pages[cur_page].map[player.y][player.x]=18;
     player.inv[player.inv[10]][1]--;
     inv_cleanup();
     break;
 }
-}
+}*/
 
 function entity_player_collide(){
     for(var i=0;i<pages[cur_page].entities.length;i++){
@@ -655,6 +750,15 @@ function entity_collide(ptr){//find if specified entity shares same coords as an
     for(var i=0;i<pages[cur_page].entities.length;i++){
         if(i==ptr){continue;}
         if(pages[cur_page].entities[ptr].x==pages[cur_page].entities[i].x && pages[cur_page].entities[ptr].y==pages[cur_page].entities[i].y){
+            return i;
+        }
+    }
+    return -1;
+}
+
+function entity_collide_xy(x,y){//find if specified entity exists on x y axis
+    for(var i=0;i<pages[cur_page].entities.length;i++){
+        if(x==pages[cur_page].entities[i].x && y==pages[cur_page].entities[i].y){
             return i;
         }
     }
@@ -715,6 +819,7 @@ function projectile(ptr){//Code for making projectiles move and interact with Th
                 pages[cur_page].entities[collided].id=-1;
                 entity_cleanup();
             }
+	    return;
         }
     }
     collided=entity_player_collide();
@@ -722,6 +827,7 @@ function projectile(ptr){//Code for making projectiles move and interact with Th
         player.health-=pages[cur_page].entities[ptr].damage;
         pages[cur_page].entities[ptr].id=-1;
         entity_cleanup();
+	return;
     }
     if(hit_bounds(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)){//hits screen edges
         pages[cur_page].entities[ptr].id=-1;
@@ -753,7 +859,22 @@ function remove_char(x,y){
 }
 
 function attack(x){
-if(player.brain.mode==1){
+var is_entity=-1;//does an entity exist at that place?
+switch(x){
+    case "up":
+        is_entity=entity_collide_xy(player.x,player.y-1);
+        break;
+    case "down":
+	is_entity=entity_collide_xy(player.x,player.y+1);
+        break;
+    case "left":
+	is_entity=entity_collide_xy(player.x-1,player.y);
+        break;
+    case "right":
+	is_entity=entity_collide_xy(player.x+1,player.y);
+        break;
+}
+//if(is_entity!=-1){//yes entity
 switch(x){
     case "up":
         pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:19, direction:-1, damage:1, decay:2});
@@ -768,8 +889,8 @@ switch(x){
         pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:19, direction:-1, damage:1, decay:2});
         break;
 }
-}
-if(player.brain.mode==-1){
+//}
+if(is_entity==-1){//no entity
 switch(x){
     case "up":
         remove_char(player.x,player.y-1);
@@ -785,6 +906,42 @@ switch(x){
         break;
 }
 }
+}
+
+function use_item(){
+if(char_value(player.x,player.y)==0){
+switch(player.inv[player.inv[10]][0]){
+    case 3://grass
+        pages[cur_page].map[player.y][player.x]=13;
+        player.inv[player.inv[10]][1]--;
+        break;
+    case 4://Brown Mushroom
+        pages[cur_page].map[player.y][player.x]=16;
+        player.inv[player.inv[10]][1]--;
+        break;
+    case 5://Red Mushroom
+        pages[cur_page].map[player.y][player.x]=17;
+        player.inv[player.inv[10]][1]--;
+        break;
+    case 6://Fence
+        pages[cur_page].map[player.y][player.x]=18;
+        player.inv[player.inv[10]][1]--;
+        break;
+}
+inv_cleanup();
+}
+switch(player.inv[player.inv[10]][0]){//item id
+	case 12: //Mushroom Stew
+        if(player.health==20){
+            break;
+        }
+	    player.health+=5;
+        if(player.health>20){
+            player.health=20;
+        }
+	    player.inv[player.inv[10]][1]--;
+}
+inv_cleanup();
 }
 
 //keys
@@ -834,63 +991,80 @@ if(pages[cur_page].map[player.y][player.x+1]==walkable[i]){
 }
 }
 }
-if(key==38){//up
-    attack("up");
-}
-if(key==40){//down
-    attack("down");
-}
-if(key==37){//left
-    attack("left");
-}
-if(key==39){//right
-    attack("right");
+//attack
+switch(key){
+    case 38:
+        attack("up");
+        break;
+   case 40:
+        attack("down");
+        break;
+   case 37:
+        attack("left");
+        break;
+   case 39:
+        attack("right");
+        break;
 }
 
-if(key==13){//enter
-	enter_button();
+//inventory slot select
+switch(key){
+    case 49://1
+        player.inv[10]=0;
+        break;
+    case 50://2
+        player.inv[10]=1;
+        break;
+    case 51://3
+        player.inv[10]=2;
+        break;
+    case 52://4
+        player.inv[10]=3;
+        break;
+    case 53://5
+        player.inv[10]=4;
+        break;
+    case 54://6
+        player.inv[10]=5;
+        break;
+    case 55://7
+        player.inv[10]=6;
+        break;
+    case 56://8
+        player.inv[10]=7;
+        break;
+    case 57://9
+        player.inv[10]=8;
+        break;
+    case 48://0
+        player.inv[10]=9;
+        break;
 }
-if(key==49){//1
-   player.inv[10]=0;
+
+//drop item
+switch(key){
+    case 71://Drop one item
+        drop_item(1);
+        break;
+    case 70://Drop all of the items.
+        drop_item(0);
+        break;
 }
-if(key==50){//2
-   player.inv[10]=1;
-}
-if(key==51){//3
-   player.inv[10]=2;
-}
-if(key==52){//4
-   player.inv[10]=3;
-}
-if(key==53){//1
-   player.inv[10]=4;
-}
-if(key==54){//1
-   player.inv[10]=5;
-}
-if(key==55){//1
-   player.inv[10]=6;
-}
-if(key==56){//1
-   player.inv[10]=7;
-}
-if(key==57){//1
-   player.inv[10]=8;
-}
-if(key==48){//1
-   player.inv[10]=9;
-}
-if(key==71){//g, drop one of selected inventory item
-   drop_item(1);
-}
-if(key==70){//f, drop selected inventory item
-   drop_item(0);
-}
-if(key==81){//q, place thing.
-    place_char();
-}
-if(key==69){//e, toggle modes
-    player.brain.mode*=-1;
+
+//break/pickup, place/use
+switch(key){
+    case 13://enter
+        enter_button();
+        break;
+    /*case 81://place thing, q
+        place_char();
+        break;*/
+    /*case 69://e, toggle modes
+        player.brain.mode*=-1;
+        break;*/
+    case 32://space
+        use_item();
+        break;
 }
 }
 
@@ -1007,11 +1181,11 @@ function refresh(){//Dang it, no multiple setintervals...
 draw_map(pages[cur_page]);
 //status bar
 var player_text="Name: "+player.name+" Health: "+player.health+" X: "+player.x+" Y: "+player.y+ " Text Page: "+cur_page;
-if(player.brain.mode==1){
-    player_text+=" Attack Mode";
+/*if(player.brain.mode==1){
+    player_text+=" Attack/Use Mode";
 }else{
-    player_text+=" Break Mode";
-}
+    player_text+=" Break/Use Mode";
+}*/
 document.getElementById("player").textContent=player_text;
 var status_bar="Inventory: ";
 for(var i=0;i<10;i++){
@@ -1030,18 +1204,6 @@ tick();
 if(tick1%10==0){
 random_tick();
 }
-//tick1++;
-//tick2++;
-//if(tick1==20){
-//tick1=0;
-//alert("tick");
-//tick();
-//}
-//if(tick2==10){
-//alert("Random Tick");
-//tick2=0;
-//random_tick();
-//}
 }
 const interval = setInterval(function (){refresh();},67);
 window.onload=function(){
