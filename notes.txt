@@ -1,0 +1,3 @@
+May want to prevent hostile spawning within 10 characters of player.
+
+May also want to add characters that prevent enemy spawning.

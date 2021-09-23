@@ -14,7 +14,7 @@
     </center>
 </body>
 <script>
-//Mouse Simulator 2D v0.22
+//Mouse Simulator 2D v0.23
 //states
 var cur_page=0;
 var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0]};
@@ -59,13 +59,20 @@ var pages=[{
 	holes:[
 		//holes
 		[{x:1, y:0, dest_page:1, next_x: 1, next_y: 23}]
-	]
+	],
+	metadata:{
+	safety:1,//Do enemies spawn here at night?
+	north_goto:-1,//Next page to go to when leaving via north edge
+	south_goto:-1,//Next page to go to when leaving via south edge
+	west_goto:-1,//Next page to go to when leaving via west edge
+	east_goto:-1,//Next page to go to when leaving via north edge
+	}
 },
 {
 	//test page
 	map:[
 	[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-	[1,18,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,2,2,2,0,2,2,2,0,0,2,2,0,2,2,2,0,2,0,0,0,18,18,18,18,18,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,2,0,0,2,0,0,0,2,0,0,0,0,2,0,0,2,0,0,18,13,13,13,13,13,18,14,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,2,0,0,2,2,0,0,0,2,0,0,0,2,0,0,2,0,0,18,13,13,13,13,13,18,15,0,0,0,0,0,0,0,0,0,0,1],
@@ -92,7 +99,7 @@ var pages=[{
 	],
 	entities:[
 		//entities
-		{id:1, char:3, x:24,y:5, brain: {no_ai:0, hostile: 0}, health:20, strength:1, destination:{type:1,dest_x:24,dest_y:15}},//npc,9,15
+		{id:1, char:3, x:24,y:5, brain: {no_ai:0, hostile: 0}, health:20, strength:1, attack_cooldown:0, dest_x:24, dest_y:15},//npc,9,15
         //{id:2, char:9, x:2, y:9, item: [1,120]},//dropped item,branch
         //{id:2, char:12, x:3, y:9, item: [2,120]},//hay
         {id:3, char:20, x:17, y:13, direction:-1, decay:20, damage:1000, item_drop:[0,0]},
@@ -100,12 +107,19 @@ var pages=[{
         {id:3, char:20, x:16, y:13, direction:2, decay:-1, damage:1000, item_drop:[0,0]},
         {id:3, char:20, x:17, y:12, direction:0, decay:-1, damage:1000, item_drop:[0,0]},
         {id:3, char:20, x:17, y:14, direction:1, decay:-1, damage:1000, item_drop:[0,0]},
-        {id:1, char:4, x:1,y:1, brain: {no_ai:1, hostile: 1}, health:20, destination:{type:1,dest_x:1,dest_y:1}},
+        {id:1, char:4, x:1,y:1, brain: {no_ai:0, hostile: 1}, health:20, strength:1, attack_cooldown:0, dest_x:1, dest_y:1},//enemy
 	],
 	holes:[
 		//holes
 		[{x:1, y:24, dest_page:0, next_x:1, next_y:1}]
-	]
+	],
+	metadata:{
+	safety:0,//Do enemies spawn here at night?
+	north_goto:-1,//Next page to go to when leaving via north edge
+	south_goto:-1,//Next page to go to when leaving via south edge
+	west_goto:-1,//Next page to go to when leaving via west edge
+	east_goto:-1,//Next page to go to when leaving via north edge
+	}
 },
 ];
 
@@ -585,6 +599,14 @@ for(var i=0;i<pages[cur_page].entities.length;i++){
 if(standing_on==6){//teleport/go to next map
 	teleport();
 }
+if(standing_on==7 || standing_on==8){
+	if(tick1<=32768){
+		document.getElementById("hints").textContent="You can only sleep at day.";
+	}else{
+		tick1=100;
+		document.getElementById("hints").textContent="Slept and skipped to night."
+	}
+}
 if(standing_on==13){//grass
 	if(player.inv[player.inv[10]][0]==0){
 		player.inv[player.inv[10]]=[3,1];
@@ -827,11 +849,11 @@ function projectile(ptr){//Code for making projectiles move and interact with Th
         if(pages[cur_page].entities[collided].health!=undefined){
             pages[cur_page].entities[collided].health-=pages[cur_page].entities[ptr].damage;
             pages[cur_page].entities[ptr].id=-1;
-            entity_cleanup();
             if(pages[cur_page].entities[collided].health<=0){
                 pages[cur_page].entities[collided].id=-1;
                 entity_cleanup();
             }
+	    entity_cleanup();
 	    return;
         }
     }
@@ -890,16 +912,16 @@ switch(x){
 //if(is_entity!=-1){//yes entity
 switch(x){
     case "up":
-        pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:19, direction:-1, damage:player.strength, decay:2});
+        pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:19, direction:-1, damage:player.strength, decay:3});
         break;
     case "down":
-        pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:19, direction:-1, damage:player.strength, decay:2});
+        pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:19, direction:-1, damage:player.strength, decay:3});
         break;
     case "left":
-        pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:19, direction:-1, damage:player.strength, decay:2});
+        pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:19, direction:-1, damage:player.strength, decay:3});
         break;
     case "right":
-        pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:19, direction:-1, damage:player.strength, decay:2});
+        pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:19, direction:-1, damage:player.strength, decay:3});
         break;
 }
 //}
@@ -968,44 +990,48 @@ if(key==87){//up
 if(hit_bounds(player.x,player.y)){
 	return;
 }
-for(var i=0;i<walkable.length;i++){
-if(pages[cur_page].map[player.y-1][player.x]==walkable[i]){
-	player.y-=1;
-	break;
+if(hit_bounds(player.x,player.y-1)){
+	return;
 }
+if(is_walkable(char_value(player.x,player.y-1))){
+	player.y-=1;
+	return;
 }
 }
 if(key==83){//down
 if(hit_bounds(player.x,player.y)){
 	return;
 }
-for(var i=0;i<walkable.length;i++){
-if(pages[cur_page].map[player.y+1][player.x]==walkable[i]){
-	player.y+=1;
-	break;
+if(hit_bounds(player.x,player.y+1)){
+	return;
 }
+if(is_walkable(char_value(player.x,player.y+1))){
+	player.y+=1;
+	return;
 }
 }
 if(key==65){//left
 if(hit_bounds(player.x,player.y)){
 	return;
 }
-for(var i=0;i<walkable.length;i++){
-if(pages[cur_page].map[player.y][player.x-1]==walkable[i]){
-	player.x-=1;
-	break;
+if(hit_bounds(player.x-1,player.y)){
+	return;
 }
+if(is_walkable(char_value(player.x-1,player.y))){
+	player.x-=1;
+	return;
 }
 }
 if(key==68){//right
 if(hit_bounds(player.x,player.y)){
 	return;
 }
-for(var i=0;i<walkable.length;i++){
-if(pages[cur_page].map[player.y][player.x+1]==walkable[i]){
-	player.x+=1;
-	break;
+if(hit_bounds(player.x+1,player.y)){
+	return;
 }
+if(is_walkable(char_value(player.x+1,player.y))){
+	player.x+=1;
+	return;
 }
 }
 //attack
@@ -1110,17 +1136,73 @@ function pathfind_step(x1,y1,x2,y2){//This is gonna hurt...
     return [x1,y1];
 }
 
+function entity_attack(ptr){
+    if(pages[cur_page].entities[ptr].attack_cooldown>0){
+        pages[cur_page].entities[ptr].attack_cooldown--;
+        return;
+    }
+    if(pages[cur_page].entities[ptr].x==player.x){
+        if(pages[cur_page].entities[ptr].y<player.y){//Attack Down
+            pages[cur_page].entities.push({id:3, x:pages[cur_page].entities[ptr].x, y:pages[cur_page].entities[ptr].y+1, char:19, direction:-1, damage:pages[cur_page].entities[ptr].strength, decay:2});
+            pages[cur_page].entities[ptr].attack_cooldown=5;
+        }
+        if(pages[cur_page].entities[ptr].y>player.y){//Attack Up
+            pages[cur_page].entities.push({id:3, x:pages[cur_page].entities[ptr].x, y:pages[cur_page].entities[ptr].y-1, char:19, direction:-1, damage:pages[cur_page].entities[ptr].strength, decay:2});
+            pages[cur_page].entities[ptr].attack_cooldown=5;
+        }
+    }
+    if(pages[cur_page].entities[ptr].y==player.y){
+        if(pages[cur_page].entities[ptr].x<player.x){//Attack Right
+            pages[cur_page].entities.push({id:3, x:pages[cur_page].entities[ptr].x+1, y:pages[cur_page].entities[ptr].y, char:19, direction:-1, damage:pages[cur_page].entities[ptr].strength, decay:2});
+            pages[cur_page].entities[ptr].attack_cooldown=5;
+        }
+        if(pages[cur_page].entities[ptr].x>player.x){//Attack Left
+            pages[cur_page].entities.push({id:3, x:pages[cur_page].entities[ptr].x-1, y:pages[cur_page].entities[ptr].y, char:19, direction:-1, damage:pages[cur_page].entities[ptr].strength, decay:2});
+            pages[cur_page].entities[ptr].attack_cooldown=5;
+        }
+    }
+}
+
 function npc(ptr){//make entity move
     if(pages[cur_page].entities[ptr].brain.no_ai==1){
         return;
     }
-    var next_xy=pathfind_step(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y,pages[cur_page].entities[ptr].destination.dest_x,pages[cur_page].entities[ptr].destination.dest_y);
+    //alert(pages[cur_page].entities[ptr].brain.hostile);
+    var next_xy;
+    switch(pages[cur_page].entities[ptr].brain.hostile){
+        case 0://not hostile
+            next_xy=pathfind_step(pages[cur_page].entities[ptr].x,
+            pages[cur_page].entities[ptr].y,
+            pages[cur_page].entities[ptr].dest_x,
+            pages[cur_page].entities[ptr].dest_y);
+            break;
+        case 1://hostile
+            next_xy=pathfind_step(pages[cur_page].entities[ptr].x,
+            pages[cur_page].entities[ptr].y,
+            player.x,
+            player.y);
+            if(next_xy[0]==player.x && next_xy[1]==player.y){
+                entity_attack(ptr);
+                return;
+            }
+            break;
+        /*default:
+            next_xy=[pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y];
+            break;*/
+    }
     pages[cur_page].entities[ptr].x=next_xy[0];
     pages[cur_page].entities[ptr].y=next_xy[1];
 }
 
+function check_health(ptr){
+    if(pages[cur_page].entities[ptr].health<=0){
+        pages[cur_page].entities[ptr].id=-1;
+        entity_cleanup();
+    }
+}
+
 function tick(){
-    if(player.health<=0){
+    if(player.health<=0){//Player Death
         death();
     }
     for(var i=0;i<pages[cur_page].entities.length;i++){
@@ -1130,17 +1212,18 @@ function tick(){
                 break;
             case 1:
                 npc(i);
+                check_health(i);
                 break;
         }
     }
 }
 //random_tick(player.x,player.y);
-function random_tick(random_x=Math.floor((Math.random()*100))%40,random_y=Math.floor((Math.random()*100))%25,action=Math.floor((Math.random()*10))%2){
+function random_tick(random_x=Math.floor((Math.random()*100))%40,random_y=Math.floor((Math.random()*100))%25,action=Math.floor((Math.random()*100))){
 if(pages[cur_page].map[random_y][random_x]==13){//grass
-    if(action==0){//create hay
+    if(action%2==0){//create hay
         pages[cur_page].entities.push({id:2, char:12, x:random_x, y:random_y, item: [2,1]});
     }
-    if(action==1){//spread
+    if(action%2==1){//spread
         var direction=Math.floor(Math.random()*100)%4;
         x=random_x;
         y=random_y;
@@ -1166,10 +1249,13 @@ if(pages[cur_page].map[random_y][random_x]==13){//grass
         }
     }
 }
+//console.log(action%2);
 if(pages[cur_page].map[random_y][random_x]==15){//tree trunk
-    if(action==0){
+    //console.log(action%2);
+    if(action%2==0){
         pages[cur_page].entities.push({id:2, char:9, x:random_x, y:random_y, item: [1,1]});//branch
-    }else{
+    }
+    if(action%2==1){
         pages[cur_page].entities.push({id:2, char:24, x:random_x, y:random_y, item: [9,1]});//sapling
     }
 }
@@ -1224,12 +1310,12 @@ if(pages[cur_page].map[random_y][random_x]==17){//red mushroom growth
         }
 }
 //non hostile entity random destination
-if(random_y<3){
+if(random_y==3){
 for(var i=0;i<pages[cur_page].entities.length;i++){
     if(pages[cur_page].entities[i].id==1){
         if(pages[cur_page].entities[i].brain.hostile==0){
-            pages[cur_page].entities[i].destination.dest_x=Math.floor(Math.random()*100)%40;
-            pages[cur_page].entities[i].destination.dest_y=Math.floor(Math.random()*100)%25;
+            pages[cur_page].entities[i].dest_x=Math.floor(Math.random()*100)%40;
+            pages[cur_page].entities[i].dest_y=Math.floor(Math.random()*100)%25;
         }
     }
 }
@@ -1242,6 +1328,17 @@ if(char_value(random_x,random_y)==24){//sapling
         }
     }
 }
+//night: 0-32767
+//day: 32768-65535
+if(tick1>=32767){
+	//enemy spawning stuff
+	//{id:1, char:4, x:1,y:1, brain: {no_ai:0, hostile: 1}, health:20, strength:1, attack_cooldown:0, dest_x:1, dest_y:1}
+	if(pages[cur_page].metadata.safety==0){
+		if(action<5){
+			pages[cur_page].entities.push({id:1, char:4, x:random_x,y:random_y, brain: {no_ai:0, hostile: 1}, health:20, strength:1, attack_cooldown:0, dest_x:1, dest_y:1});
+		}
+	}
+}
 }
 
 //var tick1=0;
@@ -1251,7 +1348,7 @@ function refresh(){//Dang it, no multiple setintervals...
 //return 0;
 draw_map(pages[cur_page]);
 //status bar
-var player_text="Name: "+player.name+" Health: "+player.health+" X: "+player.x+" Y: "+player.y+ " Text Page: "+cur_page;
+var player_text="Name: "+player.name+" Health: "+player.health+" X: "+player.x+" Y: "+player.y+ " Text Page: "+cur_page+" Time: "+tick1;
 /*if(player.brain.mode==1){
     player_text+=" Attack/Use Mode";
 }else{
@@ -1268,7 +1365,15 @@ for(var i=0;i<10;i++){
 }
 document.getElementById("status").textContent=status_bar;
 tick1++;
-if(tick1>=65536){tick=0;}
+if(tick1>=65536){tick1=0;}
+//night: 0-32767
+//day: 32768-65535
+if(tick1==32768){//Day starts
+    console.log("Fetch me their souls!");
+}
+if(tick1==0){//Night starts
+    console.log("Ba, da, DAAA");
+}
 if(tick1%2==0){//projectiles and path finding
 tick();
 }
