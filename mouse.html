@@ -14,10 +14,10 @@
     </center>
 </body>
 <script>
-//Mouse Simulator 2D v0.21
+//Mouse Simulator 2D v0.22
 //states
 var cur_page=0;
-var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0]};
+var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0]};
 //inventory: [(item id),(item amount)]; player.inv[10]=selected pointer
 //maps
 var pages=[{
@@ -53,7 +53,8 @@ var pages=[{
 		//{id:1, char:6, x:1, y:0, dest_page:0},//hole for exiting and entering nest
         {id:2, char:9, x:4, y:10, item: [1,10]},//branch
         {id:2, char:12, x:5, y:10, item: [2,10]},//hay
-        {id:2, char:27, x:5, y:11, item: [12,10]}//stew
+        {id:2, char:27, x:5, y:11, item: [12,10]},//stew
+        {id:2, char:24, x:4, y:11, item: [9,10]}
 	],
 	holes:[
 		//holes
@@ -91,7 +92,7 @@ var pages=[{
 	],
 	entities:[
 		//entities
-		{id:1, char:4, x:24,y:5, brain: {no_ai:1}, health:20, destination:{type:1,dest_x:7,dest_y:9}},//npc
+		{id:1, char:3, x:24,y:5, brain: {no_ai:0, hostile: 0}, health:20, strength:1, destination:{type:1,dest_x:24,dest_y:15}},//npc,9,15
         //{id:2, char:9, x:2, y:9, item: [1,120]},//dropped item,branch
         //{id:2, char:12, x:3, y:9, item: [2,120]},//hay
         {id:3, char:20, x:17, y:13, direction:-1, decay:20, damage:1000, item_drop:[0,0]},
@@ -99,7 +100,7 @@ var pages=[{
         {id:3, char:20, x:16, y:13, direction:2, decay:-1, damage:1000, item_drop:[0,0]},
         {id:3, char:20, x:17, y:12, direction:0, decay:-1, damage:1000, item_drop:[0,0]},
         {id:3, char:20, x:17, y:14, direction:1, decay:-1, damage:1000, item_drop:[0,0]},
-        {id:1, char:4, x:1,y:1, brain: {no_ai:1}, health:20, destination:{type:1,dest_x:1,dest_y:1}},
+        {id:1, char:4, x:1,y:1, brain: {no_ai:1, hostile: 1}, health:20, destination:{type:1,dest_x:1,dest_y:1}},
 	],
 	holes:[
 		//holes
@@ -620,6 +621,18 @@ if(standing_on==17){//red mushroom
         return;
 	}
 }
+if(standing_on==24){//sapling
+	if(player.inv[player.inv[10]][0]==0){
+		player.inv[player.inv[10]]=[9,1];
+		pages[cur_page].map[player.y][player.x]=0;
+        return;
+	}
+	if(player.inv[player.inv[10]][0]==9){
+		player.inv[player.inv[10]][1]++;
+		pages[cur_page].map[player.y][player.x]=0;
+        return;
+	}
+}
 if(standing_on==11){//crafting arrow
     var input=[
     -1,-1,//(35,1),(36,1)
@@ -877,16 +890,16 @@ switch(x){
 //if(is_entity!=-1){//yes entity
 switch(x){
     case "up":
-        pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:19, direction:-1, damage:1, decay:2});
+        pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:19, direction:-1, damage:player.strength, decay:2});
         break;
     case "down":
-        pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:19, direction:-1, damage:1, decay:2});
+        pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:19, direction:-1, damage:player.strength, decay:2});
         break;
     case "left":
-        pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:19, direction:-1, damage:1, decay:2});
+        pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:19, direction:-1, damage:player.strength, decay:2});
         break;
     case "right":
-        pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:19, direction:-1, damage:1, decay:2});
+        pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:19, direction:-1, damage:player.strength, decay:2});
         break;
 }
 //}
@@ -925,6 +938,10 @@ switch(player.inv[player.inv[10]][0]){
         break;
     case 6://Fence
         pages[cur_page].map[player.y][player.x]=18;
+        player.inv[player.inv[10]][1]--;
+        break;
+    case 9://Sapling
+        pages[cur_page].map[player.y][player.x]=24;
         player.inv[player.inv[10]][1]--;
         break;
 }
@@ -1074,6 +1091,34 @@ function death(){
     key_manager=function(){};
 }
 
+function pathfind_step(x1,y1,x2,y2){//This is gonna hurt...
+    var delta_x=Math.abs(x1-x2);
+    var delta_y=Math.abs(y1-y2);
+    if(x1>x2 && is_walkable(char_value(x1-1,y1)) && !hit_bounds(x1-1,y1)){
+        return [x1-1,y1];
+    }
+    if(x1<x2 && is_walkable(char_value(x1+1,y1)) && !hit_bounds(x1+1,y1)){
+        return [x1+1,y1];
+    }
+    if(y1>y2 && is_walkable(char_value(x1,y1-1)) && !hit_bounds(x1,y1-1)){
+        return [x1,y1-1];
+    }
+    if(y1<y2 && is_walkable(char_value(x1,y1+1)) && !hit_bounds(x1,y1+1)){
+        return [x1,y1+1];
+    }
+    
+    return [x1,y1];
+}
+
+function npc(ptr){//make entity move
+    if(pages[cur_page].entities[ptr].brain.no_ai==1){
+        return;
+    }
+    var next_xy=pathfind_step(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y,pages[cur_page].entities[ptr].destination.dest_x,pages[cur_page].entities[ptr].destination.dest_y);
+    pages[cur_page].entities[ptr].x=next_xy[0];
+    pages[cur_page].entities[ptr].y=next_xy[1];
+}
+
 function tick(){
     if(player.health<=0){
         death();
@@ -1082,6 +1127,9 @@ function tick(){
         switch(pages[cur_page].entities[i].id){
             case 3:
                 projectile(i);
+                break;
+            case 1:
+                npc(i);
                 break;
         }
     }
@@ -1119,7 +1167,11 @@ if(pages[cur_page].map[random_y][random_x]==13){//grass
     }
 }
 if(pages[cur_page].map[random_y][random_x]==15){//tree trunk
-	pages[cur_page].entities.push({id:2, char:9, x:random_x, y:random_y, item: [1,1]});
+    if(action==0){
+        pages[cur_page].entities.push({id:2, char:9, x:random_x, y:random_y, item: [1,1]});//branch
+    }else{
+        pages[cur_page].entities.push({id:2, char:24, x:random_x, y:random_y, item: [9,1]});//sapling
+    }
 }
 if(pages[cur_page].map[random_y][random_x]==16){//brown mushroom growth
     var direction=Math.floor(Math.random()*100)%4;
@@ -1170,6 +1222,25 @@ if(pages[cur_page].map[random_y][random_x]==17){//red mushroom growth
         if(pages[cur_page].map[y][x]==0){
             pages[cur_page].map[y][x]=17;
         }
+}
+//non hostile entity random destination
+if(random_y<3){
+for(var i=0;i<pages[cur_page].entities.length;i++){
+    if(pages[cur_page].entities[i].id==1){
+        if(pages[cur_page].entities[i].brain.hostile==0){
+            pages[cur_page].entities[i].destination.dest_x=Math.floor(Math.random()*100)%40;
+            pages[cur_page].entities[i].destination.dest_y=Math.floor(Math.random()*100)%25;
+        }
+    }
+}
+}
+if(char_value(random_x,random_y)==24){//sapling
+    if(!hit_bounds(random_x,random_y-1)){
+        if(char_value(random_x,random_y-1)==0){
+            pages[cur_page].map[random_y][random_x]=15;//trunk
+            pages[cur_page].map[random_y-1][random_x]=14;//leaves
+        }
+    }
 }
 }
 
