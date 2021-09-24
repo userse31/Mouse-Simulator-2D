@@ -7,17 +7,17 @@
     <canvas id="cga" width="320" height="200"></canvas>
     <p id="player"></p>
     <p id="status">This paragraph tag is left intentionally blank.</p>
-    <p id="hints">Welcome!</p>
+    <p id="demonic_announcer">Welcome!</p>
     <button onclick="load()">Load</button><button onclick="save()">Save</button>
     </br>
     <button onclick="alert(eval(prompt('Code?')))">eval()</button>
     </center>
 </body>
 <script>
-//Mouse Simulator 2D v0.23
+//Mouse Simulator 2D v0.24
 //states
 var cur_page=0;
-var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0]};
+var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0};
 //inventory: [(item id),(item amount)]; player.inv[10]=selected pointer
 //maps
 var pages=[{
@@ -433,8 +433,20 @@ var font=[
 0,0,1,1,1,1,0,0,
 0,0,0,1,1,0,0,0,0,0,0,255,255,255
 ],
+//28, Carpet
+[
+1,0,1,0,1,0,1,0,
+0,1,0,1,0,1,0,1,
+1,0,1,0,1,0,1,0,
+0,1,0,1,0,1,0,1,
+1,0,1,0,1,0,1,0,
+0,1,0,1,0,1,0,1,
+1,0,1,0,1,0,1,0,
+0,1,0,1,0,1,0,1,100,100,100,255,255,255
+],
 ];
-var walkable=[0,6,7,8,9,10,11,13,14,15,16,17,24];
+var walkable=[0,6,7,8,9,10,11,13,14,15,16,17,24,28];
+var not_spawnable=[28];
 //items
 var item_char=[
 0,//Nothing,0
@@ -450,6 +462,7 @@ var item_char=[
 25,//Leaves,10
 26,//Bowl,11
 27,//Mushroom Stew,12
+28,//Carpet,13
 ];
 
 var item_names=[
@@ -465,7 +478,8 @@ var item_names=[
 "Sapling",
 "Leaves",
 "Bowl",
-"Mushroom Stew"
+"Mushroom Stew",
+"Carpet"
 ];
 //crafting
 var recipes_input=[
@@ -475,6 +489,9 @@ var recipes_input=[
 [[8,1],[7,1]],//string+stick to fence (items reversed),3
 [[10,1],[8,1]],//string+leaves to bowl,4
 [[11,1],[4,1]],//bowl+brown mushroom to bowl,5
+[[3,4]],//4 grass to 1 hay
+[[2,4],[8,2]],//4 hay+2 string=1 carpet
+[[9,1]],//sapling to branch
 ];
 var recipes_output=[
 [[7,1],[10,1]],//branch to stick+leaves,0
@@ -483,6 +500,9 @@ var recipes_output=[
 [[6,1]],//Fence,3
 [[11,1]],//Bowl,4
 [[12,1]],//Mushroom Stew,5
+[[2,1]],//hay
+[[13,1]],//Carpet.
+[[1,1]],//Branch
 ];
 
 var ctx=document.getElementById("cga").getContext("2d");
@@ -601,10 +621,10 @@ if(standing_on==6){//teleport/go to next map
 }
 if(standing_on==7 || standing_on==8){
 	if(tick1<=32768){
-		document.getElementById("hints").textContent="You can only sleep at day.";
+		document.getElementById("demonic_announcer").textContent="You can only sleep at day.";
 	}else{
 		tick1=100;
-		document.getElementById("hints").textContent="Slept and skipped to night."
+		document.getElementById("demonic_announcer").textContent="Slept and skipped to night."
 	}
 }
 if(standing_on==13){//grass
@@ -650,6 +670,18 @@ if(standing_on==24){//sapling
         return;
 	}
 	if(player.inv[player.inv[10]][0]==9){
+		player.inv[player.inv[10]][1]++;
+		pages[cur_page].map[player.y][player.x]=0;
+        return;
+	}
+}
+if(standing_on==28){//Carpet
+	if(player.inv[player.inv[10]][0]==0){
+		player.inv[player.inv[10]]=[13,1];
+		pages[cur_page].map[player.y][player.x]=0;
+        return;
+	}
+	if(player.inv[player.inv[10]][0]==13){
 		player.inv[player.inv[10]][1]++;
 		pages[cur_page].map[player.y][player.x]=0;
         return;
@@ -966,6 +998,10 @@ switch(player.inv[player.inv[10]][0]){
         pages[cur_page].map[player.y][player.x]=24;
         player.inv[player.inv[10]][1]--;
         break;
+    case 13://grass
+        pages[cur_page].map[player.y][player.x]=28;
+        player.inv[player.inv[10]][1]--;
+        break;
 }
 inv_cleanup();
 }
@@ -975,7 +1011,7 @@ switch(player.inv[player.inv[10]][0]){//item id
             break;
         }
 	    player.health+=5;
-        if(player.health>20){
+        if(player.health>20 && player.creative==0){
             player.health=20;
         }
 	    player.inv[player.inv[10]][1]--;
@@ -983,56 +1019,49 @@ switch(player.inv[player.inv[10]][0]){//item id
 inv_cleanup();
 }
 
+function cheats(){
+    var cheat_code=prompt("Cheat?");
+    switch(cheat_code){
+        case "Max Ammo!":
+            player.health=20;
+            break;
+        case "gamemode c":
+            player.creative=1;
+            player.health=Infinity;
+            break;
+        case "Give me what I want!":
+            player.inv[player.inv[10]]=JSON.parse(prompt("Item?"));
+            break;
+        default:
+            alert("No cheat for you!");
+            break;
+    }
+}
+
 //keys
 function key_manager(key){
-//console.log(key);
-if(key==87){//up
-if(hit_bounds(player.x,player.y)){
-	return;
-}
-if(hit_bounds(player.x,player.y-1)){
-	return;
-}
-if(is_walkable(char_value(player.x,player.y-1))){
-	player.y-=1;
-	return;
-}
-}
-if(key==83){//down
-if(hit_bounds(player.x,player.y)){
-	return;
-}
-if(hit_bounds(player.x,player.y+1)){
-	return;
-}
-if(is_walkable(char_value(player.x,player.y+1))){
-	player.y+=1;
-	return;
-}
-}
-if(key==65){//left
-if(hit_bounds(player.x,player.y)){
-	return;
-}
-if(hit_bounds(player.x-1,player.y)){
-	return;
-}
-if(is_walkable(char_value(player.x-1,player.y))){
-	player.x-=1;
-	return;
-}
-}
-if(key==68){//right
-if(hit_bounds(player.x,player.y)){
-	return;
-}
-if(hit_bounds(player.x+1,player.y)){
-	return;
-}
-if(is_walkable(char_value(player.x+1,player.y))){
-	player.x+=1;
-	return;
-}
+//Movement
+switch(key){
+    case 87://up,w
+        if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x,player.y-1) || !is_walkable(char_value(player.x,player.y-1)))){
+        	player.y-=1;
+        }
+        return;
+    case 83://down, s
+        if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x,player.y+1) || !is_walkable(char_value(player.x,player.y+1)))){
+        	player.y+=1;
+        }
+        return;
+    case 65://left, a
+        if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x-1,player.y) || !is_walkable(char_value(player.x-1,player.y)))){
+        	player.x-=1;
+        }
+        return;
+    case 68://right, d
+        if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x+1,player.y) || !is_walkable(char_value(player.x+1,player.y)))){
+        	player.x+=1;
+        }
+        return;
 }
 //attack
 switch(key){
@@ -1094,24 +1123,26 @@ switch(key){
         break;
 }
 
-//break/pickup, place/use
+//break/pickup, place/use, other
 switch(key){
     case 13://enter
         enter_button();
         break;
-    /*case 81://place thing, q
-        place_char();
-        break;*/
-    /*case 69://e, toggle modes
-        player.brain.mode*=-1;
-        break;*/
     case 32://space
         use_item();
+        break;
+    case 192://"~" key
+        document.getElementById("demonic_announcer").textContent="Stop there criminal!";
+        cheats();
         break;
 }
 }
 
 function death(){
+    if(player.creative==1){
+        console.log("You live to see another day.");
+        return;
+    }
     alert("BOOM! You are DEAD!");
     clearInterval(interval);
     key_manager=function(){};
@@ -1217,6 +1248,16 @@ function tick(){
         }
     }
 }
+
+function can_spawn(x){
+    for(var i=0;i<not_spawnable.length;i++){
+        if(x==not_spawnable[i]){
+        return false;
+        }
+    }
+    return true;
+}
+
 //random_tick(player.x,player.y);
 function random_tick(random_x=Math.floor((Math.random()*100))%40,random_y=Math.floor((Math.random()*100))%25,action=Math.floor((Math.random()*100))){
 if(pages[cur_page].map[random_y][random_x]==13){//grass
@@ -1335,7 +1376,13 @@ if(tick1>=32767){
 	//{id:1, char:4, x:1,y:1, brain: {no_ai:0, hostile: 1}, health:20, strength:1, attack_cooldown:0, dest_x:1, dest_y:1}
 	if(pages[cur_page].metadata.safety==0){
 		if(action<5){
-			pages[cur_page].entities.push({id:1, char:4, x:random_x,y:random_y, brain: {no_ai:0, hostile: 1}, health:20, strength:1, attack_cooldown:0, dest_x:1, dest_y:1});
+            var cv=char_value(random_x,random_y);
+            if(!is_walkable(cv)){
+                return;
+            }
+            if(can_spawn(cv)){
+			 pages[cur_page].entities.push({id:1, char:4, x:random_x,y:random_y, brain: {no_ai:0, hostile: 1}, health:20, strength:1, attack_cooldown:0, dest_x:1, dest_y:1});
+            }
 		}
 	}
 }
