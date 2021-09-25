@@ -14,7 +14,7 @@
     </center>
 </body>
 <script>
-//Mouse Simulator 2D v0.24
+//Mouse Simulator 2D v0.25
 //states
 var cur_page=0;
 var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0};
@@ -23,7 +23,7 @@ var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex"
 var pages=[{
 	//home_page
 	map:[
-	[1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+	[1,6,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,0,10,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,11,10,1],//craft bench
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,0,10,1],
@@ -50,7 +50,6 @@ var pages=[{
 	[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 	],
 	entities:[
-		//{id:1, char:6, x:1, y:0, dest_page:0},//hole for exiting and entering nest
         {id:2, char:9, x:4, y:10, item: [1,10]},//branch
         {id:2, char:12, x:5, y:10, item: [2,10]},//hay
         {id:2, char:27, x:5, y:11, item: [12,10]},//stew
@@ -58,7 +57,8 @@ var pages=[{
 	],
 	holes:[
 		//holes
-		[{x:1, y:0, dest_page:1, next_x: 1, next_y: 23}]
+		{x:1, y:0, dest_page:1, next_x: 1, next_y: 23},
+		{x:2, y:0, dest_page:-2, next_x:1, next_y:1}//gen new page
 	],
 	metadata:{
 	safety:1,//Do enemies spawn here at night?
@@ -71,7 +71,7 @@ var pages=[{
 {
 	//test page
 	map:[
-	[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+	[1,6,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,2,2,2,0,2,2,2,0,0,2,2,0,2,2,2,0,2,0,0,0,18,18,18,18,18,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,2,0,0,2,0,0,0,2,0,0,0,0,2,0,0,2,0,0,18,13,13,13,13,13,18,14,0,0,0,0,0,0,0,0,0,0,1],
@@ -100,18 +100,18 @@ var pages=[{
 	entities:[
 		//entities
 		{id:1, char:3, x:24,y:5, brain: {no_ai:0, hostile: 0}, health:20, strength:1, attack_cooldown:0, dest_x:24, dest_y:15},//npc,9,15
-        //{id:2, char:9, x:2, y:9, item: [1,120]},//dropped item,branch
-        //{id:2, char:12, x:3, y:9, item: [2,120]},//hay
         {id:3, char:20, x:17, y:13, direction:-1, decay:20, damage:1000, item_drop:[0,0]},
         {id:3, char:20, x:18, y:13, direction:3, decay:-1, damage:1000, item_drop:[0,0]},
         {id:3, char:20, x:16, y:13, direction:2, decay:-1, damage:1000, item_drop:[0,0]},
         {id:3, char:20, x:17, y:12, direction:0, decay:-1, damage:1000, item_drop:[0,0]},
         {id:3, char:20, x:17, y:14, direction:1, decay:-1, damage:1000, item_drop:[0,0]},
-        {id:1, char:4, x:1,y:1, brain: {no_ai:0, hostile: 1}, health:20, strength:1, attack_cooldown:0, dest_x:1, dest_y:1},//enemy
+        {id:1, char:4, x:1,y:1, brain: {no_ai:1, hostile: 1}, health:20, strength:1, attack_cooldown:0, dest_x:1, dest_y:1},//enemy
 	],
 	holes:[
 		//holes
-		[{x:1, y:24, dest_page:0, next_x:1, next_y:1}]
+		{x:1, y:24, dest_page:0, next_x:1, next_y:1},
+		{x:1, y:0, dest_page:-1, next_x:1, next_y:1},//nowhere
+		
 	],
 	metadata:{
 	safety:0,//Do enemies spawn here at night?
@@ -445,7 +445,7 @@ var font=[
 0,1,0,1,0,1,0,1,100,100,100,255,255,255
 ],
 ];
-var walkable=[0,6,7,8,9,10,11,13,14,15,16,17,24,28];
+var walkable=[0,2,6,7,8,9,10,11,13,14,15,16,17,24,28];
 var not_spawnable=[28];
 //items
 var item_char=[
@@ -505,6 +505,47 @@ var recipes_output=[
 [[1,1]],//Branch
 ];
 
+var struct_weight=[//likelyness to be generated
+0.8,//tree
+0.8,//grass
+0.1,//115
+0.2,//abandoned shed.
+];
+
+var structures=[
+//tree,0
+[
+[14],
+[15]
+],
+//grass, 1
+[
+[13]
+],
+//115, 2
+[
+[1,0,1,0,1,1,1],
+[1,0,1,0,1,0,0],
+[1,0,1,0,1,1,1],
+[1,0,1,0,0,0,1],
+[1,0,1,0,1,1,1],
+],
+//Human_abandoned_shed, 3
+[
+[1,1,1,0,1],
+[13,28,28,28,1],
+[1,28,28,28,13],
+[1,28,28,28,1],
+[1,2,1,1,1],
+],
+//hole, 4
+[
+[0,2,0],
+[2,6,2],
+[0,2,0]
+],
+];
+
 var ctx=document.getElementById("cga").getContext("2d");
 var char=ctx.getImageData(0,0,8,8);
 function write_1bit(pos,val,r1,g1,b1,r2,g2,b2){
@@ -539,9 +580,6 @@ function draw_map(){
 	}
 	//entity map
 	for(var i=0;i<pages[cur_page].entities.length;i++){
-       /*if(pages[cur_page].entities[i].ignore){
-            continue;
-       }*/
 	   get_font(pages[cur_page].entities[i].char);
 	   ctx.putImageData(char,pages[cur_page].entities[i].x*8,pages[cur_page].entities[i].y*8);
 	}
@@ -550,12 +588,95 @@ function draw_map(){
 	ctx.putImageData(char,player.x*8,player.y*8);
 }
 
+function struct_copy(struct_id,offset_x,offset_y,fill_nonzero=1){
+	for(var y=0;y<structures[struct_id].length;y++){
+		for(var x=0;x<structures[struct_id][y].length;x++){
+			if(hit_bounds(offset_x+x,offset_y+y)){
+				continue;
+			}
+			if(char_value(offset_x+x,offset_y+y)!=0 && fill_nonzero==0){
+				continue;
+			}
+			pages[cur_page].map[offset_y+y][offset_x+x]=structures[struct_id][y][x];
+		}
+	}
+}
+
+function generate_stuff(){
+	var rand_x=0;
+	var rand_y=0;
+	for(var i=0;i<10;i++){
+		rand_x=Math.floor(Math.random()*100)%40;
+		rand_y=Math.floor(Math.random()*100)%25;
+		if(char_value(rand_x,rand_y)==0){
+			if(Math.random()<struct_weight[1]){
+				struct_copy(1,rand_x,rand_y);
+			}
+		}
+	}
+	for(var i=0;i<10;i++){
+		rand_x=Math.floor(Math.random()*100)%40;
+		rand_y=Math.floor(Math.random()*100)%24;
+		if(char_value(rand_x,rand_y)==0){
+			if(Math.random()<struct_weight[0]){
+				struct_copy(0,rand_x,rand_y);
+			}
+		}
+	}
+	for(var i=0;i<10;i++){
+		rand_x=Math.floor(Math.random()*100)%40;
+		rand_y=Math.floor(Math.random()*100)%24;
+		if(char_value(rand_x,rand_y)==0){
+			if(Math.random()<struct_weight[0]){
+				struct_copy(0,rand_x,rand_y);
+			}
+		}
+	}
+	for(var i=0;i<1;i++){
+		rand_x=Math.floor(Math.random()*100)%35;
+		rand_y=Math.floor(Math.random()*100)%20;
+		if(char_value(rand_x,rand_y)==0){
+			if(Math.random()<struct_weight[3]){
+				struct_copy(3,rand_x,rand_y,0);
+			}
+		}
+	}
+}
+
+function new_page(hole_from){
+	console.log("a");
+	var old_cur_page=cur_page;
+	var n_page={map:new Array(25),entities:[],holes:[],metadata:{safety:0, north_goto:-1, south_goto:-1, west_goto:-1, east_goto:-1}};
+	for(var i=0;i<25;i++){
+		n_page.map[i]=new Array(40);
+	}
+	for(var j=0;j<25;j++){
+		for(var i=0;i<40;i++){
+			n_page.map[j][i]=0;
+		}
+	}
+	pages.push(n_page);
+	pages[cur_page].holes[hole_from].dest_page=pages.length-1;
+	cur_page=pages.length-1;
+	generate_stuff();
+	struct_copy(4,20,12);
+	//n_page.map[0][0]=6;//teleporter
+	n_page.holes.push({x:21, y:13, dest_page:old_cur_page, next_x: 1, next_y: 1});
+}
+
 function teleport(){
 for(var i=0;i<pages[cur_page].holes.length;i++){
-	if(pages[cur_page].holes[i][0].x==player.x && pages[cur_page].holes[i][0].y==player.y){
-		player.x=pages[cur_page].holes[i][0].next_x;
-		player.y=pages[cur_page].holes[i][0].next_y;
-		cur_page=pages[cur_page].holes[i][0].dest_page;
+	if(pages[cur_page].holes[i].x==player.x && pages[cur_page].holes[i].y==player.y){
+		if(pages[cur_page].holes[i].dest_page==-1){//go nowhere
+			return;
+		}
+		if(pages[cur_page].holes[i].dest_page==-2){//gen new page
+			new_page(i);
+			return;
+		}
+		player.x=pages[cur_page].holes[i].next_x;
+		player.y=pages[cur_page].holes[i].next_y;
+		cur_page=pages[cur_page].holes[i].dest_page;
 	}
 }
 }
@@ -592,7 +713,6 @@ if(on_entity.id==2){
 }
 
 function compare_array(x,y){
-//alert(JSON.stringify([x,y]));
 if(x.length!=y.length){
     return false;
 }
@@ -723,7 +843,6 @@ if(standing_on==11){//crafting arrow
             input[5]=i;
         }
     }
-    //alert(JSON.stringify(input));
     for(var i=0;i<input.length;i++){
         if(input[i]==-1){
             continue;
@@ -753,23 +872,21 @@ if(player.inv[player.inv[10]][0]==0){//Don't want to be creating dropped items w
 if(!x){//drop all
 	pages[cur_page].entities.push(
 	    {
-	    id:2, 
-	    char:item_char[player.inv[ player.inv[10] ][0]], 
-	    //char:9,
-	    x:player.x, 
-	    y:player.y, 
-	    item:player.inv[ player.inv[10] ] 
+	    id:2,
+	    char:item_char[player.inv[player.inv[10]][0]],
+	    x:player.x,
+	    y:player.y,
+	    item:player.inv[player.inv[10]]
 	    });
 	    player.inv[player.inv[10]]=[0,0];
 }else{//drop one
 	pages[cur_page].entities.push(
 	    {
-	    id:2, 
-	    char:item_char[player.inv[ player.inv[10] ][0]], 
-	    //char:9,
-	    x:player.x, 
-	    y:player.y, 
-	    item:[player.inv[ player.inv[10] ][0],1] 
+	    id:2,
+	    char:item_char[player.inv[player.inv[10]][0]],
+	    x:player.x,
+	    y:player.y,
+	    item:[player.inv[player.inv[10]][0],1]
 	    });
 	    player.inv[player.inv[10]]=[player.inv[player.inv[10]][0],player.inv[player.inv[10]][1]-1];
 	    if(player.inv[player.inv[10]][1]<1){
@@ -777,32 +894,6 @@ if(!x){//drop all
 	    }
 }
 }
-
-/*function place_char(){
-var item_id=player.inv[player.inv[10]][0];
-switch(item_id){
-case 3://grass
-    pages[cur_page].map[player.y][player.x]=13;
-    player.inv[player.inv[10]][1]--;
-    inv_cleanup();
-    break;
-case 4://Brown Mushroom
-    pages[cur_page].map[player.y][player.x]=16;
-    player.inv[player.inv[10]][1]--;
-    inv_cleanup();
-    break;
-case 5://Red Mushroom
-    pages[cur_page].map[player.y][player.x]=17;
-    player.inv[player.inv[10]][1]--;
-    inv_cleanup();
-    break;
-case 6://Fence
-    pages[cur_page].map[player.y][player.x]=18;
-    player.inv[player.inv[10]][1]--;
-    inv_cleanup();
-    break;
-}
-}*/
 
 function entity_player_collide(){
     for(var i=0;i<pages[cur_page].entities.length;i++){
@@ -941,7 +1032,6 @@ switch(x){
 	is_entity=entity_collide_xy(player.x+1,player.y);
         break;
 }
-//if(is_entity!=-1){//yes entity
 switch(x){
     case "up":
         pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:19, direction:-1, damage:player.strength, decay:3});
@@ -1198,7 +1288,6 @@ function npc(ptr){//make entity move
     if(pages[cur_page].entities[ptr].brain.no_ai==1){
         return;
     }
-    //alert(pages[cur_page].entities[ptr].brain.hostile);
     var next_xy;
     switch(pages[cur_page].entities[ptr].brain.hostile){
         case 0://not hostile
@@ -1217,9 +1306,6 @@ function npc(ptr){//make entity move
                 return;
             }
             break;
-        /*default:
-            next_xy=[pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y];
-            break;*/
     }
     pages[cur_page].entities[ptr].x=next_xy[0];
     pages[cur_page].entities[ptr].y=next_xy[1];
@@ -1373,7 +1459,6 @@ if(char_value(random_x,random_y)==24){//sapling
 //day: 32768-65535
 if(tick1>=32767){
 	//enemy spawning stuff
-	//{id:1, char:4, x:1,y:1, brain: {no_ai:0, hostile: 1}, health:20, strength:1, attack_cooldown:0, dest_x:1, dest_y:1}
 	if(pages[cur_page].metadata.safety==0){
 		if(action<5){
             var cv=char_value(random_x,random_y);
@@ -1388,19 +1473,11 @@ if(tick1>=32767){
 }
 }
 
-//var tick1=0;
-//var tick2=0;
 var tick1=0;//0 to 65535
 function refresh(){//Dang it, no multiple setintervals...
-//return 0;
 draw_map(pages[cur_page]);
 //status bar
 var player_text="Name: "+player.name+" Health: "+player.health+" X: "+player.x+" Y: "+player.y+ " Text Page: "+cur_page+" Time: "+tick1;
-/*if(player.brain.mode==1){
-    player_text+=" Attack/Use Mode";
-}else{
-    player_text+=" Break/Use Mode";
-}*/
 document.getElementById("player").textContent=player_text;
 var status_bar="Inventory: ";
 for(var i=0;i<10;i++){
@@ -1436,16 +1513,18 @@ window.onload=function(){
 };
 function load(){
     var save_file=JSON.parse(prompt("Save?"));
+    if(save_file==null){
+	return;
+    }
     cur_page=save_file[0];
     player=save_file[1];
     pages=save_file[2];
 }
 function save(){
-    var save_file=JSON.stringify([cur_page,player,pages]);
+    /*var save_file=JSON.stringify([cur_page,player,pages]);
     navigator.clipboard.writeText(save_file);
-    alert("Save file copied to clipboard.");
+    alert("Save file copied to clipboard.");*/
+	document.write(JSON.stringify([cur_page,player,pages]));
 }
-//get_font(1);
-//ctx.putImageData(char,0,0);
 </script>
 </html>
