@@ -14,7 +14,7 @@
     </center>
 </body>
 <script>
-//Mouse Simulator 2D v0.25
+//Mouse Simulator 2D v0.26
 //states
 var cur_page=0;
 var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0};
@@ -23,7 +23,7 @@ var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex"
 var pages=[{
 	//home_page
 	map:[
-	[1,6,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+	[1,6,6,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,0,10,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,11,10,1],//craft bench
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,0,10,1],
@@ -58,11 +58,11 @@ var pages=[{
 	holes:[
 		//holes
 		{x:1, y:0, dest_page:1, next_x: 1, next_y: 23},
-		{x:2, y:0, dest_page:-2, next_x:1, next_y:1}//gen new page
+		{x:2, y:0, dest_page:-2, next_x:19, next_y:12}//gen new page
 	],
 	metadata:{
 	safety:1,//Do enemies spawn here at night?
-	north_goto:-1,//Next page to go to when leaving via north edge
+	north_goto:1,//Next page to go to when leaving via north edge
 	south_goto:-1,//Next page to go to when leaving via south edge
 	west_goto:-1,//Next page to go to when leaving via west edge
 	east_goto:-1,//Next page to go to when leaving via north edge
@@ -95,7 +95,7 @@ var pages=[{
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+	[1,6,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,2,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 	],
 	entities:[
 		//entities
@@ -116,7 +116,7 @@ var pages=[{
 	metadata:{
 	safety:0,//Do enemies spawn here at night?
 	north_goto:-1,//Next page to go to when leaving via north edge
-	south_goto:-1,//Next page to go to when leaving via south edge
+	south_goto:0,//Next page to go to when leaving via south edge
 	west_goto:-1,//Next page to go to when leaving via west edge
 	east_goto:-1,//Next page to go to when leaving via north edge
 	}
@@ -643,10 +643,10 @@ function generate_stuff(){
 	}
 }
 
-function new_page(hole_from){
+function new_page(hole_from=-1,direction="none"){
 	console.log("a");
 	var old_cur_page=cur_page;
-	var n_page={map:new Array(25),entities:[],holes:[],metadata:{safety:0, north_goto:-1, south_goto:-1, west_goto:-1, east_goto:-1}};
+	var n_page={map:new Array(25),entities:[],holes:[],metadata:{safety:0, north_goto:-2, south_goto:-2, west_goto:-2, east_goto:-2}};
 	for(var i=0;i<25;i++){
 		n_page.map[i]=new Array(40);
 	}
@@ -656,12 +656,48 @@ function new_page(hole_from){
 		}
 	}
 	pages.push(n_page);
-	pages[cur_page].holes[hole_from].dest_page=pages.length-1;
+	if(hole_from==-1){
+		switch(direction){//direction _entering_ new page
+	    case "none":
+		struct_copy(4,18,11);
+		n_page.holes.push({x:19, y:12, dest_page:old_cur_page, next_x: 2, next_y: 0});
+	    	break;
+	    case "up"://up
+	    	pages[cur_page].metadata.north_goto=pages.length-1;
+	    	break;
+	    case "down"://down
+	    	pages[cur_page].metadata.south_goto=pages.length-1;
+	    	break;
+	    case "left"://left
+	    	pages[cur_page].metadata.west_goto=pages.length-1;
+	    	break;
+	    case "right"://right
+	    	pages[cur_page].metadata.east_goto=pages.length-1;
+	    	break;
+	    }
+	}else{
+		pages[cur_page].holes[hole_from].dest_page=pages.length-1;
+	}
 	cur_page=pages.length-1;
 	generate_stuff();
-	struct_copy(4,20,12);
-	//n_page.map[0][0]=6;//teleporter
-	n_page.holes.push({x:21, y:13, dest_page:old_cur_page, next_x: 1, next_y: 1});
+	switch(direction){//direction _entering_ new page
+	    case "none":
+		struct_copy(4,18,11);
+		n_page.holes.push({x:19, y:12, dest_page:old_cur_page, next_x: 2, next_y: 0});
+	    	break;
+	    case "up"://up
+	    	pages[cur_page].metadata.south_goto=old_cur_page;
+	    	break;
+	    case "down"://down
+	    	pages[cur_page].metadata.north_goto=old_cur_page;
+	    	break;
+	    case "left"://left
+	    	pages[cur_page].metadata.east_goto=old_cur_page;
+	    	break;
+	    case "right"://right
+	    	pages[cur_page].metadata.west_goto=old_cur_page;
+	    	break;
+	    }
 }
 
 function teleport(){
@@ -671,14 +707,67 @@ for(var i=0;i<pages[cur_page].holes.length;i++){
 			return;
 		}
 		if(pages[cur_page].holes[i].dest_page==-2){//gen new page
-			new_page(i);
+			player.x=pages[cur_page].holes[i].next_x;
+			player.y=pages[cur_page].holes[i].next_y;
+	    		new_page(i);
 			return;
 		}
 		player.x=pages[cur_page].holes[i].next_x;
 		player.y=pages[cur_page].holes[i].next_y;
 		cur_page=pages[cur_page].holes[i].dest_page;
+	    	break;
 	}
 }
+}
+
+function off_edge(direction){//generate new page when walking off map and page edge metadata = -2
+var edge_action=-3
+var next_x=player.x;
+var next_y=player.y
+switch(direction){
+	case "up":
+	    	edge_action=pages[cur_page].metadata.north_goto;
+		next_y=24;
+	    	break;
+	case "down":
+		edge_action=pages[cur_page].metadata.south_goto;
+		next_y=0;
+	    	break;
+	case "left":
+		edge_action=pages[cur_page].metadata.west_goto;
+		next_x=39;
+	    	break;
+	case "right":
+		edge_action=pages[cur_page].metadata.east_goto;
+		next_x=0;
+	    	break;
+}
+if(edge_action==-3 || edge_action==-1){
+	return;
+}
+if(edge_action==-2){
+	switch(direction){
+	case "up":
+	    	new_page(-1,"up");
+			player.y=24;
+	    	return;
+	case "down":
+			new_page(-1,"down");
+			player.y=0;
+	    	return;
+	case "left":
+			new_page(-1,"left");
+			player.x=39
+	    	return;
+	case "right":
+			new_page(-1,"right");
+			player.x=0;
+	    	return;
+}
+}
+cur_page=edge_action;
+player.x=next_x;
+player.y=next_y;
 }
 
 function inv_cleanup(){//resolve item slots with count of 0 or less to id 0
@@ -1133,21 +1222,33 @@ function key_manager(key){
 //Movement
 switch(key){
     case 87://up,w
-        if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x,player.y-1) || !is_walkable(char_value(player.x,player.y-1)))){
+	if(hit_bounds(player.x,player.y-1)){
+		off_edge("up");
+	}
+	if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x,player.y-1) || !is_walkable(char_value(player.x,player.y-1)))){
         	player.y-=1;
         }
         return;
     case 83://down, s
+	if(hit_bounds(player.x,player.y+1)){
+		off_edge("down");
+	}
         if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x,player.y+1) || !is_walkable(char_value(player.x,player.y+1)))){
         	player.y+=1;
         }
         return;
     case 65://left, a
+	if(hit_bounds(player.x-1,player.y)){
+		off_edge("left");
+	}
         if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x-1,player.y) || !is_walkable(char_value(player.x-1,player.y)))){
         	player.x-=1;
         }
         return;
     case 68://right, d
+	if(hit_bounds(player.x+1,player.y)){
+		off_edge("right");
+	}
         if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x+1,player.y) || !is_walkable(char_value(player.x+1,player.y)))){
         	player.x+=1;
         }
