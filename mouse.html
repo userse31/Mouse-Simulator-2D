@@ -14,7 +14,7 @@
     </center>
 </body>
 <script>
-//Mouse Simulator 2D v0.27
+//Mouse Simulator 2D v0.28
 //states
 var cur_page=0;
 var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0};
@@ -23,7 +23,7 @@ var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex"
 var pages=[{
 	//home_page
 	map:[
-	[1,6,6,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+	[1,6,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,0,10,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,11,10,1],//craft bench
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,0,10,1],
@@ -62,10 +62,13 @@ var pages=[{
 	],
 	metadata:{
 	safety:1,//Do enemies spawn here at night?
-	north_goto:1,//Next page to go to when leaving via north edge
+	north_goto:-1,//Next page to go to when leaving via north edge
 	south_goto:-1,//Next page to go to when leaving via south edge
 	west_goto:-1,//Next page to go to when leaving via west edge
 	east_goto:-1,//Next page to go to when leaving via north edge
+	x:0,
+	y:0,
+	underground:true,
 	}
 },
 {
@@ -95,7 +98,7 @@ var pages=[{
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,6,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,2,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+	[1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 	],
 	entities:[
 		//entities
@@ -116,9 +119,12 @@ var pages=[{
 	metadata:{
 	safety:0,//Do enemies spawn here at night?
 	north_goto:-1,//Next page to go to when leaving via north edge
-	south_goto:0,//Next page to go to when leaving via south edge
+	south_goto:-1,//Next page to go to when leaving via south edge
 	west_goto:-1,//Next page to go to when leaving via west edge
 	east_goto:-1,//Next page to go to when leaving via north edge
+	x:0,
+	y:0,
+	underground:true,
 	}
 },
 ];
@@ -523,7 +529,7 @@ var font=[
 ],
 ];
 var walkable=[0,2,6,7,8,9,10,11,13,14,15,16,17,24,28,29,30,31,32];
-var not_spawnable=[28,29,30,31,32];
+var not_spawnable=[2,28,29,30,31,32];
 var burnable=[12,13,14,15,18,24,28];
 //items
 var item_char=[
@@ -598,8 +604,28 @@ var recipes_output=[
 var struct_weight=[//likelyness to be generated
 0.8,//tree
 0.8,//grass
-0.1,//115
+0.01,//115
 0.2,//abandoned shed.
+-1,//hole
+0.1,//pond
+];
+
+var struct_tries=[
+10,
+10,
+1,
+1,
+2,
+2,
+];
+
+var struct_sub=[
+[0,1],
+[0,0],
+[6,4],
+[4,4],
+[0,0],
+[3,3]
 ];
 
 var structures=[
@@ -633,6 +659,13 @@ var structures=[
 [0,2,0],
 [2,6,2],
 [0,2,0]
+],
+//pond,5
+[
+[0,29,29,0],
+[29,29,29,29],
+[29,29,29,29],
+[0,29,29,0],
 ],
 ];
 
@@ -695,48 +728,61 @@ function struct_copy(struct_id,offset_x,offset_y,fill_nonzero=1){
 function generate_stuff(){
 	var rand_x=0;
 	var rand_y=0;
-	for(var i=0;i<10;i++){
-		rand_x=Math.floor(Math.random()*100)%40;
-		rand_y=Math.floor(Math.random()*100)%25;
+	for(var i=0;i<struct_weight.length;i++){
+		for(var j=0;j<struct_tries[i];j++){
+		if(i==4){
+			continue;
+		}
+		rand_x=Math.floor(Math.random()*100)%(40-struct_sub[i][0]);
+		rand_y=Math.floor(Math.random()*100)%(25-struct_sub[i][1]);
 		if(char_value(rand_x,rand_y)==0){
-			if(Math.random()<struct_weight[1]){
-				struct_copy(1,rand_x,rand_y);
+			if(Math.random()<struct_weight[i]){
+				struct_copy(i,rand_x,rand_y);
 			}
 		}
-	}
-	for(var i=0;i<10;i++){
-		rand_x=Math.floor(Math.random()*100)%40;
-		rand_y=Math.floor(Math.random()*100)%24;
-		if(char_value(rand_x,rand_y)==0){
-			if(Math.random()<struct_weight[0]){
-				struct_copy(0,rand_x,rand_y);
-			}
-		}
-	}
-	for(var i=0;i<10;i++){
-		rand_x=Math.floor(Math.random()*100)%40;
-		rand_y=Math.floor(Math.random()*100)%24;
-		if(char_value(rand_x,rand_y)==0){
-			if(Math.random()<struct_weight[0]){
-				struct_copy(0,rand_x,rand_y);
-			}
-		}
-	}
-	for(var i=0;i<1;i++){
-		rand_x=Math.floor(Math.random()*100)%35;
-		rand_y=Math.floor(Math.random()*100)%20;
-		if(char_value(rand_x,rand_y)==0){
-			if(Math.random()<struct_weight[3]){
-				struct_copy(3,rand_x,rand_y,0);
-			}
 		}
 	}
 }
 
+//if two pages next to each other, link them.
+function check_page_sides(){
+	var x=pages[cur_page].metadata.x;
+	var y=pages[cur_page].metadata.y;
+	for(var i=2;i<pages.length;i++){
+		//Above
+		if(pages[i].metadata.x==pages[cur_page].metadata.x && pages[i].metadata.y==pages[cur_page].metadata.y-1){
+			pages[cur_page].metadata.north_goto=i;
+		}
+		//Below
+		if(pages[i].metadata.x==pages[cur_page].metadata.x && pages[i].metadata.y==pages[cur_page].metadata.y+1){
+			pages[cur_page].metadata.south_goto=i;
+		}
+		//left
+		if(pages[i].metadata.x==pages[cur_page].metadata.x-1 && pages[i].metadata.y==pages[cur_page].metadata.y){
+			pages[cur_page].metadata.west_goto=i;
+		}
+		//right
+		if(pages[i].metadata.x==pages[cur_page].metadata.x+1 && pages[i].metadata.y==pages[cur_page].metadata.y){
+			pages[cur_page].metadata.east_goto=i;
+		}
+	}
+}
+
+function get_ptr_from_page_xy(x,y){
+	for(var i=0;i<pages.length;i++){
+		if(pages[i].metadata.x==x && pages[i].metadata.y==y){
+			if(pages[i].underground==true){
+				return -1;
+			}
+			return i;
+		}
+	}
+	return -1;
+}
+
 function new_page(hole_from=-1,direction="none"){
-	console.log("a");
 	var old_cur_page=cur_page;
-	var n_page={map:new Array(25),entities:[],holes:[],metadata:{safety:0, north_goto:-2, south_goto:-2, west_goto:-2, east_goto:-2}};
+	var n_page={map:new Array(25),entities:[],holes:[],metadata:{safety:0, north_goto:-2, south_goto:-2, west_goto:-2, east_goto:-2, x:pages[cur_page].metadata.x,y:pages[cur_page].metadata.y,underground:false}};
 	for(var i=0;i<25;i++){
 		n_page.map[i]=new Array(40);
 	}
@@ -750,7 +796,9 @@ function new_page(hole_from=-1,direction="none"){
 		switch(direction){//direction _entering_ new page
 	    case "none":
 		struct_copy(4,18,11);
-		n_page.holes.push({x:19, y:12, dest_page:old_cur_page, next_x: 2, next_y: 0});
+		pages[cur_page].holes.push({x:19, y:12, dest_page:old_cur_page, next_x: 2, next_y: 0});
+		pages[cur_page].metadata.x=0;
+		pages[cur_page].metadata.y=0;
 	    	break;
 	    case "up"://up
 	    	pages[cur_page].metadata.north_goto=pages.length-1;
@@ -777,17 +825,26 @@ function new_page(hole_from=-1,direction="none"){
 	    	break;
 	    case "up"://up
 	    	pages[cur_page].metadata.south_goto=old_cur_page;
+		pages[cur_page].metadata.x;
+		pages[cur_page].metadata.y--;
 	    	break;
 	    case "down"://down
 	    	pages[cur_page].metadata.north_goto=old_cur_page;
+		pages[cur_page].metadata.x;
+		pages[cur_page].metadata.y++;
 	    	break;
 	    case "left"://left
 	    	pages[cur_page].metadata.east_goto=old_cur_page;
+		pages[cur_page].metadata.x--;
+		pages[cur_page].metadata.y;
 	    	break;
 	    case "right"://right
 	    	pages[cur_page].metadata.west_goto=old_cur_page;
+		pages[cur_page].metadata.x++;
+		pages[cur_page].metadata.y;
 	    	break;
-	    }
+	}
+	check_page_sides();
 }
 
 function teleport(){
@@ -811,12 +868,13 @@ for(var i=0;i<pages[cur_page].holes.length;i++){
 }
 
 function off_edge(direction){//generate new page when walking off map and page edge metadata = -2
+check_page_sides();
 var edge_action=-3
 var next_x=player.x;
 var next_y=player.y
 switch(direction){
 	case "up":
-	    	edge_action=pages[cur_page].metadata.north_goto;
+	    edge_action=pages[cur_page].metadata.north_goto;
 		next_y=24;
 	    	break;
 	case "down":
@@ -836,20 +894,53 @@ if(edge_action==-3 || edge_action==-1){
 	return;
 }
 if(edge_action==-2){
+	var tmp2=0;
 	switch(direction){
 	case "up":
+			if(get_ptr_from_page_xy(pages[cur_page].metadata.x,pages[cur_page].metadata.y-1)!=-1){
+				tmp2=get_ptr_from_page_xy(pages[cur_page].metadata.x,pages[cur_page].metadata.y-1);
+				pages[cur_page].metadata.north_goto=tmp2;
+				player.y=24;
+				cur_page=tmp2;
+				pages[cur_page].metadata.south_goto=tmp2;
+				return;
+			}
 	    	new_page(-1,"up");
 			player.y=24;
 	    	return;
 	case "down":
+			if(get_ptr_from_page_xy(pages[cur_page].metadata.x,pages[cur_page].metadata.y+1)!=-1){
+				tmp2=get_ptr_from_page_xy(pages[cur_page].metadata.x,pages[cur_page].metadata.y+1);
+				pages[cur_page].metadata.north_goto=tmp2;
+				player.y=0;
+				cur_page=tmp2;
+				pages[cur_page].metadata.north_goto=tmp2;
+				return;
+			}
 			new_page(-1,"down");
 			player.y=0;
 	    	return;
 	case "left":
+			if(get_ptr_from_page_xy(pages[cur_page].metadata.x-1,pages[cur_page].metadata.y)!=-1){
+				tmp2=get_ptr_from_page_xy(pages[cur_page].metadata.x-1,pages[cur_page].metadata.y);
+				pages[cur_page].metadata.north_goto=tmp2;
+				player.x=39;
+				cur_page=tmp2;
+				pages[cur_page].metadata.west_goto=tmp2;
+				return;
+			}
 			new_page(-1,"left");
 			player.x=39
 	    	return;
 	case "right":
+			if(get_ptr_from_page_xy(pages[cur_page].metadata.x+1,pages[cur_page].metadata.y)!=-1){
+				tmp2=get_ptr_from_page_xy(pages[cur_page].metadata.x+1,pages[cur_page].metadata.y);
+				pages[cur_page].metadata.north_goto=tmp2;
+				player.x=0;
+				cur_page=tmp2;
+				pages[cur_page].metadata.east_goto=tmp2;
+				return;
+			}
 			new_page(-1,"right");
 			player.x=0;
 	    	return;
@@ -1728,7 +1819,7 @@ var tick1=0;//0 to 65535
 function refresh(){//Dang it, no multiple setintervals...
 draw_map(pages[cur_page]);
 //status bar
-var player_text="Name: "+player.name+" Health: "+player.health+" X: "+player.x+" Y: "+player.y+ " Text Page: "+cur_page+" Time: "+tick1;
+var player_text="Name: "+player.name+" Health: "+player.health+" X: "+player.x+" Y: "+player.y+ " Text Page: "+cur_page+" Time: "+tick1+" "+pages[cur_page].metadata.x+","+pages[cur_page].metadata.y;
 document.getElementById("player").textContent=player_text;
 var status_bar="Inventory: ";
 for(var i=0;i<10;i++){
