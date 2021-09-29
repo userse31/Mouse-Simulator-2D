@@ -4,7 +4,7 @@
 </head>
 <body>
     <center>
-    <canvas id="cga" width="320" height="200"></canvas>
+    <canvas id="cga" width="320" height="200" style="border: 2px solid #777777;"></canvas>
     <p id="player"></p>
     <p id="status">This paragraph tag is left intentionally blank.</p>
     <p id="demonic_announcer">Welcome!</p>
@@ -14,7 +14,7 @@
     </center>
 </body>
 <script>
-//Mouse Simulator 2D v0.28
+//Mouse Simulator 2D v0.29
 //states
 var cur_page=0;
 var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0};
@@ -572,7 +572,7 @@ var item_names=[
 "Amber",
 ];
 //crafting
-var recipes_input=[
+/*var recipes_input=[
 [[1,1]],//branch to stick+leaves,0
 [[2,1]],//hay to string,1
 [[7,1],[8,1]],//string+stick to fence,2
@@ -599,6 +599,57 @@ var recipes_output=[
 [[14,1]],//Bow
 [[15,1]],//Bow and Spindle.
 [[15,1],[16,1]],//Bow and Spindle + Amber
+];*/
+
+var recipies=[
+{//branch to stick+leaves
+input_id:[1,0,0,0,0,0],
+output:[[7,1],[10,1]]
+},
+{//hay to string
+input_id:[2,0,0,0,0,0],
+output:[[8,1]]
+},
+{//2 sticks + 1 string to fence
+input_id:[7,0,8,0,7,0],
+output:[[6,1]]
+},
+{//2 string + 1 leaves to bowl
+input_id:[8,0,10,0,8,0],
+output:[[11,1]]
+},
+{//bowl + brown mushroom to mushroom stew
+input_id:[0,0,4,0,11,0],
+output:[[11,1]]
+},
+{//bowl + brown mushroom to mushroom stew
+input_id:[4,0,11,0,0,0],
+output:[[12,1]]
+},
+{//4 grass to hay
+input_id:[3,3,3,3,0,0],
+output:[[2,1]]
+},
+{//4 string + 2 hay to carpet
+input_id:[8,8,2,2,8,8],
+output:[[13,1]]
+},
+{//bow
+input_id:[7,0,8,7,7,0],
+output:[[14,1]]
+},
+{//bow
+input_id:[0,7,7,8,0,7],
+output:[[14,1]]
+},
+{//bow+stick to bow and spindle
+input_id:[14,7,0,0,0,0],
+output:[[15,1]]
+},
+{//bow and spindle+hay+stick to amber
+input_id:[15,2,1,0,0,0],
+output:[[15,1],[16,1]]
+},
 ];
 
 var struct_weight=[//likelyness to be generated
@@ -1083,7 +1134,7 @@ if(standing_on==11){//crafting arrow
     -1,-1,//(35,2),(36,2)
     -1,-1//(35,3),(36,3)
     ];
-    var recipe=[];
+    var recipe_id=[0,0,0,0,0,0];
 /*    var output=[
     -1,//(38,1)
     -1,//(38,2)
@@ -1096,43 +1147,52 @@ if(standing_on==11){//crafting arrow
         }
         if(pages[cur_page].entities[i].x==35 && pages[cur_page].entities[i].y==1){
             input[0]=i;
+			recipe_id[0]=pages[cur_page].entities[i].item[0];
         }
         if(pages[cur_page].entities[i].x==36 && pages[cur_page].entities[i].y==1){
             input[1]=i;
+			recipe_id[1]=pages[cur_page].entities[i].item[0];
         }
         if(pages[cur_page].entities[i].x==35 && pages[cur_page].entities[i].y==2){
             input[2]=i;
+			recipe_id[2]=pages[cur_page].entities[i].item[0];
         }
         if(pages[cur_page].entities[i].x==36 && pages[cur_page].entities[i].y==2){
             input[3]=i;
+			recipe_id[3]=pages[cur_page].entities[i].item[0];
         }
         if(pages[cur_page].entities[i].x==35 && pages[cur_page].entities[i].y==3){
             input[4]=i;
+			recipe_id[4]=pages[cur_page].entities[i].item[0];
         }
         if(pages[cur_page].entities[i].x==36 && pages[cur_page].entities[i].y==3){
             input[5]=i;
+			recipe_id[5]=pages[cur_page].entities[i].item[0];
         }
     }
-    for(var i=0;i<input.length;i++){
-        if(input[i]==-1){
-            continue;
-        }
-        recipe.push(pages[cur_page].entities[input[i]].item);
-    }
-    for(var i=0;i<recipes_input.length;i++){
-        if(JSON.stringify(recipe)==JSON.stringify(recipes_input[i])){
-            for(var j=0;j<input.length;j++){
-            if(input[j]==-1){
-            continue;
-            }
-            pages[cur_page].entities[input[j]].id=-1;
-            }
-            for(var j=0;j<recipes_output[i].length;j++){
-            pages[cur_page].entities.push({id:2, char:item_char[recipes_output[i][j][0]], x:38, y:1+j, item: recipes_output[i][j]});
-            }
-            entity_cleanup();
-        }
-    }
+	document.getElementById("demonic_announcer").textContent=JSON.stringify(recipe_id);
+	var selected=-1;
+	for(var i=0;i<recipies.length;i++){
+		if(compare_array(recipe_id,recipies[i].input_id)){
+			selected=i;
+			break;
+		}
+	}
+	if(selected==-1){
+		return;
+	}
+	for(var i=0;i<input.length;i++){
+		if(input[i]!=-1){
+			pages[cur_page].entities[input[i]].item[1]--;
+			if(pages[cur_page].entities[input[i]].item[1]<=0){
+				pages[cur_page].entities[input[i]].id=-1
+			}
+		}
+	}
+	for(var i=0;i<recipies[selected].output.length;i++){
+		pages[cur_page].entities.push({id:2, char:item_char[recipies[selected].output[i][0]], x:38, y:1+i, item: recipies[selected].output[i]});
+	}
+	entity_cleanup();
 }
 }
 function drop_item(x){
@@ -1670,7 +1730,7 @@ function do_fire(x,y){
 	if(spread==0){
 		pages[cur_page].map[y][x]++;
 		if(char_value(x,y)>=33){
-			pages[cur_page].map[y-1][x]=0;
+			pages[cur_page].map[y][x]=0;
 		}
 	}
 }
@@ -1815,6 +1875,21 @@ switch(char_value(random_x,random_y)){
 }
 }
 
+function fireing(){
+var limit=5;
+for(var x=0;x<40;x++){
+	for(var y=0;y<25;y++){
+		if(char_value(x,y)==30 || char_value(x,y)==31 || char_value(x,y)==32){
+			if(limit==0){
+				return;
+			}
+			do_fire(x,y);
+			limit--;
+		}
+	}
+}
+}
+
 var tick1=0;//0 to 65535
 function refresh(){//Dang it, no multiple setintervals...
 draw_map(pages[cur_page]);
@@ -1843,8 +1918,11 @@ if(tick1==0){//Night starts
 if(tick1%2==0){//projectiles and path finding
 tick();
 }
-if(tick1%10==0){
+if(tick1%10==0){//random tick
 random_tick();
+}
+if(tick1%7==0){//fire
+fireing();
 }
 }
 const interval = setInterval(function (){refresh();},67);
@@ -1861,12 +1939,13 @@ function load(){
     cur_page=save_file[0];
     player=save_file[1];
     pages=save_file[2];
+	tick1=save_file[3];
 }
 function save(){
     /*var save_file=JSON.stringify([cur_page,player,pages]);
     navigator.clipboard.writeText(save_file);
     alert("Save file copied to clipboard.");*/
-	document.write(JSON.stringify([cur_page,player,pages]));
+	document.write(JSON.stringify([cur_page,player,pages,tick1]));
 }
 </script>
 </html>
