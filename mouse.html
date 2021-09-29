@@ -8,13 +8,16 @@
     <p id="player"></p>
     <p id="status">This paragraph tag is left intentionally blank.</p>
     <p id="demonic_announcer">Welcome!</p>
-    <button onclick="load()">Load</button><button onclick="save()">Save</button>
+    <button onclick="_import()">Import</button><button onclick="_export()">Export</button>
     </br>
     <button onclick="alert(eval(prompt('Code?')))">eval()</button>
     </center>
 </body>
 <script>
-//Mouse Simulator 2D v0.29
+/*window.onbeforeunload = function(e) {
+  return "This will end your session.";
+};*/
+//Mouse Simulator 2D v0.30
 //states
 var cur_page=0;
 var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0};
@@ -527,8 +530,41 @@ var font=[
 0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,200,0,0,255,255,255
 ],
+//36, Fire Bow
+[
+0,0,0,0,0,0,0,0,
+0,0,0,1,1,1,0,0,
+0,0,1,0,1,0,0,0,
+0,1,0,1,0,0,0,0,
+0,1,1,0,0,1,1,0,
+0,1,0,0,1,1,1,0,
+0,0,0,0,1,1,0,0,
+0,0,0,0,0,0,0,0,0,0,0,255,255,255
+],
+//37, spear
+[
+0,0,0,0,0,0,0,0,
+0,0,0,0,1,1,1,0,
+0,0,0,0,0,1,1,0,
+0,0,0,0,1,0,1,0,
+0,0,0,1,0,0,0,0,
+0,0,1,0,0,0,0,0,
+0,1,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,185,122,87,255,255,255
+],
+//38, Raygun
+[
+0,0,0,0,0,0,0,0,
+0,0,0,1,1,0,0,0,
+0,0,0,1,1,0,0,0,
+0,0,0,1,1,0,0,0,
+0,0,1,1,1,1,0,0,
+0,0,1,1,1,1,0,0,
+0,0,1,1,1,1,0,0,
+0,0,0,0,0,0,0,0,255,0,0,255,255,255
+],
 ];
-var walkable=[0,2,6,7,8,9,10,11,13,14,15,16,17,24,28,29,30,31,32];
+var walkable=[0,2,6,7,8,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38];
 var not_spawnable=[2,28,29,30,31,32];
 var burnable=[12,13,14,15,18,24,28];
 //items
@@ -550,6 +586,9 @@ var item_char=[
 33,//Bow,14
 34,//Bow and spindle,15
 35,//Amber,16
+36,//Fire bow, 17
+37,//Spear,18
+38,//Raygun,19
 ];
 
 var item_names=[
@@ -570,36 +609,11 @@ var item_names=[
 "Bow",
 "Bow and Spindle",
 "Amber",
+"Fire Bow",
+"Spear",
+"Raygun",
 ];
 //crafting
-/*var recipes_input=[
-[[1,1]],//branch to stick+leaves,0
-[[2,1]],//hay to string,1
-[[7,1],[8,1]],//string+stick to fence,2
-[[8,1],[7,1]],//string+stick to fence (items reversed),3
-[[10,1],[8,1]],//string+leaves to bowl,4
-[[11,1],[4,1]],//bowl+brown mushroom to bowl,5
-[[3,4]],//4 grass to 1 hay
-[[2,4],[8,2]],//4 hay+2 string=1 carpet
-[[9,1]],//sapling to branch
-[[7,1],[8,3]],//stick + 3 string
-[[14,1],[7,1]],//Bow+stick
-[[15,1],[2,1],[1,1]],//Bow and Spindle + Hay + Stick
-];
-var recipes_output=[
-[[7,1],[10,1]],//branch to stick+leaves,0
-[[8,1]],//hay to string,1
-[[6,1]],//Fence,2
-[[6,1]],//Fence,3
-[[11,1]],//Bowl,4
-[[12,1]],//Mushroom Stew,5
-[[2,1]],//hay
-[[13,1]],//Carpet.
-[[1,1]],//Branch
-[[14,1]],//Bow
-[[15,1]],//Bow and Spindle.
-[[15,1],[16,1]],//Bow and Spindle + Amber
-];*/
 
 var recipies=[
 {//branch to stick+leaves
@@ -646,9 +660,17 @@ output:[[14,1]]
 input_id:[14,7,0,0,0,0],
 output:[[15,1]]
 },
-{//bow and spindle+hay+stick to amber
+{//bow and spindle+hay+stick to amber and bow and spindle
 input_id:[15,2,1,0,0,0],
 output:[[15,1],[16,1]]
+},
+{//bow + amber to fire bow
+input_id:[14,16,16,16,16,16],
+output:[[17,5]]
+},
+{//3 sticks to spear.
+input_id:[7,0,7,0,7,0],
+output:[[18,1]]
 },
 ];
 
@@ -659,6 +681,7 @@ var struct_weight=[//likelyness to be generated
 0.2,//abandoned shed.
 -1,//hole
 0.1,//pond
+0.1,//raygun
 ];
 
 var struct_tries=[
@@ -668,6 +691,7 @@ var struct_tries=[
 1,
 2,
 2,
+1
 ];
 
 var struct_sub=[
@@ -676,7 +700,8 @@ var struct_sub=[
 [6,4],
 [4,4],
 [0,0],
-[3,3]
+[3,3],
+[1,1],
 ];
 
 var structures=[
@@ -718,6 +743,10 @@ var structures=[
 [29,29,29,29],
 [0,29,29,0],
 ],
+//raygun,6
+[
+[38]
+]
 ];
 
 var ctx=document.getElementById("cga").getContext("2d");
@@ -797,6 +826,9 @@ function generate_stuff(){
 
 //if two pages next to each other, link them.
 function check_page_sides(){
+	if(pages[cur_page].metadata.underground==true){
+		return;
+	}
 	var x=pages[cur_page].metadata.x;
 	var y=pages[cur_page].metadata.y;
 	for(var i=2;i<pages.length;i++){
@@ -1128,6 +1160,18 @@ if(standing_on==28){//Carpet
         return;
 	}
 }
+if(standing_on==38){//Raygun
+	if(player.inv[player.inv[10]][0]==0){
+		player.inv[player.inv[10]]=[19,1];
+		pages[cur_page].map[player.y][player.x]=0;
+        return;
+	}
+	if(player.inv[player.inv[10]][0]==4){
+		player.inv[player.inv[10]][1]++;
+		pages[cur_page].map[player.y][player.x]=0;
+        return;
+	}
+}
 if(standing_on==11){//crafting arrow
     var input=[
     -1,-1,//(35,1),(36,1)
@@ -1362,6 +1406,60 @@ switch(x){
 	is_entity=entity_collide_xy(player.x+1,player.y);
         break;
 }
+switch(player.inv[player.inv[10]][0]){
+	case 17://fire bow
+	switch(x){
+	    case "up":
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:35, direction:0, damage:player.strength*4, decay:8});
+ 	       break;
+ 	   case "down":
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:35, direction:1, damage:player.strength*4, decay:8});
+ 	       break;
+ 	   case "left":
+  	       pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:35, direction:2, damage:player.strength*4, decay:8});
+  	       break;
+  	   case "right":
+   	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:35, direction:3, damage:player.strength*4, decay:8});
+   	       break;
+	}
+	player.inv[player.inv[10]][1]--;
+	inv_cleanup();
+        break;
+	case 18://spear
+	switch(x){
+	    case "up":
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:37, direction:-1, damage:player.strength*5, decay:3});
+ 	       break;
+ 	   case "down":
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:37, direction:-1, damage:player.strength*5, decay:3});
+ 	       break;
+ 	   case "left":
+  	       pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:37, direction:-1, damage:player.strength*5, decay:3});
+  	       break;
+  	   case "right":
+   	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:37, direction:-1, damage:player.strength*5, decay:3});
+   	       break;
+	}
+	inv_cleanup();
+        break;
+	case 19://Raygun
+	switch(x){
+	    case "up":
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:20, direction:0, damage:player.strength*1000, decay:-1});
+ 	       break;
+ 	   case "down":
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:20, direction:1, damage:player.strength*1000, decay:-1});
+ 	       break;
+ 	   case "left":
+  	       pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:20, direction:2, damage:player.strength*1000, decay:-1});
+  	       break;
+  	   case "right":
+   	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:20, direction:3, damage:player.strength*1000, decay:-1});
+   	       break;
+	}
+	inv_cleanup();
+	break;
+default:
 switch(x){
     case "up":
         pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:19, direction:-1, damage:player.strength, decay:3});
@@ -1375,6 +1473,7 @@ switch(x){
     case "right":
         pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:19, direction:-1, damage:player.strength, decay:3});
         break;
+}
 }
 //}
 if(is_entity==-1){//no entity
@@ -1931,7 +2030,7 @@ window.onload=function(){
 		key_manager(e.keyCode);
 	}
 };
-function load(){
+function _import(){
     var save_file=JSON.parse(prompt("Save?"));
     if(save_file==null){
 	return;
@@ -1941,7 +2040,7 @@ function load(){
     pages=save_file[2];
 	tick1=save_file[3];
 }
-function save(){
+function _export(){
     /*var save_file=JSON.stringify([cur_page,player,pages]);
     navigator.clipboard.writeText(save_file);
     alert("Save file copied to clipboard.");*/
