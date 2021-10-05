@@ -10,24 +10,25 @@
     <p id="demonic_announcer">Welcome!</p>
     <button onclick="_import()">Import</button><button onclick="_export()">Export</button>
     </br>
-    <button onclick="alert(eval(prompt('Code?')))">eval()</button>
+    <button onclick="alert(JSON.stringify(eval(prompt('Code?'))))">eval()</button>
     </center>
 </body>
 <script>
-/*window.onbeforeunload = function(e) {
-  return "This will end your session.";
-};*/
-//Mouse Simulator 2D v0.31
+//Mouse Simulator 2D v0.32
 /*
-Bangs
-Poisonous Spears
-Dropping have of item amounts
-More structures
-Better crafting system (or was that added last update?)
+Code Cleanup
+Doors
+NPC spawning and ai for hiding during day
 */
 //states
+
+//Javascript doesn't support "#define" UGH!
+var INV_PTR=function(){player.inv[player.inv[10]]}
+var MAX_FEMALE=0;
+var MAX_MALE=1;
+
 var cur_page=0;
-var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0};
+var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0};
 //inventory: [(item id),(item amount)]; player.inv[10]=selected pointer
 //maps
 var pages=[{
@@ -108,7 +109,7 @@ var pages=[{
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,42,43,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 	],
@@ -605,12 +606,45 @@ var font=[
 0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,120,120,120,255,255,255
 ],
+//42, Door closed
+[
+0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,0,185,122,87,255,255,255
+],
+//43, Door open
+[
+0,1,1,1,1,1,1,0,
+0,1,0,0,0,0,1,0,
+0,1,0,0,0,0,1,0,
+0,1,0,0,0,0,1,0,
+0,1,0,0,0,0,1,0,
+0,1,0,0,0,0,1,0,
+0,1,0,0,0,0,1,0,
+0,1,0,0,0,0,1,0,185,122,87,255,255,255
+],
+//44, npc hole
+[
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,
+1,1,1,0,0,1,1,1,
+1,1,0,0,0,0,1,1,
+1,1,0,0,0,0,1,1,
+1,1,1,0,0,1,1,1,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,0,0,0,255,255,255
+],
 ];
 var properties={
-walkable:[0,2,6,7,8,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40],
-not_spawnable:[2,28,29,30,31,32],
-burnable:[12,13,14,15,18,24,28],
-bangable:[18],
+walkable:[0,2,6,7,8,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40,43,44],
+not_spawnable:[2,28,29,30,31,32,43],
+burnable:[12,13,14,15,18,24,28,42,43],
+bangable:[18,42,43],
 };
 //items
 var item_char=[
@@ -636,6 +670,7 @@ var item_char=[
 38,//Raygun,19
 39,//Poisonous Spear, 20
 40,//115, 21
+42,//Door, 22
 ];
 
 var item_names=[
@@ -660,7 +695,8 @@ var item_names=[
 "Spear",
 "Raygun",
 "Poisonous Spear",
-"Cyan Thing"
+"Cyan Thing",
+"Door"
 ];
 //crafting
 
@@ -725,39 +761,22 @@ output:[[18,1]]
 input_id:[18,5,0,0,0,0],
 output:[[20,1]]
 },
+{//6 sticks to door.
+input_id:[7,7,7,7,7,7],
+output:[[22,1]]
+},
 ];
 
-var struct_weight=[//likelyness to be generated
-0.8,//tree
-0.8,//grass
-0.1,//115
-0.2,//abandoned shed.
--1,//hole
-0.1,//pond
-0.1,//raygun
-0.1,//Facility
-];
-
-var struct_tries=[
-10,
-10,
-1,
-1,
-2,
-2,
-1,
-1,
-];
-
-var struct_sub=[
-[0,1],
-[0,0],
-[1,1],
-[4,4],
-[0,0],
-[3,3],
-[1,1],
-[11,5],
+var struct=[
+{weight:0.8,tries:10,sub:[0,1],id:0},//tree
+{weight:0.8,tries:10,sub:[0,0],id:1},//grass
+{weight:0.1,tries:1,sub:[1,1],id:2},//115
+{weight:0.2,tries:1,sub:[4,4],id:3},//abandoned shed
+{weight:-1,tries:2,sub:[0,0],id:4},//hole
+{weight:0.1,tries:2,sub:[3,3],id:5},//pond
+{weight:0.1,tries:1,sub:[0,0],id:6},//raygun
+{weight:0.1,tries:1,sub:[11,5],id:7},//facility
+{weight:0.8,tries:1,sub:[2,2],id:8,entity:{offset_x:1,offset_y:1}},//facility
 ];
 
 var structures=[
@@ -799,7 +818,7 @@ var structures=[
 [
 [38]
 ],
-//group 935
+//group 935, 7
 [
 [1,1,1,2,1,1,1,1,1,1,1,1],
 [1,13,13,30,13,13,13,13,13,13,13,1],
@@ -807,6 +826,12 @@ var structures=[
 [14,13,13,13,13,13,13,13,15,13,13,1],
 [1,13,13,13,13,13,13,13,13,13,13,1],
 [1,1,1,1,13,1,1,1,1,1,1,1],
+],
+//mouse nest (ncp), 8
+[
+[0,7,0],
+[7,44,7],
+[0,7,0],
 ]
 ];
 
@@ -852,6 +877,16 @@ function draw_map(){
 	ctx.putImageData(char,player.x*8,player.y*8);
 }
 
+function new_npc(_x,_y,_home_x,_home_y){
+//id:1, char:3, x:24,y:5, brain: {no_ai:0, hostile: 0}, health:20, strength:1, attack_cooldown:0, dest_x:24, dest_y:15
+var new_boi={id:1, char:3, x:_x,y:_y, brain: {no_ai:0,hostile:0,identity:{gender:0,attraction:0,dysphoria:0},home_x:_home_x,home_y:_home_y}, health:20, strength:1, attack_cooldown:0, dest_x:_x, dest_y:_y};
+new_boi.brain.identity.gender=Math.floor(Math.random()*100)%2;
+new_boi.brain.identity.attraction=Math.floor(Math.random()*100)%2;
+new_boi.brain.identity.dysphoria=(Math.floor(Math.random()*100)%100)<10;
+pages[cur_page].entities.push(new_boi);
+return pages[cur_page].entities.length-1;
+}
+
 function struct_copy(struct_id,offset_x,offset_y,fill_nonzero=1){
 	for(var y=0;y<structures[struct_id].length;y++){
 		for(var x=0;x<structures[struct_id][y].length;x++){
@@ -869,16 +904,21 @@ function struct_copy(struct_id,offset_x,offset_y,fill_nonzero=1){
 function generate_stuff(){
 	var rand_x=0;
 	var rand_y=0;
-	for(var i=0;i<struct_weight.length;i++){
-		for(var j=0;j<struct_tries[i];j++){
-		if(i==4){
+	var rand_action=0;
+	//structures
+	for(var i=0;i<struct.length;i++){
+		for(var j=0;j<struct[i].tries;j++){
+		if(struct.weight==-1){
 			continue;
 		}
-		rand_x=Math.floor(Math.random()*100)%(40-struct_sub[i][0]);
-		rand_y=Math.floor(Math.random()*100)%(25-struct_sub[i][1]);
+		rand_x=Math.floor(Math.random()*100)%(40-struct[i].sub[0]);
+		rand_y=Math.floor(Math.random()*100)%(25-struct[i].sub[1]);
 		if(char_value(rand_x,rand_y)==0){
-			if(Math.random()<struct_weight[i]){
-				struct_copy(i,rand_x,rand_y);
+			if(Math.random()<struct[i].weight){
+				struct_copy(struct[i].id,rand_x,rand_y);
+				if(struct[i].entity!=undefined){//entities
+					new_npc(rand_x+struct[i].entity.offset_x,rand_y+struct[i].entity.offset_y,rand_x+struct[i].entity.offset_x,rand_y+struct[i].entity.offset_y);
+				}
 			}
 		}
 		}
@@ -1245,6 +1285,19 @@ if(standing_on==40){//Element 115
         return;
 	}
 }
+if(standing_on==43){//Open door
+	if(player.inv[player.inv[10]][0]==0){
+		player.inv[player.inv[10]]=[22,1];
+		pages[cur_page].map[player.y][player.x]=0;
+        return;
+	}
+	if(player.inv[player.inv[10]][0]==22){
+		player.inv[player.inv[10]][1]++;
+		pages[cur_page].map[player.y][player.x]=0;
+        return;
+	}
+}
+
 if(standing_on==11){//crafting arrow
     var input=[
     -1,-1,//(35,1),(36,1)
@@ -1545,7 +1598,13 @@ function remove_char(x,y){
                 player.inv[player.inv[10]][1]++;
                 pages[cur_page].map[y][x]=0;
             }
-            break
+            break;
+		case 42://closed door
+			pages[cur_page].map[y][x]=43;
+			break;
+		case 43://open door
+			pages[cur_page].map[y][x]=42;
+			break;
     }
 }
 
@@ -1702,8 +1761,12 @@ switch(player.inv[player.inv[10]][0]){
         pages[cur_page].map[player.y][player.x]=30;
         player.inv[player.inv[10]][1]--;
         break;
-	case 21://Amber (fire)
+	case 21://cyan thing
         pages[cur_page].map[player.y][player.x]=40;
+        player.inv[player.inv[10]][1]--;
+        break;
+	case 22:
+		pages[cur_page].map[player.y][player.x]=43;
         player.inv[player.inv[10]][1]--;
         break;
 }
@@ -1726,14 +1789,17 @@ inv_cleanup();
 function cheats(){
     var cheat_code=prompt("Cheat?");
     switch(cheat_code){
-        case "Max Ammo!":
+        case "Juggernog":
+			player.tainted=1;
             player.health=20;
             break;
         case "gamemode c":
+			player.tainted=1;
             player.creative=1;
             player.health=Infinity;
             break;
         case "Give me what I want!":
+			player.tainted=1;
             player.inv[player.inv[10]]=JSON.parse(prompt("Item?"));
             break;
         default:
@@ -2111,12 +2177,23 @@ if(pages[cur_page].map[random_y][random_x]==17){//red mushroom growth
         }
 }
 //non hostile entity random destination
-if(random_y==3){
+if(tick1>=32767){//during day, hide
+for(var i=0;i<pages[cur_page].entities.length;i++){
+    if(pages[cur_page].entities[i].id==1){
+        if(pages[cur_page].entities[i].brain.hostile==0){
+            pages[cur_page].entities[i].dest_x=pages[cur_page].entities[i].brain.home_x;
+            pages[cur_page].entities[i].dest_y=pages[cur_page].entities[i].brain.home_y;
+        }
+    }
+}
+}
+if(random_y==3 && tick1<32767){
 for(var i=0;i<pages[cur_page].entities.length;i++){
     if(pages[cur_page].entities[i].id==1){
         if(pages[cur_page].entities[i].brain.hostile==0){
             pages[cur_page].entities[i].dest_x=Math.floor(Math.random()*100)%40;
             pages[cur_page].entities[i].dest_y=Math.floor(Math.random()*100)%25;
+			return;
         }
     }
 }
@@ -2225,10 +2302,9 @@ function _import(){
 	tick1=save_file[3];
 }
 function _export(){
-    /*var save_file=JSON.stringify([cur_page,player,pages]);
-    navigator.clipboard.writeText(save_file);
-    alert("Save file copied to clipboard.");*/
-	document.write(JSON.stringify([cur_page,player,pages,tick1]));
+	if(confirm("This will end your session.")){
+		document.write(JSON.stringify([cur_page,player,pages,tick1]));
+	}
 }
 </script>
 </html>
