@@ -17,7 +17,14 @@
 /*window.onbeforeunload = function(e) {
   return "This will end your session.";
 };*/
-//Mouse Simulator 2D v0.30
+//Mouse Simulator 2D v0.31
+/*
+Bangs
+Poisonous Spears
+Dropping have of item amounts
+More structures
+Better crafting system (or was that added last update?)
+*/
 //states
 var cur_page=0;
 var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0};
@@ -56,7 +63,9 @@ var pages=[{
         {id:2, char:9, x:4, y:10, item: [1,10]},//branch
         {id:2, char:12, x:5, y:10, item: [2,10]},//hay
         {id:2, char:27, x:5, y:11, item: [12,10]},//stew
-        {id:2, char:24, x:4, y:11, item: [9,10]}
+        {id:2, char:24, x:4, y:11, item: [9,10]},
+		{id:2, char:36, x:6, y:11, item: [17,255]},
+		{id:2, char:38, x:4, y:12, item: [19,1]}
 	],
 	holes:[
 		//holes
@@ -90,7 +99,7 @@ var pages=[{
 	[1,0,0,14,14,14,14,14,0,29,29,29,0,0,0,0,0,0,0,0,0,0,0,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,15,15,15,15,15,0,0,29,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-	[2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+	[2,0,0,0,0,0,0,0,40,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
 	[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,32,31,30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
@@ -563,10 +572,46 @@ var font=[
 0,0,1,1,1,1,0,0,
 0,0,0,0,0,0,0,0,255,0,0,255,255,255
 ],
+//39, Poisonous Spear
+[
+0,0,0,0,0,0,0,0,
+0,0,0,0,1,1,1,0,
+0,0,0,0,0,1,1,0,
+0,0,0,0,1,0,1,0,
+0,0,0,1,0,0,0,0,
+0,0,1,0,0,0,0,0,
+0,1,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,255,0,0,255,255,255
+],
+//40, 115
+[
+0,0,0,0,0,0,1,0,
+0,1,0,0,0,0,1,0,
+0,0,0,1,1,0,0,0,
+0,0,0,1,0,0,0,0,
+0,1,0,0,0,0,0,0,
+1,1,1,0,1,1,0,0,
+0,1,0,0,1,1,0,0,
+0,0,0,0,0,0,0,0,0,255,255,120,120,120
+],
+//41, stone
+[
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,1,1,1,0,0,
+0,0,1,1,1,1,0,0,
+0,0,1,1,1,1,0,0,
+0,0,1,1,1,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,120,120,120,255,255,255
+],
 ];
-var walkable=[0,2,6,7,8,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38];
-var not_spawnable=[2,28,29,30,31,32];
-var burnable=[12,13,14,15,18,24,28];
+var properties={
+walkable:[0,2,6,7,8,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40],
+not_spawnable:[2,28,29,30,31,32],
+burnable:[12,13,14,15,18,24,28],
+bangable:[18],
+};
 //items
 var item_char=[
 0,//Nothing,0
@@ -589,6 +634,8 @@ var item_char=[
 36,//Fire bow, 17
 37,//Spear,18
 38,//Raygun,19
+39,//Poisonous Spear, 20
+40,//115, 21
 ];
 
 var item_names=[
@@ -612,6 +659,8 @@ var item_names=[
 "Fire Bow",
 "Spear",
 "Raygun",
+"Poisonous Spear",
+"Cyan Thing"
 ];
 //crafting
 
@@ -672,16 +721,21 @@ output:[[17,5]]
 input_id:[7,0,7,0,7,0],
 output:[[18,1]]
 },
+{//Spear+Red Mushroom to Poisonous Spear.
+input_id:[18,5,0,0,0,0],
+output:[[20,1]]
+},
 ];
 
 var struct_weight=[//likelyness to be generated
 0.8,//tree
 0.8,//grass
-0.01,//115
+0.1,//115
 0.2,//abandoned shed.
 -1,//hole
 0.1,//pond
 0.1,//raygun
+0.1,//Facility
 ];
 
 var struct_tries=[
@@ -691,17 +745,19 @@ var struct_tries=[
 1,
 2,
 2,
-1
+1,
+1,
 ];
 
 var struct_sub=[
 [0,1],
 [0,0],
-[6,4],
+[1,1],
 [4,4],
 [0,0],
 [3,3],
 [1,1],
+[11,5],
 ];
 
 var structures=[
@@ -716,11 +772,7 @@ var structures=[
 ],
 //115, 2
 [
-[1,0,1,0,1,1,1],
-[1,0,1,0,1,0,0],
-[1,0,1,0,1,1,1],
-[1,0,1,0,0,0,1],
-[1,0,1,0,1,1,1],
+[40]
 ],
 //Human_abandoned_shed, 3
 [
@@ -746,6 +798,15 @@ var structures=[
 //raygun,6
 [
 [38]
+],
+//group 935
+[
+[1,1,1,2,1,1,1,1,1,1,1,1],
+[1,13,13,30,13,13,13,13,13,13,13,1],
+[1,13,13,13,13,13,13,13,14,13,13,1],
+[14,13,13,13,13,13,13,13,15,13,13,1],
+[1,13,13,13,13,13,13,13,13,13,13,1],
+[1,1,1,1,13,1,1,1,1,1,1,1],
 ]
 ];
 
@@ -1166,7 +1227,19 @@ if(standing_on==38){//Raygun
 		pages[cur_page].map[player.y][player.x]=0;
         return;
 	}
-	if(player.inv[player.inv[10]][0]==4){
+	if(player.inv[player.inv[10]][0]==19){
+		player.inv[player.inv[10]][1]++;
+		pages[cur_page].map[player.y][player.x]=0;
+        return;
+	}
+}
+if(standing_on==40){//Element 115
+	if(player.inv[player.inv[10]][0]==0){
+		player.inv[player.inv[10]]=[21,1];
+		pages[cur_page].map[player.y][player.x]=0;
+        return;
+	}
+	if(player.inv[player.inv[10]][0]==21){
 		player.inv[player.inv[10]][1]++;
 		pages[cur_page].map[player.y][player.x]=0;
         return;
@@ -1243,7 +1316,7 @@ function drop_item(x){
 if(player.inv[player.inv[10]][0]==0){//Don't want to be creating dropped items with item id of zero...
 	return;
 }
-if(!x){//drop all
+if(x==0){//drop all
 	pages[cur_page].entities.push(
 	    {
 	    id:2,
@@ -1253,7 +1326,8 @@ if(!x){//drop all
 	    item:player.inv[player.inv[10]]
 	    });
 	    player.inv[player.inv[10]]=[0,0];
-}else{//drop one
+}
+if(x==1){//drop one
 	pages[cur_page].entities.push(
 	    {
 	    id:2,
@@ -1266,6 +1340,22 @@ if(!x){//drop all
 	    if(player.inv[player.inv[10]][1]<1){
 		player.inv[player.inv[10]]=[0,0];
 	    }
+}
+if(x=="half"){
+	var half_amount=Math.floor(player.inv[player.inv[10]][1]/2);
+	if(half_amount<=0){
+		return;
+	}
+	player.inv[player.inv[10]][1]-=half_amount;
+	pages[cur_page].entities.push(
+	    {
+	    id:2,
+	    char:item_char[player.inv[player.inv[10]][0]],
+	    x:player.x,
+	    y:player.y,
+	    item:[player.inv[player.inv[10]][0],half_amount]
+	    });
+	inv_cleanup();
 }
 }
 
@@ -1310,12 +1400,37 @@ function char_value(x,y){
 }
 
 function is_walkable(x){
-    for(var i=0;i<walkable.length;i++){
-        if(walkable[i]==x){
+    for(var i=0;i<properties.walkable.length;i++){
+        if(properties.walkable[i]==x){
             return true;
         }
     }
     return false;
+}
+
+function can_bang(x){
+	for(var i=0;i<properties.bangable.length;i++){
+		if(properties.bangable[i]==x){
+			return true;
+		}
+	}
+	return false;
+}
+
+function do_bang(_x,_y){
+	pages[cur_page].entities.push({id:3, x:_x, y:_y, char:19, direction:-1, damage:7, decay:3});//Center Bang
+	if(!hit_bounds(_x-1,_y)){
+	pages[cur_page].entities.push({id:3, x:_x-1, y:_y, char:19, direction:-1, damage:7, decay:3});//Left
+	}
+	if(!hit_bounds(_x+1,_y)){
+	pages[cur_page].entities.push({id:3, x:_x+1, y:_y, char:19, direction:-1, damage:7, decay:3});//Right
+	}
+	if(!hit_bounds(_x,_y-1)){
+	pages[cur_page].entities.push({id:3, x:_x, y:_y-1, char:19, direction:-1, damage:7, decay:3});//Up
+	}
+	if(!hit_bounds(_x,_y+1)){
+	pages[cur_page].entities.push({id:3, x:_x, y:_y+1, char:19, direction:-1, damage:7, decay:3});//Down
+	}
 }
 
 function projectile(ptr){//Code for making projectiles move and interact with ThInGs
@@ -1337,6 +1452,16 @@ function projectile(ptr){//Code for making projectiles move and interact with Th
     }
     pages[cur_page].entities[ptr].decay--;
     if(pages[cur_page].entities[ptr].decay==0){
+		pages[cur_page].entities[ptr].id=-1;
+		switch(pages[cur_page].entities[ptr].char){
+			case 35://Amber, fire bow
+				if(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)==0){
+					pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=30
+				}
+				break;
+			default:
+				break;
+		}
         pages[cur_page].entities[ptr].id=-1;
         entity_cleanup();
         return;
@@ -1346,6 +1471,15 @@ function projectile(ptr){//Code for making projectiles move and interact with Th
         if(pages[cur_page].entities[collided].health!=undefined){
             pages[cur_page].entities[collided].health-=pages[cur_page].entities[ptr].damage;
             pages[cur_page].entities[ptr].id=-1;
+			switch(pages[cur_page].entities[ptr].char){
+			case 35://Amber, fire bow
+				if(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)==0){
+					pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=30;
+				}
+				break;
+			default:
+				break;
+			}
             if(pages[cur_page].entities[collided].health<=0){
                 pages[cur_page].entities[collided].id=-1;
                 entity_cleanup();
@@ -1366,8 +1500,33 @@ function projectile(ptr){//Code for making projectiles move and interact with Th
         entity_cleanup();
         return;
     }
+	if(is_walkable(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)) && char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)!=0){//encounters walkable block
+        switch(pages[cur_page].entities[ptr].char){
+			case 35://Amber, fire bow
+				if(!is_burnable(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y))){
+					return;
+				}
+				pages[cur_page].entities[ptr].id=-1;
+				pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=30
+				break;
+			default:
+				break;
+		}
+        entity_cleanup();
+        return;
+    }
     if(!is_walkable(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y))){//encounters non walkable block
         pages[cur_page].entities[ptr].id=-1;
+		switch(pages[cur_page].entities[ptr].char){
+			case 20://raygun ring
+				do_bang(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y);
+				if(can_bang(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y))){
+					pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=0;
+				}
+				break;
+			default:
+				break;
+		}
         entity_cleanup();
         return;
     }
@@ -1423,6 +1582,9 @@ switch(player.inv[player.inv[10]][0]){
    	       break;
 	}
 	player.inv[player.inv[10]][1]--;
+	if(player.inv[player.inv[10]][1]<=0){
+		player.inv[player.inv[10]]=[14,1];
+	}
 	inv_cleanup();
         break;
 	case 18://spear
@@ -1459,6 +1621,21 @@ switch(player.inv[player.inv[10]][0]){
 	}
 	inv_cleanup();
 	break;
+	case 20://Poisonous Spear
+	switch(x){
+	    case "up":
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:39, direction:-1, damage:player.strength*10, decay:3});
+ 	       break;
+ 	   case "down":
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:39, direction:-1, damage:player.strength*10, decay:3});
+ 	       break;
+ 	   case "left":
+  	       pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:39, direction:-1, damage:player.strength*10, decay:3});
+  	       break;
+  	   case "right":
+   	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:39, direction:-1, damage:player.strength*10, decay:3});
+   	       break;
+	}
 default:
 switch(x){
     case "up":
@@ -1523,6 +1700,10 @@ switch(player.inv[player.inv[10]][0]){
         break;
 	case 16://Amber (fire)
         pages[cur_page].map[player.y][player.x]=30;
+        player.inv[player.inv[10]][1]--;
+        break;
+	case 21://Amber (fire)
+        pages[cur_page].map[player.y][player.x]=40;
         player.inv[player.inv[10]][1]--;
         break;
 }
@@ -1656,6 +1837,9 @@ switch(key){
     case 70://Drop all of the items.
         drop_item(0);
         break;
+	case 86://v, Drop have of items
+		drop_item("half");
+		break;
 }
 
 //break/pickup, place/use, other
@@ -1781,8 +1965,8 @@ function tick(){
 }
 
 function can_spawn(x){
-    for(var i=0;i<not_spawnable.length;i++){
-        if(x==not_spawnable[i]){
+    for(var i=0;i<properties.not_spawnable.length;i++){
+        if(x==properties.not_spawnable[i]){
         return false;
         }
     }
@@ -1790,8 +1974,8 @@ function can_spawn(x){
 }
 
 function is_burnable(x){
-	for(var i=0;i<burnable.length;i++){
-        if(burnable[i]==x){
+	for(var i=0;i<properties.burnable.length;i++){
+        if(properties.burnable[i]==x){
             return true;
         }
     }
@@ -1950,7 +2134,7 @@ if(char_value(random_x,random_y)==24){//sapling
 if(tick1>=32767){
 	//enemy spawning stuff
 	if(pages[cur_page].metadata.safety==0){
-		if(action<5){
+		if(action<10){
             var cv=char_value(random_x,random_y);
             if(!is_walkable(cv)){
                 return;
