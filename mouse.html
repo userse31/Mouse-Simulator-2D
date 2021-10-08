@@ -1,3 +1,4 @@
+<!-- Utilizes GNU GENERAL PUBLIC LICENSE 3. See "LICENSE" file for details -->
 <html>
 <head>
 <title>Mouse Simulator 2D</title>
@@ -10,15 +11,20 @@
     <p id="demonic_announcer">Welcome!</p>
     <button onclick="_import()">Import</button><button onclick="_export()">Export</button>
     </br>
+	<a href="./help.html">Help</a>
+	</br>
     <button onclick="alert(JSON.stringify(eval(prompt('Code?'))))">eval()</button>
     </center>
 </body>
 <script>
-//Mouse Simulator 2D v0.32
+//Mouse Simulator 2D v0.33
 /*
 Code Cleanup
-Doors
-NPC spawning and ai for hiding during day
+Hay bail
+Stones
+Raygun rays destroy breakable solid walls and create stone
+Player made projectiles no longer damage player.
+Help document.
 */
 //states
 
@@ -199,16 +205,16 @@ var font=[
 1,1,1,1,1,1,1,1,
 0,1,1,1,1,1,1,0,185,122,87,255,255,255
 ],
-//5	
+//5, solid black, not invul
 [
-0,1,1,1,1,1,1,0,
-1,0,0,0,0,0,0,1,
-1,0,0,0,0,0,0,1,
-1,0,0,0,0,0,0,1,
-1,0,0,0,0,0,0,1,
-1,0,0,0,0,0,0,1,
-1,0,0,0,0,0,0,1,
-0,1,1,1,1,1,1,0,255,255,255,0,0,0
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,0,0,0,255,255,255
 ],
 //6, hole	
 [
@@ -644,7 +650,7 @@ var properties={
 walkable:[0,2,6,7,8,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40,43,44],
 not_spawnable:[2,28,29,30,31,32,43],
 burnable:[12,13,14,15,18,24,28,42,43],
-bangable:[18,42,43],
+bangable:[18,42,43,12,5],
 };
 //items
 var item_char=[
@@ -671,6 +677,8 @@ var item_char=[
 39,//Poisonous Spear, 20
 40,//115, 21
 42,//Door, 22
+41,//Stone, 23
+12,//hay bail, 24
 ];
 
 var item_names=[
@@ -696,7 +704,9 @@ var item_names=[
 "Raygun",
 "Poisonous Spear",
 "Cyan Thing",
-"Door"
+"Door",
+"Stone",
+"Hay Bail",
 ];
 //crafting
 
@@ -765,6 +775,14 @@ output:[[20,1]]
 input_id:[7,7,7,7,7,7],
 output:[[22,1]]
 },
+{//6 hay to hay bail.
+input_id:[2,2,2,2,2,2],
+output:[[24,1]]
+},
+{//hay bail to 6 hay.
+input_id:[24,0,0,0,0,0],
+output:[[2,6]]
+},
 ];
 
 var struct=[
@@ -776,7 +794,7 @@ var struct=[
 {weight:0.1,tries:2,sub:[3,3],id:5},//pond
 {weight:0.1,tries:1,sub:[0,0],id:6},//raygun
 {weight:0.1,tries:1,sub:[11,5],id:7},//facility
-{weight:0.8,tries:1,sub:[2,2],id:8,entity:{offset_x:1,offset_y:1}},//facility
+{weight:0.3,tries:1,sub:[2,2],id:8,entity:{offset_x:1,offset_y:1}},//Mouse Nest
 ];
 
 var structures=[
@@ -795,11 +813,11 @@ var structures=[
 ],
 //Human_abandoned_shed, 3
 [
-[1,1,1,0,1],
-[13,28,28,28,1],
-[1,28,28,28,13],
-[1,28,28,28,1],
-[1,2,1,1,1],
+[5,5,5,0,5],
+[13,28,28,28,5],
+[5,28,28,28,13],
+[5,28,28,28,5],
+[5,2,5,5,5],
 ],
 //hole, 4
 [
@@ -820,12 +838,12 @@ var structures=[
 ],
 //group 935, 7
 [
-[1,1,1,2,1,1,1,1,1,1,1,1],
-[1,13,13,30,13,13,13,13,13,13,13,1],
-[1,13,13,13,13,13,13,13,14,13,13,1],
-[14,13,13,13,13,13,13,13,15,13,13,1],
-[1,13,13,13,13,13,13,13,13,13,13,1],
-[1,1,1,1,13,1,1,1,1,1,1,1],
+[5,5,5,2,5,5,5,5,5,5,5,5],
+[5,13,13,30,13,13,13,13,13,13,13,5],
+[5,13,13,13,13,13,13,13,14,13,13,5],
+[14,13,13,13,13,13,13,13,15,13,13,5],
+[5,13,13,13,13,13,13,13,13,13,13,5],
+[5,5,5,5,13,5,5,5,5,5,5,5],
 ],
 //mouse nest (ncp), 8
 [
@@ -879,7 +897,7 @@ function draw_map(){
 
 function new_npc(_x,_y,_home_x,_home_y){
 //id:1, char:3, x:24,y:5, brain: {no_ai:0, hostile: 0}, health:20, strength:1, attack_cooldown:0, dest_x:24, dest_y:15
-var new_boi={id:1, char:3, x:_x,y:_y, brain: {no_ai:0,hostile:0,identity:{gender:0,attraction:0,dysphoria:0},home_x:_home_x,home_y:_home_y}, health:20, strength:1, attack_cooldown:0, dest_x:_x, dest_y:_y};
+var new_boi={id:1, char:3, x:_x,y:_y, brain: {no_ai:0,hostile:0,identity:{gender:0,attraction:0,dysphoria:0,love_mode:0},home_x:_home_x,home_y:_home_y}, health:20, strength:1, attack_cooldown:0, dest_x:_x, dest_y:_y};
 new_boi.brain.identity.gender=Math.floor(Math.random()*100)%2;
 new_boi.brain.identity.attraction=Math.floor(Math.random()*100)%2;
 new_boi.brain.identity.dysphoria=(Math.floor(Math.random()*100)%100)<10;
@@ -1297,6 +1315,30 @@ if(standing_on==43){//Open door
         return;
 	}
 }
+if(standing_on==2){//dither, stone
+	if(player.inv[player.inv[10]][0]==0){
+		player.inv[player.inv[10]]=[23,1];
+		pages[cur_page].map[player.y][player.x]=0;
+        return;
+	}
+	if(player.inv[player.inv[10]][0]==23){
+		player.inv[player.inv[10]][1]++;
+		pages[cur_page].map[player.y][player.x]=0;
+        return;
+	}
+}
+if(standing_on==12){//dither, stone
+	if(player.inv[player.inv[10]][0]==0){
+		player.inv[player.inv[10]]=[24,1];
+		pages[cur_page].map[player.y][player.x]=0;
+        return;
+	}
+	if(player.inv[player.inv[10]][0]==24){
+		player.inv[player.inv[10]][1]++;
+		pages[cur_page].map[player.y][player.x]=0;
+        return;
+	}
+}
 
 if(standing_on==11){//crafting arrow
     var input=[
@@ -1543,6 +1585,9 @@ function projectile(ptr){//Code for making projectiles move and interact with Th
     }
     collided=entity_player_collide();
     if(collided==ptr){
+		if(pages[cur_page].entities[ptr].from_player==1){//don't inflict damage on oneself.
+			return;
+		}
         player.health-=pages[cur_page].entities[ptr].damage;
         pages[cur_page].entities[ptr].id=-1;
         entity_cleanup();
@@ -1560,7 +1605,7 @@ function projectile(ptr){//Code for making projectiles move and interact with Th
 					return;
 				}
 				pages[cur_page].entities[ptr].id=-1;
-				pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=30
+				pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=30;
 				break;
 			default:
 				break;
@@ -1574,9 +1619,19 @@ function projectile(ptr){//Code for making projectiles move and interact with Th
 			case 20://raygun ring
 				do_bang(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y);
 				if(can_bang(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y))){
-					pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=0;
+					switch(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)){
+						case 5://Black stone?
+							pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=2;
+							break;
+						default:
+							pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=0;
+					}
 				}
 				break;
+			case 35:
+				if(is_burnable(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y))){
+					pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=30
+				}
 			default:
 				break;
 		}
@@ -1585,16 +1640,24 @@ function projectile(ptr){//Code for making projectiles move and interact with Th
     }
 }
 
-var removable=[18];
-
 function remove_char(x,y){
     switch(char_value(x,y)){
-        case 18:
+        case 18://fence
             if(player.inv[player.inv[10]][0]==0){
                 player.inv[player.inv[10]][0]=6;
                 pages[cur_page].map[y][x]=0;
             }
             if(player.inv[player.inv[10]][0]==6){
+                player.inv[player.inv[10]][1]++;
+                pages[cur_page].map[y][x]=0;
+            }
+            break;
+		case 12://Hay
+            if(player.inv[player.inv[10]][0]==0){
+                player.inv[player.inv[10]][0]=24;
+                pages[cur_page].map[y][x]=0;
+            }
+            if(player.inv[player.inv[10]][0]==24){
                 player.inv[player.inv[10]][1]++;
                 pages[cur_page].map[y][x]=0;
             }
@@ -1628,16 +1691,16 @@ switch(player.inv[player.inv[10]][0]){
 	case 17://fire bow
 	switch(x){
 	    case "up":
- 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:35, direction:0, damage:player.strength*4, decay:8});
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:35, direction:0, damage:player.strength*4, decay:8, from_player:1});
  	       break;
  	   case "down":
- 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:35, direction:1, damage:player.strength*4, decay:8});
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:35, direction:1, damage:player.strength*4, decay:8, from_player:1});
  	       break;
  	   case "left":
-  	       pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:35, direction:2, damage:player.strength*4, decay:8});
+  	       pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:35, direction:2, damage:player.strength*4, decay:8, from_player:1});
   	       break;
   	   case "right":
-   	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:35, direction:3, damage:player.strength*4, decay:8});
+   	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:35, direction:3, damage:player.strength*4, decay:8, from_player:1});
    	       break;
 	}
 	player.inv[player.inv[10]][1]--;
@@ -1649,16 +1712,16 @@ switch(player.inv[player.inv[10]][0]){
 	case 18://spear
 	switch(x){
 	    case "up":
- 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:37, direction:-1, damage:player.strength*5, decay:3});
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:37, direction:-1, damage:player.strength*5, decay:3, from_player:1});
  	       break;
  	   case "down":
- 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:37, direction:-1, damage:player.strength*5, decay:3});
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:37, direction:-1, damage:player.strength*5, decay:3, from_player:1});
  	       break;
  	   case "left":
-  	       pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:37, direction:-1, damage:player.strength*5, decay:3});
+  	       pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:37, direction:-1, damage:player.strength*5, decay:3, from_player:1});
   	       break;
   	   case "right":
-   	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:37, direction:-1, damage:player.strength*5, decay:3});
+   	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:37, direction:-1, damage:player.strength*5, decay:3, from_player:1});
    	       break;
 	}
 	inv_cleanup();
@@ -1666,16 +1729,16 @@ switch(player.inv[player.inv[10]][0]){
 	case 19://Raygun
 	switch(x){
 	    case "up":
- 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:20, direction:0, damage:player.strength*1000, decay:-1});
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:20, direction:0, damage:player.strength*1000, decay:-1, from_player:1});
  	       break;
  	   case "down":
- 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:20, direction:1, damage:player.strength*1000, decay:-1});
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:20, direction:1, damage:player.strength*1000, decay:-1, from_player:1});
  	       break;
  	   case "left":
-  	       pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:20, direction:2, damage:player.strength*1000, decay:-1});
+  	       pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:20, direction:2, damage:player.strength*1000, decay:-1, from_player:1});
   	       break;
   	   case "right":
-   	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:20, direction:3, damage:player.strength*1000, decay:-1});
+   	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:20, direction:3, damage:player.strength*1000, decay:-1, from_player:1});
    	       break;
 	}
 	inv_cleanup();
@@ -1683,31 +1746,31 @@ switch(player.inv[player.inv[10]][0]){
 	case 20://Poisonous Spear
 	switch(x){
 	    case "up":
- 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:39, direction:-1, damage:player.strength*10, decay:3});
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:39, direction:-1, damage:player.strength*10, decay:3, from_player:1});
  	       break;
  	   case "down":
- 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:39, direction:-1, damage:player.strength*10, decay:3});
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:39, direction:-1, damage:player.strength*10, decay:3, from_player:1});
  	       break;
  	   case "left":
-  	       pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:39, direction:-1, damage:player.strength*10, decay:3});
+  	       pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:39, direction:-1, damage:player.strength*10, decay:3, from_player:1});
   	       break;
   	   case "right":
-   	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:39, direction:-1, damage:player.strength*10, decay:3});
+   	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:39, direction:-1, damage:player.strength*10, decay:3, from_player:1});
    	       break;
 	}
 default:
 switch(x){
     case "up":
-        pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:19, direction:-1, damage:player.strength, decay:3});
+        pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:19, direction:-1, damage:player.strength, decay:3, from_player:1});
         break;
     case "down":
-        pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:19, direction:-1, damage:player.strength, decay:3});
+        pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:19, direction:-1, damage:player.strength, decay:3, from_player:1});
         break;
     case "left":
-        pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:19, direction:-1, damage:player.strength, decay:3});
+        pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:19, direction:-1, damage:player.strength, decay:3, from_player:1});
         break;
     case "right":
-        pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:19, direction:-1, damage:player.strength, decay:3});
+        pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:19, direction:-1, damage:player.strength, decay:3, from_player:1});
         break;
 }
 }
@@ -1757,16 +1820,24 @@ switch(player.inv[player.inv[10]][0]){
         pages[cur_page].map[player.y][player.x]=28;
         player.inv[player.inv[10]][1]--;
         break;
-	case 16://Amber (fire)
+    case 16://Amber (fire)
         pages[cur_page].map[player.y][player.x]=30;
         player.inv[player.inv[10]][1]--;
         break;
-	case 21://cyan thing
+    case 21://cyan thing
         pages[cur_page].map[player.y][player.x]=40;
         player.inv[player.inv[10]][1]--;
         break;
-	case 22:
-		pages[cur_page].map[player.y][player.x]=43;
+    case 22:
+	pages[cur_page].map[player.y][player.x]=43;
+        player.inv[player.inv[10]][1]--;
+        break;
+    case 23://stone
+        pages[cur_page].map[player.y][player.x]=2;
+        player.inv[player.inv[10]][1]--;
+        break;
+    case 24://hay bail
+        pages[cur_page].map[player.y][player.x]=12;
         player.inv[player.inv[10]][1]--;
         break;
 }
