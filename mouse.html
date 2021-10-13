@@ -16,15 +16,14 @@
     <button onclick="alert(JSON.stringify(eval(prompt('Code?'))))">eval()</button>
     </center>
 </body>
+<script id="lzutf8" src="https://cdn.jsdelivr.net/npm/lzutf8/build/production/lzutf8.min.js"></script>
 <script>
-//Mouse Simulator 2D v0.33
+//Mouse Simulator 2D v0.34
 /*
-Code Cleanup
-Hay bail
-Stones
-Raygun rays destroy breakable solid walls and create stone
-Player made projectiles no longer damage player.
-Help document.
+Walnut trees
+Slipping
+Bonemeal
+Save file compression
 */
 //states
 
@@ -34,6 +33,7 @@ var MAX_FEMALE=0;
 var MAX_MALE=1;
 
 var cur_page=0;
+var last_dir="";
 var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0};
 //inventory: [(item id),(item amount)]; player.inv[10]=selected pointer
 //maps
@@ -72,7 +72,8 @@ var pages=[{
         {id:2, char:27, x:5, y:11, item: [12,10]},//stew
         {id:2, char:24, x:4, y:11, item: [9,10]},
 		{id:2, char:36, x:6, y:11, item: [17,255]},
-		{id:2, char:38, x:4, y:12, item: [19,1]}
+		{id:2, char:38, x:4, y:12, item: [19,1]},
+		{id:2, char:52, x:5, y:12, item: [25,10]},
 	],
 	holes:[
 		//holes
@@ -113,9 +114,9 @@ var pages=[{
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,42,43,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,50,49,51,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,47,46,48,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,45,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 	],
@@ -645,12 +646,134 @@ var font=[
 1,1,1,1,1,1,1,1,
 1,1,1,1,1,1,1,1,0,0,0,255,255,255
 ],
+//45, Walnut trunk
+[
+0,0,0,1,1,0,0,0,
+0,0,0,1,1,0,0,0,
+0,0,0,1,1,0,0,0,
+0,0,0,1,1,0,0,0,
+0,0,0,1,1,0,0,0,
+0,0,0,1,1,0,0,0,
+0,0,1,1,1,1,0,0,
+0,1,1,1,1,1,1,0,165,102,67,255,255,255
+],
+//46, Walnut leaves 1 (middle)
+[
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,0,215,0,255,255,255
+],
+//47, Walnut leaves 2 (left)
+[
+0,0,1,1,1,1,1,1,
+0,0,1,1,1,1,1,1,
+0,0,1,1,1,1,1,1,
+0,0,1,1,1,1,1,1,
+0,0,1,1,1,1,1,1,
+0,0,1,1,1,1,1,1,
+0,0,1,1,1,1,1,1,
+0,0,0,1,1,1,1,1,0,215,0,255,255,255
+],
+//48, Walnut leaves 3 (right)
+[
+1,1,1,1,1,1,0,0,
+1,1,1,1,1,1,0,0,
+1,1,1,1,1,1,0,0,
+1,1,1,1,1,1,0,0,
+1,1,1,1,1,1,0,0,
+1,1,1,1,1,1,0,0,
+1,1,1,1,1,1,0,0,
+1,1,1,1,1,0,0,0,0,215,0,255,255,255
+],
+//49, Walnut leaves 4 (top)
+[
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,0,215,0,255,255,255
+],
+//50, Walnut leaves 5 (top left)
+[
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,1,1,1,1,1,
+0,0,1,1,1,1,1,1,
+0,0,1,1,1,1,1,1,
+0,0,1,1,1,1,1,1,
+0,0,1,1,1,1,1,1,0,215,0,255,255,255
+],
+//51, Walnut leaves 6 (top right)
+[
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+1,1,1,1,1,0,0,0,
+1,1,1,1,1,1,0,0,
+1,1,1,1,1,1,0,0,
+1,1,1,1,1,1,0,0,
+1,1,1,1,1,1,0,0,0,215,0,255,255,255
+],
+//52, walnut fruit
+[
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,1,1,0,0,0,
+0,0,1,1,1,1,0,0,
+0,0,1,1,1,1,0,0,
+0,0,0,1,1,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,160,0,255,255,255
+],
+//53, walnut stone
+[
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,1,1,0,0,0,
+0,0,1,1,1,1,0,0,
+0,0,1,1,1,1,0,0,
+0,0,0,1,1,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,165,102,67,255,255,255
+],
+//54, walnut peels
+[
+0,0,0,0,0,0,0,0,
+0,0,0,1,1,0,0,0,
+0,0,0,0,0,1,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,1,0,
+0,1,0,0,0,0,1,0,
+0,0,1,1,0,0,0,0,
+0,0,0,0,0,0,0,0,0,160,0,255,255,255
+],
+//55, Bone meal
+[
+0,0,0,0,0,0,0,0,
+0,1,0,1,0,0,0,0,
+0,0,0,0,1,0,0,0,
+0,0,0,1,0,1,1,0,
+0,0,0,1,0,0,1,0,
+0,1,0,0,1,0,1,0,
+0,0,1,1,1,0,0,0,
+0,0,0,0,0,0,0,0,160,160,160,255,255,255
+],
 ];
 var properties={
-walkable:[0,2,6,7,8,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40,43,44],
+walkable:[0,2,6,7,8,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40,43,44,45,46,47,48,49,50,51,52,54],
 not_spawnable:[2,28,29,30,31,32,43],
-burnable:[12,13,14,15,18,24,28,42,43],
+burnable:[12,13,14,15,18,24,28,42,43,45,46,47,48,49,50,51],
 bangable:[18,42,43,12,5],
+breakable:[3,4,5,6,9,13,21,22,24,25,27],
 };
 //items
 var item_char=[
@@ -679,6 +802,10 @@ var item_char=[
 42,//Door, 22
 41,//Stone, 23
 12,//hay bail, 24
+52,//walnut fruit, 25
+53,//walnut stone, 26
+54,//walnut peels, 27
+55,//bone meal, 28
 ];
 
 var item_names=[
@@ -707,6 +834,10 @@ var item_names=[
 "Door",
 "Stone",
 "Hay Bail",
+"Walnut Fruit",
+"Walnut Stone",
+"Walnut Peels",
+"Bone Meal"
 ];
 //crafting
 
@@ -783,10 +914,43 @@ output:[[24,1]]
 input_id:[24,0,0,0,0,0],
 output:[[2,6]]
 },
+{//hay bail to 6 hay.
+input_id:[0,24,0,0,0,0],
+output:[[2,6]]
+},
+{//hay bail to 6 hay.
+input_id:[0,0,24,0,0,0],
+output:[[2,6]]
+},
+{//hay bail to 6 hay.
+input_id:[0,0,0,24,0,0],
+output:[[2,6]]
+},
+{//hay bail to 6 hay.
+input_id:[0,0,0,0,24,0],
+output:[[2,6]]
+},
+{//hay bail to 6 hay.
+input_id:[0,0,0,0,0,24],
+output:[[2,6]]
+},
+{//Walnut fruit to walnut stone and peels
+input_id:[25,0,0,0,0,0],
+output:[[26,1],[27,1]]
+},
+{//Brown mushroom+red mushroom to Bone meal
+input_id:[4,0,10,0,5,0],
+output:[[28,3]]
+},
+{//Brown mushroom+red mushroom to Bone meal
+input_id:[5,0,10,0,4,0],
+output:[[28,3]]
+},
 ];
 
 var struct=[
 {weight:0.8,tries:10,sub:[0,1],id:0},//tree
+{weight:0.6,tries:1,sub:[2,2],id:9},//walnut tree
 {weight:0.8,tries:10,sub:[0,0],id:1},//grass
 {weight:0.1,tries:1,sub:[1,1],id:2},//115
 {weight:0.2,tries:1,sub:[4,4],id:3},//abandoned shed
@@ -850,6 +1014,12 @@ var structures=[
 [0,7,0],
 [7,44,7],
 [0,7,0],
+],
+//walnut tree, 9
+[
+[50,49,51],
+[47,46,48],
+[0,45,0],
 ]
 ];
 
@@ -1339,6 +1509,30 @@ if(standing_on==12){//dither, stone
         return;
 	}
 }
+if(standing_on==52){//walnut fruit
+	if(player.inv[player.inv[10]][0]==0){
+		player.inv[player.inv[10]]=[25,1];
+		pages[cur_page].map[player.y][player.x]=0;
+        return;
+	}
+	if(player.inv[player.inv[10]][0]==25){
+		player.inv[player.inv[10]][1]++;
+		pages[cur_page].map[player.y][player.x]=0;
+        return;
+	}
+}
+if(standing_on==54){//walnut peels
+	if(player.inv[player.inv[10]][0]==0){
+		player.inv[player.inv[10]]=[27,1];
+		pages[cur_page].map[player.y][player.x]=0;
+        return;
+	}
+	if(player.inv[player.inv[10]][0]==27){
+		player.inv[player.inv[10]][1]++;
+		pages[cur_page].map[player.y][player.x]=0;
+        return;
+	}
+}
 
 if(standing_on==11){//crafting arrow
     var input=[
@@ -1491,6 +1685,9 @@ function char_entity_on(ptr){//what type of character is the selected entity on?
 }
 
 function char_value(x,y){
+	if(hit_bounds(x,y)){
+		return -1;
+	}
     return pages[cur_page].map[y][x];
 }
 
@@ -1662,6 +1859,16 @@ function remove_char(x,y){
                 pages[cur_page].map[y][x]=0;
             }
             break;
+		case 54://peels
+            if(player.inv[player.inv[10]][0]==0){
+                player.inv[player.inv[10]][0]=27;
+                pages[cur_page].map[y][x]=0;
+            }
+            if(player.inv[player.inv[10]][0]==27){
+                player.inv[player.inv[10]][1]++;
+                pages[cur_page].map[y][x]=0;
+            }
+            break;
 		case 42://closed door
 			pages[cur_page].map[y][x]=43;
 			break;
@@ -1793,66 +2000,55 @@ switch(x){
 }
 }
 
+
 function use_item(){
 if(char_value(player.x,player.y)==0){
-switch(player.inv[player.inv[10]][0]){
-    case 3://grass
-        pages[cur_page].map[player.y][player.x]=13;
-        player.inv[player.inv[10]][1]--;
-        break;
-    case 4://Brown Mushroom
-        pages[cur_page].map[player.y][player.x]=16;
-        player.inv[player.inv[10]][1]--;
-        break;
-    case 5://Red Mushroom
-        pages[cur_page].map[player.y][player.x]=17;
-        player.inv[player.inv[10]][1]--;
-        break;
-    case 6://Fence
-        pages[cur_page].map[player.y][player.x]=18;
-        player.inv[player.inv[10]][1]--;
-        break;
-    case 9://Sapling
-        pages[cur_page].map[player.y][player.x]=24;
-        player.inv[player.inv[10]][1]--;
-        break;
-    case 13://grass
-        pages[cur_page].map[player.y][player.x]=28;
-        player.inv[player.inv[10]][1]--;
-        break;
-    case 16://Amber (fire)
-        pages[cur_page].map[player.y][player.x]=30;
-        player.inv[player.inv[10]][1]--;
-        break;
-    case 21://cyan thing
-        pages[cur_page].map[player.y][player.x]=40;
-        player.inv[player.inv[10]][1]--;
-        break;
-    case 22:
-	pages[cur_page].map[player.y][player.x]=43;
-        player.inv[player.inv[10]][1]--;
-        break;
-    case 23://stone
-        pages[cur_page].map[player.y][player.x]=2;
-        player.inv[player.inv[10]][1]--;
-        break;
-    case 24://hay bail
-        pages[cur_page].map[player.y][player.x]=12;
-        player.inv[player.inv[10]][1]--;
-        break;
+for(var i=0;i<properties.breakable.length;i++){
+	if(player.inv[player.inv[10]][0]==properties.breakable[i]){
+		pages[cur_page].map[player.y][player.x]=item_char[player.inv[player.inv[10]][0]];
+		player.inv[player.inv[10]][1]--;
+		inv_cleanup();
+		return;
+	}
 }
-inv_cleanup();
 }
 switch(player.inv[player.inv[10]][0]){//item id
-	case 12: //Mushroom Stew
+    case 12: //Mushroom Stew
         if(player.health==20){
             break;
         }
-	    player.health+=5;
+	player.health+=5;
         if(player.health>20 && player.creative==0){
             player.health=20;
         }
-	    player.inv[player.inv[10]][1]--;
+	player.inv[player.inv[10]][1]--;
+	break;
+	case 16://amber
+		if(char_value(player.x,player.y)==0){
+			pages[cur_page].map[player.y][player.x]=30;
+			player.inv[player.inv[10]][1]--;
+		}
+		break;
+	case 23://stone
+		if(char_value(player.x,player.y)==0){
+			pages[cur_page].map[player.y][player.x]=2;
+			player.inv[player.inv[10]][1]--;
+		}
+		break;
+    case 26://walnut stone
+        if(player.health==20){
+            break;
+        }
+	player.health+=10;
+        if(player.health>20 && player.creative==0){
+            player.health=20;
+        }
+	player.inv[player.inv[10]][1]--;
+	break;
+	case 28://bone meal
+		random_tick(player.x,player.y,1);
+		player.inv[player.inv[10]][1]--;
+		break;
 }
 inv_cleanup();
 }
@@ -1873,6 +2069,10 @@ function cheats(){
 			player.tainted=1;
             player.inv[player.inv[10]]=JSON.parse(prompt("Item?"));
             break;
+		case "Let it grow!":
+			player.tainted=1;
+            random_tick(player.x,player.y);
+            break;
         default:
             alert("No cheat for you!");
             break;
@@ -1882,8 +2082,10 @@ function cheats(){
 //keys
 function key_manager(key){
 //Movement
+last_dir="";
 switch(key){
     case 87://up,w
+	last_dir="up";
 	if(hit_bounds(player.x,player.y-1)){
 		off_edge("up");
 	}
@@ -1892,6 +2094,7 @@ switch(key){
         }
         return;
     case 83://down, s
+	last_dir="down";
 	if(hit_bounds(player.x,player.y+1)){
 		off_edge("down");
 	}
@@ -1900,6 +2103,7 @@ switch(key){
         }
         return;
     case 65://left, a
+	last_dir="left";
 	if(hit_bounds(player.x-1,player.y)){
 		off_edge("left");
 	}
@@ -1908,6 +2112,7 @@ switch(key){
         }
         return;
     case 68://right, d
+	last_dir="right";
 	if(hit_bounds(player.x+1,player.y)){
 		off_edge("right");
 	}
@@ -2084,6 +2289,45 @@ function check_health(ptr){
     }
 }
 
+function slip(){
+switch(last_dir){
+	case "up":
+		if(is_walkable(char_value(player.x,player.y-1)) && !hit_bounds(player.x,player.y-1)){
+			player.y--;
+		}
+		if(hit_bounds(player.x,player.y-1)){
+			off_edge("up");
+		}
+		return;
+	case "down":
+		if(is_walkable(char_value(player.x,player.y+1)) && !hit_bounds(player.x,player.y+1)){
+			player.y++;
+		}
+		if(hit_bounds(player.x,player.y+1)){
+			off_edge("down");
+		}
+		break;
+	case "left":
+		if(is_walkable(char_value(player.x-1,player.y)) && !hit_bounds(player.x-1,player.y)){
+			player.x--;
+		}
+		if(hit_bounds(player.x-1,player.y)){
+			off_edge("left");
+		}
+		break;
+	case "right":
+		if(is_walkable(char_value(player.x+1,player.y)) && !hit_bounds(player.x+1,player.y)){
+			player.x++;
+		}
+		if(hit_bounds(player.x+1,player.y)){
+			off_edge("right");
+		}
+		break;
+	default:
+		break;
+}
+}
+
 function tick(){
     if(player.health<=0){//Player Death
         death();
@@ -2099,6 +2343,9 @@ function tick(){
                 break;
         }
     }
+	if(char_value(player.x,player.y)==54){
+		slip();
+	}
 }
 
 function can_spawn(x){
@@ -2156,7 +2403,7 @@ function do_fire(x,y){
 }
 
 //random_tick(player.x,player.y);
-function random_tick(random_x=Math.floor((Math.random()*100))%40,random_y=Math.floor((Math.random()*100))%25,action=Math.floor((Math.random()*100))){
+function random_tick(random_x=Math.floor((Math.random()*100))%40,random_y=Math.floor((Math.random()*100))%25,bone_meal=0,action=Math.floor((Math.random()*100))){
 if(pages[cur_page].map[random_y][random_x]==13){//grass
     if(action%2==0){//create hay
         pages[cur_page].entities.push({id:2, char:12, x:random_x, y:random_y, item: [2,1]});
@@ -2247,6 +2494,42 @@ if(pages[cur_page].map[random_y][random_x]==17){//red mushroom growth
             pages[cur_page].map[y][x]=17;
         }
 }
+switch(pages[cur_page].map[random_y][random_x]){
+	case 46://walnut leaves
+		pages[cur_page].entities.push({id:2, char:52, x:random_x, y:random_y, item: [25,1]});
+		break;
+	case 47://walnut leaves
+		pages[cur_page].entities.push({id:2, char:52, x:random_x, y:random_y, item: [25,1]});
+		break;
+	case 48://walnut leaves
+		pages[cur_page].entities.push({id:2, char:52, x:random_x, y:random_y, item: [25,1]});
+		break;
+	case 49://walnut leaves
+		pages[cur_page].entities.push({id:2, char:52, x:random_x, y:random_y, item: [25,1]});
+		break;
+	case 50://walnut leaves
+		pages[cur_page].entities.push({id:2, char:52, x:random_x, y:random_y, item: [25,1]});
+		break;
+	case 51://walnut leaves
+		pages[cur_page].entities.push({id:2, char:52, x:random_x, y:random_y, item: [25,1]});
+		break;
+	case 52://walnut fruit
+		if(char_value(random_x,random_y-1)==0 && char_value(random_x,random_y-2)==0 && char_value(random_x-1,random_y-1)==0 && char_value(random_x-1,random_y-2)==0 && char_value(random_x+1,random_y-1)==0 && char_value(random_x+1,random_y-2)==0){
+			struct_copy(9,random_x-1,random_y-2);
+		}
+		break;
+}
+if(char_value(random_x,random_y)==24){//sapling
+    if(!hit_bounds(random_x,random_y-1)){
+        if(char_value(random_x,random_y-1)==0){
+            pages[cur_page].map[random_y][random_x]=15;//trunk
+            pages[cur_page].map[random_y-1][random_x]=14;//leaves
+        }
+    }
+}
+if(bone_meal==1){
+	return;
+}
 //non hostile entity random destination
 if(tick1>=32767){//during day, hide
 for(var i=0;i<pages[cur_page].entities.length;i++){
@@ -2268,14 +2551,6 @@ for(var i=0;i<pages[cur_page].entities.length;i++){
         }
     }
 }
-}
-if(char_value(random_x,random_y)==24){//sapling
-    if(!hit_bounds(random_x,random_y-1)){
-        if(char_value(random_x,random_y-1)==0){
-            pages[cur_page].map[random_y][random_x]=15;//trunk
-            pages[cur_page].map[random_y-1][random_x]=14;//leaves
-        }
-    }
 }
 //night: 0-32767
 //day: 32768-65535
@@ -2363,7 +2638,7 @@ window.onload=function(){
 	}
 };
 function _import(){
-    var save_file=JSON.parse(prompt("Save?"));
+    var save_file=JSON.parse(LZUTF8.decompress(prompt("Save?"),{outputEncoding:"String",inputEncoding:"Base64"}));
     if(save_file==null){
 	return;
     }
@@ -2374,7 +2649,7 @@ function _import(){
 }
 function _export(){
 	if(confirm("This will end your session.")){
-		document.write(JSON.stringify([cur_page,player,pages,tick1]));
+		document.write(LZUTF8.compress(JSON.stringify([cur_page,player,pages,tick1]),{outputEncoding:"Base64"}));
 	}
 }
 </script>
