@@ -1,6 +1,8 @@
 <!-- Utilizes GNU GENERAL PUBLIC LICENSE 3. See "LICENSE" file for details -->
 <html>
 <head>
+<!-- sound effects -->
+<audio id="sfx" src="./sounds/raygun_bang.wav" type="audio/wav"></audio>
 <title>Mouse Simulator 2D</title>
 </head>
 <body>
@@ -17,15 +19,16 @@
     </center>
 </body>
 <script id="lzutf8" src="https://cdn.jsdelivr.net/npm/lzutf8/build/production/lzutf8.min.js"></script>
+<script id="lzutf8" src="./lzutf8.min.js"></script>
 <script>
-//Mouse Simulator 2D v0.35
+//Mouse Simulator 2D v0.36
 /*
-lzutf8 404 warning.
-dropped item combining.
-crafting recipe stuff.
-mushrooms in generation.
-slowed random tick down.
-LocalStorage saving.
+Picking items up is better.
+Path finding stuff.
+organized projectile code.
+More pathfinding stuff.
+Pausing.
+Sounds!
 */
 //states
 
@@ -35,11 +38,24 @@ if(LZUTF8==undefined){
 	alert("Unable to fetch 'lzutf8.min.js'. This is required to compress/decompress saves. Please make sure Mouse Simulator 2D can fetch this file.");
 }
 
+function sfx(sound){
+var x=document.getElementById("sfx");
+	switch(sound){
+		case "raygun_bang":
+			x.src="./sounds/raygun_bang.wav";
+			break;
+		case "raygun_cooldown":
+			x.src="./sounds/raygun_cooldown.wav";
+	}
+x.play();
+}
+
 var INV_PTR=function(){player.inv[player.inv[10]]}
 var MAX_FEMALE=0;
 var MAX_MALE=1;
 
 var cur_page=0;
+var paused=0;
 var last_dir="";
 var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0};
 //inventory: [(item id),(item amount)]; player.inv[10]=selected pointer
@@ -787,6 +803,30 @@ var item_names=[
 ];
 //crafting
 var recipies=[
+{//sapling to stick+leaves
+input_id:[9,0,0,0,0,0],
+output:[[7,1],[10,1]]
+},
+{//sapling to stick+leaves
+input_id:[0,9,0,0,0,0],
+output:[[7,1],[10,1]]
+},
+{//sapling to stick+leaves
+input_id:[0,0,9,0,0,0],
+output:[[7,1],[10,1]]
+},
+{//sapling to stick+leaves
+input_id:[0,0,0,9,0,0],
+output:[[7,1],[10,1]]
+},
+{//sapling to stick+leaves
+input_id:[0,0,0,0,9,0],
+output:[[7,1],[10,1]]
+},
+{//sapling to stick+leaves
+input_id:[0,0,0,0,0,9],
+output:[[7,1],[10,1]]
+},
 {//branch to stick+leaves
 input_id:[1,0,0,0,0,0],
 output:[[7,1],[10,1]]
@@ -1430,7 +1470,6 @@ for(var i=0;i<pages[cur_page].entities.length;i++){
 	if(pages[cur_page].entities[i].x==player.x && pages[cur_page].entities[i].y==player.y){
         on_entity=pages[cur_page].entities[i];
 		entities(on_entity,i);
-        break;
 	}
 }
 //check block
@@ -1721,7 +1760,7 @@ function entity_player_collide(){
 function entity_collide(ptr){//find if specified entity shares same coords as another one.
     for(var i=0;i<pages[cur_page].entities.length;i++){
         if(i==ptr){continue;}
-        if(pages[cur_page].entities[ptr].x==pages[cur_page].entities[i].x && pages[cur_page].entities[ptr].y==pages[cur_page].entities[i].y){
+        if(pages[cur_page].entities[ptr].x==pages[cur_page].entities[i].x && pages[cur_page].entities[ptr].y==pages[cur_page].entities[i].y && pages[cur_page].entities[i].id!=3){
             return i;
         }
     }
@@ -1786,7 +1825,32 @@ function do_bang(_x,_y){
 	}
 }
 
-function projectile(ptr){//Code for making projectiles move and interact with ThInGs
+function projectile_effect(ptr){
+switch(pages[cur_page].entities[ptr].char){
+	case 35://Amber, fire bow
+		if(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)==0 || is_burnable(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y))){
+			pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=30
+		}
+		break;
+	case 20://raygun ring
+		do_bang(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y);
+		if(can_bang(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y))){
+			switch(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)){
+				case 5://Black stone?
+					pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=2;
+					break;
+				default:
+					pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=0;
+			}
+		}
+		sfx("raygun_bang");
+		break;
+	default:
+		0;
+}
+}
+
+function projectile_step(ptr){
     switch(pages[cur_page].entities[ptr].direction){
         case -1:
             break;
@@ -1803,36 +1867,24 @@ function projectile(ptr){//Code for making projectiles move and interact with Th
             pages[cur_page].entities[ptr].x++;
             break;
     }
+	if(pages[cur_page].entities[ptr].decay!=-1){
     pages[cur_page].entities[ptr].decay--;
+	}
+}
+
+function projectile_check(ptr){
     if(pages[cur_page].entities[ptr].decay==0){
+		projectile_effect(ptr);
 		pages[cur_page].entities[ptr].id=-1;
-		switch(pages[cur_page].entities[ptr].char){
-			case 35://Amber, fire bow
-				if(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)==0){
-					pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=30
-				}
-				break;
-			default:
-				break;
-		}
-        pages[cur_page].entities[ptr].id=-1;
         entity_cleanup();
         return;
     }
     var collided=entity_collide(ptr);
     if(collided!=-1){
         if(pages[cur_page].entities[collided].health!=undefined){
+			projectile_effect(ptr);
             pages[cur_page].entities[collided].health-=pages[cur_page].entities[ptr].damage;
             pages[cur_page].entities[ptr].id=-1;
-			switch(pages[cur_page].entities[ptr].char){
-			case 35://Amber, fire bow
-				if(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)==0){
-					pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=30;
-				}
-				break;
-			default:
-				break;
-			}
             if(pages[cur_page].entities[collided].health<=0){
                 pages[cur_page].entities[collided].id=-1;
                 entity_cleanup();
@@ -1846,56 +1898,36 @@ function projectile(ptr){//Code for making projectiles move and interact with Th
 		if(pages[cur_page].entities[ptr].from_player==1){//don't inflict damage on oneself.
 			return;
 		}
+		projectile_effect(ptr);
         player.health-=pages[cur_page].entities[ptr].damage;
         pages[cur_page].entities[ptr].id=-1;
         entity_cleanup();
-	return;
+		return;
     }
     if(hit_bounds(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)){//hits screen edges
+		projectile_effect(ptr);
         pages[cur_page].entities[ptr].id=-1;
-        entity_cleanup();
-        return;
-    }
-	if(is_walkable(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)) && char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)!=0){//encounters walkable block
-        switch(pages[cur_page].entities[ptr].char){
-			case 35://Amber, fire bow
-				if(!is_burnable(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y))){
-					return;
-				}
-				pages[cur_page].entities[ptr].id=-1;
-				pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=30;
-				break;
-			default:
-				break;
-		}
         entity_cleanup();
         return;
     }
     if(!is_walkable(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y))){//encounters non walkable block
+		projectile_effect(ptr);
         pages[cur_page].entities[ptr].id=-1;
-		switch(pages[cur_page].entities[ptr].char){
-			case 20://raygun ring
-				do_bang(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y);
-				if(can_bang(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y))){
-					switch(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)){
-						case 5://Black stone?
-							pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=2;
-							break;
-						default:
-							pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=0;
-					}
-				}
-				break;
-			case 35:
-				if(is_burnable(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y))){
-					pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=30
-				}
-			default:
-				break;
-		}
         entity_cleanup();
         return;
     }
+	if(is_burnable(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)) && pages[cur_page].entities[ptr].char==35){//amber encounters burnable block
+		projectile_effect(ptr,"burn");
+        pages[cur_page].entities[ptr].id=-1;
+        entity_cleanup();
+        return;
+    }
+}
+
+function projectile(ptr){//Code for making projectiles move and interact with ThInGs
+	projectile_check(ptr);
+	projectile_step(ptr);
+	projectile_check(ptr);
 }
 
 function remove_char(x,y){
@@ -1976,7 +2008,7 @@ switch(player.inv[player.inv[10]][0]){
 		player.inv[player.inv[10]]=[14,1];
 	}
 	inv_cleanup();
-        break;
+    break;
 	case 18://spear
 	switch(x){
 	    case "up":
@@ -1993,20 +2025,24 @@ switch(player.inv[player.inv[10]][0]){
    	       break;
 	}
 	inv_cleanup();
-        break;
+    break;
 	case 19://Raygun
 	switch(x){
 	    case "up":
  	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:20, direction:0, damage:player.strength*1000, decay:-1, from_player:1});
+		   sfx("raygun_cooldown");
  	       break;
  	   case "down":
  	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:20, direction:1, damage:player.strength*1000, decay:-1, from_player:1});
+		   sfx("raygun_cooldown");
  	       break;
  	   case "left":
   	       pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:20, direction:2, damage:player.strength*1000, decay:-1, from_player:1});
+		   sfx("raygun_cooldown");
   	       break;
   	   case "right":
    	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:20, direction:3, damage:player.strength*1000, decay:-1, from_player:1});
+		   sfx("raygun_cooldown");
    	       break;
 	}
 	inv_cleanup();
@@ -2026,20 +2062,21 @@ switch(player.inv[player.inv[10]][0]){
    	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:39, direction:-1, damage:player.strength*10, decay:3, from_player:1});
    	       break;
 	}
-default:
-switch(x){
-    case "up":
-        pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:19, direction:-1, damage:player.strength, decay:3, from_player:1});
-        break;
-    case "down":
-        pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:19, direction:-1, damage:player.strength, decay:3, from_player:1});
-        break;
-    case "left":
-        pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:19, direction:-1, damage:player.strength, decay:3, from_player:1});
-        break;
-    case "right":
-        pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:19, direction:-1, damage:player.strength, decay:3, from_player:1});
-        break;
+	break;
+	default:
+		switch(x){
+ 		 	case "up":
+      	  pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:19, direction:-1, damage:player.strength, decay:3, from_player:1});
+ 	       break;
+   		 case "down":
+   		     pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:19, direction:-1, damage:player.strength, decay:3, from_player:1});
+   		     break;
+   		 case "left":
+    	    pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:19, direction:-1, damage:player.strength, decay:3, from_player:1});
+    	    break;
+  		  case "right":
+   		     pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:19, direction:-1, damage:player.strength, decay:3, from_player:1});
+    	    break;
 }
 }
 //}
@@ -2144,6 +2181,21 @@ function cheats(){
 function key_manager(key){
 //Movement
 last_dir="";
+if(key==80){//pause, p
+	switch(paused){
+		case 0:
+			paused=1;
+			document.getElementById("demonic_announcer").textContent="Paused";
+			break;
+		case 1:
+			paused=0;
+			document.getElementById("demonic_announcer").textContent="Unpaused";
+			break;
+	}
+}
+if(paused==1){
+	return;
+}
 switch(key){
     case 87://up,w
 	last_dir="up";
@@ -2270,9 +2322,10 @@ function death(){
     key_manager=function(){};
 }
 
-function pathfind_step(x1,y1,x2,y2){//This is gonna hurt...
+/*function pathfind_step(x1,y1,x2,y2){//This is gonna hurt...
     var delta_x=Math.abs(x1-x2);
     var delta_y=Math.abs(y1-y2);
+if(delta_x<delta_y){
     if(x1>x2 && is_walkable(char_value(x1-1,y1)) && !hit_bounds(x1-1,y1)){
         return [x1-1,y1];
     }
@@ -2285,10 +2338,62 @@ function pathfind_step(x1,y1,x2,y2){//This is gonna hurt...
     if(y1<y2 && is_walkable(char_value(x1,y1+1)) && !hit_bounds(x1,y1+1)){
         return [x1,y1+1];
     }
+}else{
+	if(y1>y2 && is_walkable(char_value(x1,y1-1)) && !hit_bounds(x1,y1-1)){
+        return [x1,y1-1];
+    }
+    if(y1<y2 && is_walkable(char_value(x1,y1+1)) && !hit_bounds(x1,y1+1)){
+        return [x1,y1+1];
+    }
+    if(x1>x2 && is_walkable(char_value(x1-1,y1)) && !hit_bounds(x1-1,y1)){
+        return [x1-1,y1];
+    }
+    if(x1<x2 && is_walkable(char_value(x1+1,y1)) && !hit_bounds(x1+1,y1)){
+        return [x1+1,y1];
+    }
+}
     
     return [x1,y1];
-}
+}*/
 
+function pathfind_step(x1,y1,x2,y2){
+var nodes=[];
+nodes.push({x:x1,y:y1,h:Math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))});
+if(is_walkable(char_value(x1,y1-1))){//up
+	nodes.push({x:x1,y:y1-1,h:Math.sqrt((x2-x1)*(x2-x1)+(y2-(y1-1))*(y2-(y1-1)))});
+}
+if(is_walkable(char_value(x1,y1+1))){//down
+	nodes.push({x:x1,y:y1+1,h:Math.sqrt((x2-x1)*(x2-x1)+(y2-(y1+1))*(y2-(y1+1)))});
+}
+if(is_walkable(char_value(x1-1,y1))){//left
+	nodes.push({x:x1-1,y:y1,h:Math.sqrt((x2-(x1-1))*(x2-(x1-1))+(y2-y1)*(y2-y1))});
+}
+if(is_walkable(char_value(x1+1,y1))){//right
+	nodes.push({x:x1+1,y:y1,h:Math.sqrt((x2-(x1+1))*(x2-(x1+1))+(y2-y1)*(y2-y1))});
+}
+if(is_walkable(char_value(x1-1,y1-1)) && (is_walkable(char_value(x1-1,y1)) || is_walkable(char_value(x1,y1-1)))){//up left
+	nodes.push({x:x1-1,y:y1-1,h:Math.sqrt((x2-(x1-1))*(x2-(x1-1))+(y2-(y1-1))*(y2-(y1-1)))});
+}
+if(is_walkable(char_value(x1-1,y1+1)) && (is_walkable(char_value(x1-1,y1)) || is_walkable(char_value(x1,y1+1)))){//down left
+	nodes.push({x:x1-1,y:y1+1,h:Math.sqrt((x2-(x1-1))*(x2-(x1-1))+(y2-(y1+1))*(y2-(y1+1)))});
+}
+if(is_walkable(char_value(x1+1,y1-1)) && (is_walkable(char_value(x1+1,y1)) || is_walkable(char_value(x1,y1-1)))){//up right
+	nodes.push({x:x1+1,y:y1-1,h:Math.sqrt((x2-(x1+1))*(x2-(x1+1))+(y2-(y1-1))*(y2-(y1-1)))});
+}
+if(is_walkable(char_value(x1+1,y1+1)) && (is_walkable(char_value(x1+1,y1)) || is_walkable(char_value(x1,y1+1)))){//down right
+	nodes.push({x:x1+1,y:y1+1,h:Math.sqrt((x2-(x1+1))*(x2-(x1+1))+(y2-(y1+1))*(y2-(y1+1)))});
+}
+if(nodes.length==0){
+	return [x1,y1];
+}
+var smallest=nodes[0];
+for(var i=1;i<nodes.length;i++){
+	if(smallest.h>=nodes[i].h){
+		smallest=nodes[i];
+	}
+}
+return [smallest.x,smallest.y];
+}
 function entity_attack(ptr){
     if(pages[cur_page].entities[ptr].attack_cooldown>0){
         pages[cur_page].entities[ptr].attack_cooldown--;
@@ -2339,6 +2444,9 @@ function npc(ptr){//make entity move
             }
             break;
     }
+	if(entity_collide_xy(next_xy[0],next_xy[1])!=-1){
+		return;
+	}
     pages[cur_page].entities[ptr].x=next_xy[0];
     pages[cur_page].entities[ptr].y=next_xy[1];
 }
@@ -2627,7 +2735,7 @@ for(var i=0;i<pages[cur_page].entities.length;i++){
 if(tick1>=32767){
 	//enemy spawning stuff
 	if(pages[cur_page].metadata.safety==0){
-		if(action<10){
+		if(action<30){
             var cv=char_value(random_x,random_y);
             if(!is_walkable(cv)){
                 return;
@@ -2668,6 +2776,9 @@ for(var x=0;x<40;x++){
 
 var tick1=0;//0 to 65535
 function refresh(){//Dang it, no multiple setintervals...
+if(paused==1){
+	return;
+}
 draw_map(pages[cur_page]);
 //status bar
 var player_text="Name: "+player.name+" Health: "+player.health+" X: "+player.x+" Y: "+player.y+ " Text Page: "+cur_page+" Time: "+tick1+" "+pages[cur_page].metadata.x+","+pages[cur_page].metadata.y;
