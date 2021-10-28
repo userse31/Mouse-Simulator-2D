@@ -7,7 +7,7 @@
 </head>
 <body>
     <center>
-    <canvas id="cga" width="320" height="200" style="border: 2px solid #777777;width:320;height:200;image-rendering:pixelated;image-rendering:crisp-edges;"></canvas>
+    <canvas id="cga" width="320" height="200" style="border:2px solid #777777;width:320;height:200;image-rendering:pixelated;image-rendering:crisp-edges;"></canvas>
     <p id="player"></p>
     <p id="status">This paragraph tag is left intentionally blank.</p>
     <p id="demonic_announcer">Welcome!</p>
@@ -18,29 +18,17 @@
     <button onclick="alert(JSON.stringify(eval(prompt('Code?'))))">eval()</button>
     </center>
 </body>
-<!-- <script id="lzutf8" src="https://cdn.jsdelivr.net/npm/lzutf8/build/production/lzutf8.min.js"></script> -->
-<!-- I am very much _not_ smart enough to create a compression algorithm -->
 <script id="lzutf8" src="./lzutf8.min.js"></script>
 <script>
-//Mouse Simulator 2D v0.38
+//Mouse Simulator 2D v0.39
 /*
-Can only bonemeal plants now.
-enemies drop items
-iron
-meat
-Fixed bug with entity_cleanup() where it copied pointers instead of cloning the object.
-Math.random() now multiplied by 65535 instead of 100
-Fixed bug where page edge link code picked pages that where underground, resulting in player being spontanously sent from the surface to the base.
-Ability to make canvas bigger.
-Copper and Iron walls.
+Fixed bug on removing copper and iron walls. Did not check item id.
+Fire damages player.
+Enemy spawn chance dependent on time.
 */
-//states
-//Javascript doesn't support "#define" UGH!
-
 if(LZUTF8==undefined){
 	alert("Unable to fetch 'lzutf8.min.js'. This is required to compress/decompress saves. Please make sure Mouse Simulator 2D can fetch this file.");
 }
-
 //autoconfig
 function autoconfig(){
 	var saves=window.localStorage;
@@ -54,8 +42,6 @@ function autoconfig(){
 	}
 }
 autoconfig();
-
-//var saves=window.localStorage;saves.setItem("_bigger","1");alert(saves.getItem("_bigger"))
 function config(){
 	var saves=window.localStorage;
 	var bigger;
@@ -85,10 +71,6 @@ var x=document.getElementById("sfx");
 	}
 x.play();
 }
-
-var INV_PTR=function(){player.inv[player.inv[10]]}
-var MAX_FEMALE=0;
-var MAX_MALE=1;
 
 var cur_page=0;
 var paused=0;
@@ -891,7 +873,7 @@ enemy:[
 {chance:0.05,item_id:33,item_min:1,item_max:1},//iron
 {chance:0.05,item_id:35,item_min:1,item_max:1},//copper
 {chance:0.01,item_id:21,item_min:1,item_max:1},//cyan thing, 115
-],
+]
 };
 
 //items
@@ -1346,13 +1328,9 @@ var structures=[
 [0,45,0],
 ],
 //brown mushroom, 10
-[
-[16]
-],
+[[16]],
 //red mushroom, 11
-[
-[17]
-],
+[[17]],
 ];
 
 var ctx=document.getElementById("cga").getContext("2d");
@@ -1389,7 +1367,6 @@ function draw_map(){
 	}
 	//entity map
 	for(var i=0;i<pages[cur_page].entities.length;i++){
-	//for(var i=pages[cur_page].entities.length;i>-1;i--){
 	   get_font(pages[cur_page].entities[i].char);
 	   ctx.putImageData(char,pages[cur_page].entities[i].x*8,pages[cur_page].entities[i].y*8);
 	}
@@ -2298,6 +2275,7 @@ function remove_char(x,y){//qwer
                 player.inv[player.inv[10]][1]++;
                 pages[cur_page].map[y][x]=0;
             }
+			break;
 		case 58://Bookshelf
             if(player.inv[player.inv[10]][0]==0){
                 player.inv[player.inv[10]][0]=31;
@@ -2307,6 +2285,7 @@ function remove_char(x,y){//qwer
                 player.inv[player.inv[10]][1]++;
                 pages[cur_page].map[y][x]=0;
             }
+			break;
 		case 64://Iron wall
             if(player.inv[player.inv[10]][0]==0){
                 player.inv[player.inv[10]][0]=37;
@@ -2316,6 +2295,7 @@ function remove_char(x,y){//qwer
                 player.inv[player.inv[10]][1]++;
                 pages[cur_page].map[y][x]=0;
             }
+			break;
 		case 65://Copper wall
             if(player.inv[player.inv[10]][0]==0){
                 player.inv[player.inv[10]][0]=38;
@@ -2325,7 +2305,6 @@ function remove_char(x,y){//qwer
                 player.inv[player.inv[10]][1]++;
                 pages[cur_page].map[y][x]=0;
             }
-			
             break;
 		case 42://closed door
 			pages[cur_page].map[y][x]=43;
@@ -2909,7 +2888,6 @@ return 1;
 }
 
 function entity_standing_on(ptr){
-
 //pages[cur_page].entities[0].dest_x=19;pages[cur_page].entities[0].dest_y=12;
 switch(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)){
 	case 6://hole
@@ -2921,6 +2899,15 @@ switch(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].
 	case 54://walnut peel
 		entity_slip(ptr);
 		return 1;
+		break;
+	case 30://fire
+		pages[cur_page].entities[ptr].health--;
+		break;
+	case 31:
+		pages[cur_page].entities[ptr].health--;
+		break;
+	case 32:
+		pages[cur_page].entities[ptr].health--;
 		break;
 }
 }
@@ -2977,13 +2964,9 @@ function entity_edge(ptr){//move entity between pages through edges.
 	}
 }
 
-function npc(ptr){//make entity move
-	if(entity_standing_on(ptr)==1){
-		return;
-	}
-    if(pages[cur_page].entities[ptr].brain.no_ai==1){
-        return;
-    }
+function npc(ptr){//make entity move and interact with environment.
+	if(entity_standing_on(ptr)==1){return;}
+    if(pages[cur_page].entities[ptr].brain.no_ai==1){return;}
     var next_xy;
     switch(pages[cur_page].entities[ptr].brain.hostile){
         case 0://not hostile
@@ -3005,14 +2988,8 @@ function npc(ptr){//make entity move
     }
 	pages[cur_page].entities[ptr].last_dir=next_xy[2];
 	var collided=entity_collide_xy(next_xy[0],next_xy[1]);
-	if(collided!=-1){
-		if(pages[cur_page].entities[collided].id==1){
-			return;
-		}
-	}
-	//pages[cur_page].entities[0].dest_x=6;pages[cur_page].entities[0].dest_y=0;
-    pages[cur_page].entities[ptr].x=next_xy[0];
-    pages[cur_page].entities[ptr].y=next_xy[1];
+	if(collided!=-1 && pages[cur_page].entities[collided].id==1){return;}//prevent multiple npc's from occupying the same char.
+    pages[cur_page].entities[ptr].x=next_xy[0];pages[cur_page].entities[ptr].y=next_xy[1];//for slipping.
 	entity_standing_on(ptr);
 	entity_edge(ptr);
 }
@@ -3069,6 +3046,10 @@ pages[cur_page].entities[ptr].id=-1;
 entity_cleanup();
 }
 
+function fire_damage(){
+	player.health--;
+}
+
 function tick(){
     if(player.health<=0){//Player Death
         death();
@@ -3084,8 +3065,19 @@ function tick(){
                 break;
         }
     }
-	if(char_value(player.x,player.y)==54){
-		slip();
+	switch(char_value(player.x,player.y)){
+		case 54://walnut peels
+			slip();
+			break;
+		case 30://fire
+			fire_damage();
+			break;
+		case 31:
+			fire_damage();
+			break;
+		case 32:
+			fire_damage();
+			break;
 	}
 }
 
@@ -3140,7 +3132,25 @@ function do_fire(x,y){
 			pages[cur_page].map[y][x]=0;
 		}
 	}
+	//check for entities
+	for(var i=0;i<pages[cur_page].entities.length;i++){
+		if(pages[cur_page].entities[i].x==x &&pages[cur_page].entities[i].y==y){
+		switch(pages[cur_page].entities[i].id){
+			/*case 1://npc
+				pages[cur_page].entities[i].health--;
+				break;*/
+			case 2://dropped item
+				pages[cur_page].entities[i].id=-1;
+				break;
+			case 3://projectile
+				break;
+		}
+		}
+	}
+	entity_cleanup();
 }
+
+function enemy_chance(){return Math.floor(-290.0146493+0.014649182*tick1-0.000000149*tick1*tick1);}
 
 function random_tick(random_x=Math.floor((Math.random()*65535))%40,random_y=Math.floor((Math.random()*65535))%25,bone_meal=0,action=Math.floor((Math.random()*65535))%100){
 if(pages[cur_page].map[random_y][random_x]==13){//grass
@@ -3303,7 +3313,7 @@ for(var i=0;i<pages[cur_page].entities.length;i++){
 if(tick1>=32767){
 	//enemy spawning stuff
 	if(pages[cur_page].metadata.safety==0){
-		if(action<30){
+		if(action<enemy_chance()){
             var cv=char_value(random_x,random_y);
             if(!is_walkable(cv)){
                 return;
@@ -3364,12 +3374,6 @@ tick1++;
 if(tick1>=65536){tick1=0;}
 //night: 0-32767
 //day: 32768-65535
-if(tick1==32768){//Day starts
-    console.log("Fetch me their souls!");
-}
-if(tick1==0){//Night starts
-    console.log("Ba, da, DAAA");
-}
 if(tick1%2==0){//projectiles and path finding
 tick();
 }
