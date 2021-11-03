@@ -20,11 +20,22 @@
 </body>
 <script id="lzutf8" src="./lzutf8.min.js"></script>
 <script>
-//Mouse Simulator 2D v0.39
+//Mouse Simulator 2D v0.40
 /*
-Fixed bug on removing copper and iron walls. Did not check item id.
-Fire damages player.
-Enemy spawn chance dependent on time.
+Tweaked Spears.
+When arrow keys are used to remove blocks, open doors, etc, Projectiles are no longer created.
+Bowl of Water.
+Suspicious Stew.
+Stews drop bowls.
+Pathfind tweak.
+Camp Fire
+Fixed bug where characters with items on top could not be picked up.
+Fixed bug where npc's would not drop items if damaged by fire.
+Now gives 3 fences on crafting.
+entity_cleanup() mostly only called in refresh() function. Possible performance improvement.
+Entities with health <= 0 only marked id of -1 in refresh() function. Possible performance improvement.
+Code Cleanup.
+Struct chance for raygun and cyan thing decreased.
 */
 if(LZUTF8==undefined){
 	alert("Unable to fetch 'lzutf8.min.js'. This is required to compress/decompress saves. Please make sure Mouse Simulator 2D can fetch this file.");
@@ -857,13 +868,46 @@ var font=[
 0,1,1,1,1,1,1,0,
 0,0,0,0,0,0,0,0,184,115,51,169,100,26
 ],
+//66, Bowl of Water
+[
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,0,
+0,0,1,1,1,1,0,0,
+0,0,0,1,1,0,0,0,0,0,255,255,255,255
+],
+//67, Suspicious Stew
+[
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,0,
+0,0,1,1,1,1,0,0,
+0,0,0,1,1,0,0,0,0,255,255,255,255,255
+],
+//68, Camp Fire
+[
+0,0,0,1,1,0,0,0,
+0,0,0,1,1,0,0,0,
+0,0,1,1,1,1,0,0,
+0,0,1,1,1,1,0,0,
+0,0,0,0,0,0,0,0,
+0,1,1,0,0,1,1,0,
+0,0,0,1,1,0,0,0,
+0,1,1,0,0,1,1,0,200,0,0,255,255,255
+],
 ];
 var properties={
-walkable:[0,2,6,7,8,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40,43,44,45,46,47,48,49,50,51,52,54],
-not_spawnable:[2,28,29,30,31,32,43],
+walkable:[0,2,6,7,8,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40,43,44,45,46,47,48,49,50,51,52,54,68],
+not_spawnable:[2,28,29,30,31,32,43,68],
 burnable:[12,13,14,15,18,24,28,42,43,45,46,47,48,49,50,51],
 bangable:[18,42,43,12,5],
-breakable:[3,4,5,6,9,13,21,22,24,25,27,31,37,38],
+breakable:[3,4,5,6,9,13,21,22,24,25,27,31,37,38,41],
 bonemealable:[52,51,50,49,48,47,46,24,17,16,15,13]
 };
 
@@ -899,7 +943,7 @@ var item_char=[
 37,//Spear,18
 38,//Raygun,19
 39,//Poisonous Spear, 20
-40,//115, 21
+40,//cyan thing, 21
 42,//Door, 22
 41,//Stone, 23
 12,//hay bail, 24
@@ -917,6 +961,9 @@ var item_char=[
 63,//Cooked Meat,36
 64,//Iron Wall,37
 65,//Copper Wall,38
+66,//Bowl of Water,39
+67,//Suspicious Stew,40
+68,//Camp Fire,41
 ];
 
 var item_names=[
@@ -959,6 +1006,9 @@ var item_names=[
 "Cooked Meat",
 "Iron Wall",
 "Copper Wall",
+"Bowl of Water",
+"Suspicious Stew",
+"Camp Fire"
 ];
 //crafting
 var recipies=[
@@ -1036,11 +1086,11 @@ output:[[8,1]]
 },
 {//2 sticks + 1 string to fence
 input_id:[7,0,8,0,7,0],
-output:[[6,1]]
+output:[[6,3]]
 },
 {//2 sticks + 1 string to fence
 input_id:[0,7,0,8,0,7],
-output:[[6,1]]
+output:[[6,3]]
 },
 {//2 string + 1 leaves to bowl
 input_id:[8,0,10,0,8,0],
@@ -1090,12 +1140,12 @@ output:[[15,1],[16,5]]
 input_id:[14,16,16,16,16,16],
 output:[[17,5]]
 },
-{//3 sticks to spear.
-input_id:[7,0,7,0,7,0],
+{//2 sticks+iron to spear.
+input_id:[33,0,7,0,7,0],
 output:[[18,1]]
 },
-{//3 sticks to spear.
-input_id:[0,7,0,7,0,7],
+{//2 sticks+iron to spear.
+input_id:[0,33,0,7,0,7],
 output:[[18,1]]
 },
 {//Spear+Red Mushroom to Poisonous Spear.
@@ -1249,7 +1299,19 @@ output:[[35,6]],
 {//copper wall to 6 copper
 input_id:[0,0,0,0,0,38],
 output:[[35,6]],
-}
+},
+{//Amber+Bowl of Water+Brown Mushroom+Red Mushroom to Suspicious Stew
+input_id:[4,5,39,21,16,0],
+output:[[40,1]],
+},
+{//Amber+Bowl of Water+Brown Mushroom+Red Mushroom to Suspicious Stew
+input_id:[5,4,39,21,16,0],
+output:[[40,1]],
+},
+{//Amber+2 Sticks to Camp Fire
+input_id:[16,7,7,0,0,0],
+output:[[41,1]],
+},
 ];
 
 var struct=[
@@ -1258,11 +1320,11 @@ var struct=[
 {weight:0.8,tries:10,sub:[0,0],id:1},//grass
 {weight:0.1,tries:3,sub:[0,0],id:10},//brown mushroom
 {weight:0.1,tries:3,sub:[0,0],id:11},//red mushroom
-{weight:0.1,tries:1,sub:[1,1],id:2},//115
+{weight:0.01,tries:1,sub:[1,1],id:2},//115
 {weight:0.2,tries:1,sub:[4,4],id:3},//abandoned shed
 {weight:-1,tries:2,sub:[0,0],id:4},//hole
 {weight:0.1,tries:2,sub:[3,3],id:5},//pond
-{weight:0.1,tries:1,sub:[0,0],id:6},//raygun
+{weight:0.01,tries:1,sub:[0,0],id:6},//raygun
 {weight:0.1,tries:1,sub:[11,5],id:7},//facility
 {weight:0.3,tries:1,sub:[2,2],id:8,entity:{offset_x:1,offset_y:1}},//Mouse Nest
 ];
@@ -1375,8 +1437,6 @@ function draw_map(){
 	ctx.putImageData(char,player.x*8,player.y*8);
 }
 
-//asdf
-
 function item_roulette(drop_list,_x,_y){
 for(var i=0;i<drop_list.length;i++){
 	if(Math.random()<=drop_list[i].chance){
@@ -1420,7 +1480,6 @@ function combine_items(_x,_y,item_id){//Reduce memory usage and improve the user
 		pages[cur_page].entities[ptrs[i]].id=-1;
 	}
 	pages[cur_page].entities.push({id:2, x:_x, y:_y, char:item_char[item_id], item: [item_id,total_amount]});
-	entity_cleanup();
 }
 
 function new_npc(_x,_y,_home_x,_home_y){
@@ -1701,17 +1760,6 @@ for(var i=0;i<pages[cur_page].entities.length;i++){
 pages[cur_page].entities=new_entity_list;
 }
 
-function entities(on_entity,i){
-if(on_entity.id==2){
-    if(on_entity.item[0]==player.inv[player.inv[10]][0] || player.inv[player.inv[10]][0]==0){
-        player.inv[player.inv[10]][0]=on_entity.item[0];
-        player.inv[player.inv[10]][1]+=on_entity.item[1];
-        pages[cur_page].entities[i].id=-1;
-        entity_cleanup();
-    }
-}
-}
-
 function compare_array(x,y){
 if(x.length!=y.length){
     return false;
@@ -1730,167 +1778,206 @@ var on_entity=0;
 //check entity
 for(var i=0;i<pages[cur_page].entities.length;i++){
 	if(pages[cur_page].entities[i].x==player.x && pages[cur_page].entities[i].y==player.y){
-        on_entity=pages[cur_page].entities[i];
-		entities(on_entity,i);
+		on_entity=pages[cur_page].entities[i];
+		if(on_entity.id==2){//Pick items up.
+			if(on_entity.item[0]==player.inv[player.inv[10]][0] || player.inv[player.inv[10]][0]==0){
+				player.inv[player.inv[10]][0]=on_entity.item[0];
+				player.inv[player.inv[10]][1]+=on_entity.item[1];
+				pages[cur_page].entities[i].id=-1;
+			}
+		}
 	}
 }
 //check block
-if(standing_on==6){//teleport/go to next map
-	teleport();
-}
-if(standing_on==7 || standing_on==8){
-	if(tick1<=32768){
-		document.getElementById("demonic_announcer").textContent="You can only sleep at day.";
-	}else{
-		tick1=100;
-		document.getElementById("demonic_announcer").textContent="Slept and skipped to night."
-	}
-}
-if(standing_on==13){//grass
-	if(player.inv[player.inv[10]][0]==0){
-		player.inv[player.inv[10]]=[3,1];
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-	if(player.inv[player.inv[10]][0]==3){
-		player.inv[player.inv[10]][1]++;
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-}
-if(standing_on==16){//brown mushroom
-	if(player.inv[player.inv[10]][0]==0){
-		player.inv[player.inv[10]]=[4,1];
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-	if(player.inv[player.inv[10]][0]==4){
-		player.inv[player.inv[10]][1]++;
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-}
-if(standing_on==17){//red mushroom
-	if(player.inv[player.inv[10]][0]==0){
-		player.inv[player.inv[10]]=[5,1];
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-	if(player.inv[player.inv[10]][0]==5){
-		player.inv[player.inv[10]][1]++;
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-}
-if(standing_on==24){//sapling
-	if(player.inv[player.inv[10]][0]==0){
-		player.inv[player.inv[10]]=[9,1];
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-	if(player.inv[player.inv[10]][0]==9){
-		player.inv[player.inv[10]][1]++;
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-}
-if(standing_on==28){//Carpet
-	if(player.inv[player.inv[10]][0]==0){
-		player.inv[player.inv[10]]=[13,1];
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-	if(player.inv[player.inv[10]][0]==13){
-		player.inv[player.inv[10]][1]++;
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-}
-if(standing_on==38){//Raygun
-	if(player.inv[player.inv[10]][0]==0){
-		player.inv[player.inv[10]]=[19,1];
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-	if(player.inv[player.inv[10]][0]==19){
-		player.inv[player.inv[10]][1]++;
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-}
-if(standing_on==40){//Element 115
-	if(player.inv[player.inv[10]][0]==0){
-		player.inv[player.inv[10]]=[21,1];
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-	if(player.inv[player.inv[10]][0]==21){
-		player.inv[player.inv[10]][1]++;
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-}
-if(standing_on==43){//Open door
-	if(player.inv[player.inv[10]][0]==0){
-		player.inv[player.inv[10]]=[22,1];
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-	if(player.inv[player.inv[10]][0]==22){
-		player.inv[player.inv[10]][1]++;
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-}
-if(standing_on==2){//dither, stone
-	if(player.inv[player.inv[10]][0]==0){
-		player.inv[player.inv[10]]=[23,1];
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-	if(player.inv[player.inv[10]][0]==23){
-		player.inv[player.inv[10]][1]++;
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-}
-if(standing_on==12){//dither, stone
-	if(player.inv[player.inv[10]][0]==0){
-		player.inv[player.inv[10]]=[24,1];
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-	if(player.inv[player.inv[10]][0]==24){
-		player.inv[player.inv[10]][1]++;
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-}
-if(standing_on==52){//walnut fruit
-	if(player.inv[player.inv[10]][0]==0){
-		player.inv[player.inv[10]]=[25,1];
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-	if(player.inv[player.inv[10]][0]==25){
-		player.inv[player.inv[10]][1]++;
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-}
-if(standing_on==54){//walnut peels
-	if(player.inv[player.inv[10]][0]==0){
-		player.inv[player.inv[10]]=[27,1];
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-	if(player.inv[player.inv[10]][0]==27){
-		player.inv[player.inv[10]][1]++;
-		pages[cur_page].map[player.y][player.x]=0;
-        return;
-	}
-}
 
+switch(standing_on){
+	case 6://teleport/goto next map
+		teleport();
+		break;
+	case 7://bedding
+	case 8:
+		if(tick1<=32768){
+			document.getElementById("demonic_announcer").textContent="You can only sleep at day.";
+		}else{
+			tick1=100;
+			document.getElementById("demonic_announcer").textContent="Slept and skipped to night."
+			player.strength=1;//Player strength reset after sleeping.
+		}
+		break;
+	case 13://grass
+		if(player.inv[player.inv[10]][0]==0){
+			player.inv[player.inv[10]]=[3,1];
+			pages[cur_page].map[player.y][player.x]=0;
+    	    return;
+		}
+		if(player.inv[player.inv[10]][0]==3){
+			player.inv[player.inv[10]][1]++;
+			pages[cur_page].map[player.y][player.x]=0;
+    	    return;
+		}
+		break;
+	case 16://brown mushroom
+		if(player.inv[player.inv[10]][0]==0){
+			player.inv[player.inv[10]]=[4,1];
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		if(player.inv[player.inv[10]][0]==4){
+			player.inv[player.inv[10]][1]++;
+			pages[cur_page].map[player.y][player.x]=0;
+     	   return;
+		}
+		break;
+	case 17://red mushroom
+		if(player.inv[player.inv[10]][0]==0){
+			player.inv[player.inv[10]]=[5,1];
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		if(player.inv[player.inv[10]][0]==5){
+			player.inv[player.inv[10]][1]++;
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		break;
+	case 24://sapling
+		if(player.inv[player.inv[10]][0]==0){
+			player.inv[player.inv[10]]=[9,1];
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		if(player.inv[player.inv[10]][0]==9){
+			player.inv[player.inv[10]][1]++;
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		break;
+	case 28://carpet
+		if(player.inv[player.inv[10]][0]==0){
+			player.inv[player.inv[10]]=[13,1];
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		if(player.inv[player.inv[10]][0]==13){
+			player.inv[player.inv[10]][1]++;
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		break;
+	case 38://raygun
+		if(player.inv[player.inv[10]][0]==0){
+			player.inv[player.inv[10]]=[19,1];
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		if(player.inv[player.inv[10]][0]==19){
+			player.inv[player.inv[10]][1]++;
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		break;
+	case 40://Cyan Thing
+		if(player.inv[player.inv[10]][0]==0){
+			player.inv[player.inv[10]]=[21,1];
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		if(player.inv[player.inv[10]][0]==21){
+			player.inv[player.inv[10]][1]++;
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		break;
+	case 43://Open Door
+		if(player.inv[player.inv[10]][0]==0){
+			player.inv[player.inv[10]]=[22,1];
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		if(player.inv[player.inv[10]][0]==22){
+			player.inv[player.inv[10]][1]++;
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		break;
+	case 2://Dither, Stone
+		if(player.inv[player.inv[10]][0]==0){
+			player.inv[player.inv[10]]=[23,1];
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		if(player.inv[player.inv[10]][0]==23){
+			player.inv[player.inv[10]][1]++;
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		break;
+	case 12://Hay Bail
+		if(player.inv[player.inv[10]][0]==0){
+			player.inv[player.inv[10]]=[24,1];
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		if(player.inv[player.inv[10]][0]==24){
+			player.inv[player.inv[10]][1]++;
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		break;
+	case 52://Walnut Fruit
+		if(player.inv[player.inv[10]][0]==0){
+			player.inv[player.inv[10]]=[25,1];
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		if(player.inv[player.inv[10]][0]==25){
+			player.inv[player.inv[10]][1]++;
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		break;
+	case 54://Walnut peels
+		if(player.inv[player.inv[10]][0]==0){
+			player.inv[player.inv[10]]=[27,1];
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		if(player.inv[player.inv[10]][0]==27){
+			player.inv[player.inv[10]][1]++;
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		break;
+	case 68://Camp Fire
+		if(player.inv[player.inv[10]][0]==0){
+			player.inv[player.inv[10]]=[41,1];
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		if(player.inv[player.inv[10]][0]==41){
+			player.inv[player.inv[10]][1]++;
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		break;
+	case 29://water
+		if(player.inv[player.inv[10]][0]==11){//Bowl
+			pages[cur_page].entities.push({
+			id:2,
+			x:player.x,
+			y:player.y,
+			char:item_char[39],
+			item:[39,1]
+			});//Bowl of water.
+			combine_items(player.x,player.y,39);
+			player.inv[player.inv[10]][1]--;
+		}
+		if(player.inv[player.inv[10]][1]<=0){
+			player.inv[player.inv[10]][0]=0;
+			player.inv[player.inv[10]][1]=0;
+		}
+		break;
+}
 if(standing_on==11){//crafting arrow
     var input=[
     -1,-1,//(35,1),(36,1)
@@ -1949,7 +2036,6 @@ if(standing_on==11){//crafting arrow
 		pages[cur_page].entities.push({id:2, char:item_char[recipies[selected].output[i][0]], x:38, y:1+i, item: recipies[selected].output[i]});
 		combine_items(38,1+i,recipies[selected].output[i][0]);
 	}
-	entity_cleanup();
 }
 }
 function drop_item(x){
@@ -2150,12 +2236,9 @@ if(pages[cur_page].entities[ptr]==undefined){
     if(pages[cur_page].entities[ptr].decay==0){
 		projectile_effect(ptr);
 		pages[cur_page].entities[ptr].id=-1;
-        entity_cleanup();
         return;
     }
-	//(x<0 || x>39 || y<0 || y>24);
 	if(hit_bounds(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)){//move entity to next page when hit edges if possible
-		//alert(projectile_check.caller);
 		var next_page=-1;
 		var dir="";
 		if(pages[cur_page].entities[ptr].x<0){//left edge, west_goto
@@ -2199,52 +2282,42 @@ if(pages[cur_page].entities[ptr]==undefined){
 		}
 	}
     var collided=projectile_entity_collide(ptr);
-    if(collided!=-1){
+    if(collided!=-1){//hits entity
         if(pages[cur_page].entities[collided].health!=undefined){
 			projectile_effect(ptr);
-            pages[cur_page].entities[collided].health-=pages[cur_page].entities[ptr].damage;
-            pages[cur_page].entities[ptr].id=-1;
-			entity_cleanup();
-            if(pages[cur_page].entities[collided].health<=0){
-                pages[cur_page].entities[collided].id=-1;
-				npc_drops(collided);
-            }
-	    	entity_cleanup();
+            pages[cur_page].entities[collided].health-=pages[cur_page].entities[ptr].damage;//inflict damage on target entity
+            pages[cur_page].entities[ptr].id=-1;//Mark projectile for deletion.
 	    	return;
         }
     }
     collided=entity_player_collide();
-    if(collided==ptr){
+    if(collided==ptr){//hits player
 		if(pages[cur_page].entities[ptr].from_player==1){//don't inflict damage on oneself.
 			return;
 		}
 		projectile_effect(ptr);
         player.health-=pages[cur_page].entities[ptr].damage;
         pages[cur_page].entities[ptr].id=-1;
-        entity_cleanup();
 		return;
     }
     if(!is_walkable(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y))){//encounters non walkable block
 		projectile_effect(ptr);
         pages[cur_page].entities[ptr].id=-1;
-        entity_cleanup();
         return;
     }
 	if(is_burnable(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)) && pages[cur_page].entities[ptr].char==35){//amber encounters burnable block
 		projectile_effect(ptr,"burn");
         pages[cur_page].entities[ptr].id=-1;
-        entity_cleanup();
         return;
     }
 }
-//asdf
 function projectile(ptr){//Code for making projectiles move and interact with ThInGs
 	projectile_check(ptr);
 	projectile_step(ptr);
 	projectile_check(ptr);
 }
 
-function remove_char(x,y){//qwer
+function remove_char(x,y){
     switch(char_value(x,y)){
         case 18://fence
             if(player.inv[player.inv[10]][0]==0){
@@ -2255,7 +2328,7 @@ function remove_char(x,y){//qwer
                 player.inv[player.inv[10]][1]++;
                 pages[cur_page].map[y][x]=0;
             }
-            break;
+            return true;
 		case 12://Hay
             if(player.inv[player.inv[10]][0]==0){
                 player.inv[player.inv[10]][0]=24;
@@ -2265,7 +2338,7 @@ function remove_char(x,y){//qwer
                 player.inv[player.inv[10]][1]++;
                 pages[cur_page].map[y][x]=0;
             }
-            break;
+            return true;
 		case 54://peels
             if(player.inv[player.inv[10]][0]==0){
                 player.inv[player.inv[10]][0]=27;
@@ -2275,7 +2348,7 @@ function remove_char(x,y){//qwer
                 player.inv[player.inv[10]][1]++;
                 pages[cur_page].map[y][x]=0;
             }
-			break;
+			return true;
 		case 58://Bookshelf
             if(player.inv[player.inv[10]][0]==0){
                 player.inv[player.inv[10]][0]=31;
@@ -2285,7 +2358,7 @@ function remove_char(x,y){//qwer
                 player.inv[player.inv[10]][1]++;
                 pages[cur_page].map[y][x]=0;
             }
-			break;
+			return true;
 		case 64://Iron wall
             if(player.inv[player.inv[10]][0]==0){
                 player.inv[player.inv[10]][0]=37;
@@ -2295,7 +2368,7 @@ function remove_char(x,y){//qwer
                 player.inv[player.inv[10]][1]++;
                 pages[cur_page].map[y][x]=0;
             }
-			break;
+			return true;
 		case 65://Copper wall
             if(player.inv[player.inv[10]][0]==0){
                 player.inv[player.inv[10]][0]=38;
@@ -2305,13 +2378,13 @@ function remove_char(x,y){//qwer
                 player.inv[player.inv[10]][1]++;
                 pages[cur_page].map[y][x]=0;
             }
-            break;
+            return true;
 		case 42://closed door
 			pages[cur_page].map[y][x]=43;
-			break;
+			return true;
 		case 43://open door
 			pages[cur_page].map[y][x]=42;
-			break;
+			return true;
     }
 }
 
@@ -2330,6 +2403,22 @@ switch(x){
     case "right":
 	is_entity=entity_collide_xy(player.x+1,player.y);
         break;
+}
+if(is_entity==-1 || pages[cur_page].entities[is_entity].id!=1){//no entity
+switch(x){
+    case "up":
+        if(remove_char(player.x,player.y-1)){return;}
+        break;
+    case "down":
+        if(remove_char(player.x,player.y+1)){return;};
+        break;
+    case "left":
+        if(remove_char(player.x-1,player.y)){return;};
+        break;
+    case "right":
+        if(remove_char(player.x+1,player.y)){return;};
+        break;
+}
 }
 switch(player.inv[player.inv[10]][0]){
 	case 17://fire bow
@@ -2356,16 +2445,16 @@ switch(player.inv[player.inv[10]][0]){
 	case 18://spear
 	switch(x){
 	    case "up":
- 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:37, direction:-1, damage:player.strength*5, decay:3, from_player:1});
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:37, direction:-1, damage:player.strength*20, decay:3, from_player:1});
  	       break;
  	   case "down":
- 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:37, direction:-1, damage:player.strength*5, decay:3, from_player:1});
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:37, direction:-1, damage:player.strength*20, decay:3, from_player:1});
  	       break;
  	   case "left":
-  	       pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:37, direction:-1, damage:player.strength*5, decay:3, from_player:1});
+  	       pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:37, direction:-1, damage:player.strength*20, decay:3, from_player:1});
   	       break;
   	   case "right":
-   	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:37, direction:-1, damage:player.strength*5, decay:3, from_player:1});
+   	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:37, direction:-1, damage:player.strength*20, decay:3, from_player:1});
    	       break;
 	}
 	inv_cleanup();
@@ -2390,20 +2479,20 @@ switch(player.inv[player.inv[10]][0]){
    	       break;
 	}
 	inv_cleanup();
-	break;
+	break;39
 	case 20://Poisonous Spear
 	switch(x){
 	    case "up":
- 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:39, direction:-1, damage:player.strength*10, decay:3, from_player:1});
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y-1, char:39, direction:-1, damage:player.strength*30, decay:3, from_player:1});
  	       break;
  	   case "down":
- 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:39, direction:-1, damage:player.strength*10, decay:3, from_player:1});
+ 	       pages[cur_page].entities.push({id:3, x:player.x, y:player.y+1, char:39, direction:-1, damage:player.strength*30, decay:3, from_player:1});
  	       break;
  	   case "left":
-  	       pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:39, direction:-1, damage:player.strength*10, decay:3, from_player:1});
+  	       pages[cur_page].entities.push({id:3, x:player.x-1, y:player.y, char:39, direction:-1, damage:player.strength*30, decay:3, from_player:1});
   	       break;
   	   case "right":
-   	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:39, direction:-1, damage:player.strength*10, decay:3, from_player:1});
+   	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:39, direction:-1, damage:player.strength*30, decay:3, from_player:1});
    	       break;
 	}
 	break;
@@ -2421,23 +2510,6 @@ switch(player.inv[player.inv[10]][0]){
   		  case "right":
    		     pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:19, direction:-1, damage:player.strength, decay:3, from_player:1});
     	    break;
-}
-}
-//}
-if(is_entity==-1){//no entity
-switch(x){
-    case "up":
-        remove_char(player.x,player.y-1);
-        break;
-    case "down":
-        remove_char(player.x,player.y+1);
-        break;
-    case "left":
-        remove_char(player.x-1,player.y);
-        break;
-    case "right":
-        remove_char(player.x+1,player.y);
-        break;
 }
 }
 }
@@ -2464,14 +2536,23 @@ for(var i=0;i<properties.breakable.length;i++){
 }
 switch(player.inv[player.inv[10]][0]){//item id
     case 12: //Mushroom Stew
-        if(player.health==20){
+        if(player.health>=20){
             break;
         }
 	player.health+=5;
         if(player.health>20 && player.creative==0){
             player.health=20;
         }
+		
 	player.inv[player.inv[10]][1]--;
+	pages[cur_page].entities.push({
+		id:2,
+		x:player.x,
+		y:player.y,
+		char:item_char[11],
+		item:[11,1]
+		});//drop bowl
+		combine_items(player.x,player.y,11);
 	break;
 	case 16://amber
 		if(char_value(player.x,player.y)==0){
@@ -2486,7 +2567,7 @@ switch(player.inv[player.inv[10]][0]){//item id
 		}
 		break;
     case 26://walnut stone
-        if(player.health==20){
+        if(player.health>=20){
             break;
         }
 	player.health+=10;
@@ -2504,7 +2585,7 @@ switch(player.inv[player.inv[10]][0]){//item id
 		inv_cleanup();
 		break;
 	case 34: //Meat
-        if(player.health==20){
+        if(player.health>=20){
             break;
         }
 		player.health+=2;
@@ -2514,7 +2595,7 @@ switch(player.inv[player.inv[10]][0]){//item id
 		player.inv[player.inv[10]][1]--;
 		break;
 	case 36: //Cooked Meat
-        if(player.health==20){
+        if(player.health>=20){
             break;
         }
 		player.health+=10;
@@ -2523,6 +2604,31 @@ switch(player.inv[player.inv[10]][0]){//item id
         }
 		player.inv[player.inv[10]][1]--;
 		break;
+	case 40: //Suspicious Stew
+		player.inv[player.inv[10]][1]--;
+		player.health+=20;
+        if(player.health>20 && player.creative==0){
+            player.health=20;
+        }
+		pages[cur_page].entities.push({
+		id:2,
+		x:player.x,
+		y:player.y,
+		char:item_char[11],
+		item:[11,1]
+		});//drop bowl
+		combine_items(player.x,player.y,11);
+		var choice=Math.floor(Math.random()*65535)%3;
+        switch(choice){
+			case 0://strength boost
+				player.strength=1.5;
+				break;
+			case 1://Health boost
+				player.health=40;
+				break;
+			case 2://Nothing
+				break;
+		}
 }
 inv_cleanup();
 }
@@ -2698,9 +2804,15 @@ function death(){
     key_manager=function(){};
 }
 
-function pathfind_step(x1,y1,x2,y2){
+function pathfind_step(x1,y1,x2,y2,og_x,og_y){
 var nodes=[];
-var dir=""
+var dir="";
+if(og_x==undefined){
+	og_x=20;
+}
+if(og_y==undefined){
+	og_y=12;
+}
 nodes.push({x:x1,y:y1,h:Math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))});
 if(is_walkable(char_value(x1,y1-1))){//up
 	nodes.push({x:x1,y:y1-1,h:Math.sqrt((x2-x1)*(x2-x1)+(y2-(y1-1))*(y2-(y1-1)))});
@@ -2909,6 +3021,9 @@ switch(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].
 	case 32:
 		pages[cur_page].entities[ptr].health--;
 		break;
+	case 68://Camp Fire
+		pages[cur_page].entities[ptr].health--;
+		break;
 }
 }
 
@@ -2973,13 +3088,17 @@ function npc(ptr){//make entity move and interact with environment.
             next_xy=pathfind_step(pages[cur_page].entities[ptr].x,
             pages[cur_page].entities[ptr].y,
             pages[cur_page].entities[ptr].dest_x,
-            pages[cur_page].entities[ptr].dest_y);
+            pages[cur_page].entities[ptr].dest_y,
+			pages[cur_page].entities[ptr].og_x,
+			pages[cur_page].entities[ptr].og_y);
             break;
         case 1://hostile
             next_xy=pathfind_step(pages[cur_page].entities[ptr].x,
             pages[cur_page].entities[ptr].y,
             player.x,
-            player.y);
+            player.y,
+            pages[cur_page].entities[ptr].og_x,
+            pages[cur_page].entities[ptr].og_y);
             if(next_xy[0]==player.x && next_xy[1]==player.y){
                 entity_attack(ptr);
                 return;
@@ -2992,13 +3111,6 @@ function npc(ptr){//make entity move and interact with environment.
     pages[cur_page].entities[ptr].x=next_xy[0];pages[cur_page].entities[ptr].y=next_xy[1];//for slipping.
 	entity_standing_on(ptr);
 	entity_edge(ptr);
-}
-
-function check_health(ptr){
-    if(pages[cur_page].entities[ptr].health<=0){
-        pages[cur_page].entities[ptr].id=-1;
-        entity_cleanup();
-    }
 }
 
 function slip(){
@@ -3061,7 +3173,6 @@ function tick(){
                 break;
             case 1:
                 npc(i);
-                check_health(i);
                 break;
         }
     }
@@ -3099,6 +3210,52 @@ function is_burnable(x){
     return false;
 }
 
+function adj_empty(x,y){
+if(char_value(x,y-1)==0){//up
+	return [x,y-1];
+}
+if(char_value(x+1,y)==0){//right
+	return [x+1,y];
+}
+if(char_value(x,y+1)==0){//down
+	return [x,y+1];
+}
+if(char_value(x-1,y)==0){//left
+	return [x-1,y];
+}
+return [x,y];
+}
+
+function crisp_item(ptr,x,y){
+switch(pages[cur_page].entities[ptr].item[0]){
+	case 34://Meat
+		pages[cur_page].entities[ptr].item[1]--;
+		pages[cur_page].entities.push({
+		id:2,
+		x:adj_empty(x,y)[0],
+		y:adj_empty(x,y)[1],
+		char:item_char[36],
+		item:[36,1]
+		});//cooked meat
+		combine_items(adj_empty(x,y)[0],adj_empty(x,y)[1],36);
+		if(pages[cur_page].entities[ptr].item[1]<=0){
+			pages[cur_page].entities[ptr].id=-1;
+		}
+		break;
+	case 36://cooked meat
+		break;
+	case 33://iron
+		break;
+	case 35://Copper
+		break;
+	case 21://cyan thing
+		break;
+	default:
+		pages[cur_page].entities[ptr].id=-1;
+		break;
+}
+}
+
 function do_fire(x,y){
 	//check for flamable objects around.
 	var spread=0;
@@ -3127,27 +3284,29 @@ function do_fire(x,y){
 		}
 	}
 	if(spread==0){
+		if(char_value(x,y)==68){
+			0;
+		}else{
 		pages[cur_page].map[y][x]++;
 		if(char_value(x,y)>=33){
 			pages[cur_page].map[y][x]=0;
+		}
 		}
 	}
 	//check for entities
 	for(var i=0;i<pages[cur_page].entities.length;i++){
 		if(pages[cur_page].entities[i].x==x &&pages[cur_page].entities[i].y==y){
 		switch(pages[cur_page].entities[i].id){
-			/*case 1://npc
-				pages[cur_page].entities[i].health--;
-				break;*/
+			case 1://npc
+				break;
 			case 2://dropped item
-				pages[cur_page].entities[i].id=-1;
+				crisp_item(i,x,y);
 				break;
 			case 3://projectile
 				break;
 		}
 		}
 	}
-	entity_cleanup();
 }
 
 function enemy_chance(){return Math.floor(-290.0146493+0.014649182*tick1-0.000000149*tick1*tick1);}
@@ -3319,7 +3478,7 @@ if(tick1>=32767){
                 return;
             }
             if(can_spawn(cv)){
-			 pages[cur_page].entities.push({id:1, char:4, x:random_x,y:random_y, brain: {no_ai:0, hostile: 1}, health:20, strength:1, attack_cooldown:0, dest_x:1, dest_y:1});
+			 pages[cur_page].entities.push({id:1, char:4, x:random_x,y:random_y, brain: {no_ai:0, hostile: 1}, health:20, strength:1, attack_cooldown:0, og_x:random_x, og_y:random_y});
             }
 		}
 	}
@@ -3341,7 +3500,7 @@ function fireing(){
 var limit=5;
 for(var x=0;x<40;x++){
 	for(var y=0;y<25;y++){
-		if(char_value(x,y)==30 || char_value(x,y)==31 || char_value(x,y)==32){
+		if(char_value(x,y)==30 || char_value(x,y)==31 || char_value(x,y)==32 || char_value(x,y)==68){//Fire, Camp Fire
 			if(limit==0){
 				return;
 			}
@@ -3357,9 +3516,22 @@ function refresh(){//Dang it, no multiple setintervals...
 if(paused==1){
 	return;
 }
+//Entity and npc cleanup
+for(var i=0;i<pages[cur_page].entities.length;i++){
+	switch(pages[cur_page].entities[i].id){
+		case 1://npc
+			if(pages[cur_page].entities[i].health<=0){//npc death.
+				pages[cur_page].entities[i].id=-1;
+				npc_drops(i);
+			}
+		default:
+			break;
+	}
+}
+entity_cleanup();
 draw_map(pages[cur_page]);
 //status bar
-var player_text="Name: "+player.name+" Health: "+player.health+" X: "+player.x+" Y: "+player.y+ " Text Page: "+cur_page+" Time: "+tick1+" "+pages[cur_page].metadata.x+","+pages[cur_page].metadata.y;
+var player_text="Name: "+player.name+" Health: "+player.health+" Strength: "+player.strength+" X: "+player.x+" Y: "+player.y+ " Text Page: "+cur_page+" Time: "+tick1+" "+pages[cur_page].metadata.x+","+pages[cur_page].metadata.y;
 document.getElementById("player").textContent=player_text;
 var status_bar="Inventory: ";
 for(var i=0;i<10;i++){
