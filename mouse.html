@@ -2,7 +2,7 @@
 <html>
 <head>
 <!-- sound effects -->
-<audio id="sfx" src="./sounds/raygun_bang.wav" type="audio/wav"></audio>
+<audio id="sfx" oncanplay="sfx_play()" type="audio/wav"></audio>
 <title>Mouse Simulator 2D</title>
 </head>
 <body>
@@ -20,22 +20,15 @@
 </body>
 <script id="lzutf8" src="./lzutf8.min.js"></script>
 <script>
-//Mouse Simulator 2D v0.40
+//Mouse Simulator 2D v0.41
 /*
-Tweaked Spears.
-When arrow keys are used to remove blocks, open doors, etc, Projectiles are no longer created.
-Bowl of Water.
-Suspicious Stew.
-Stews drop bowls.
-Pathfind tweak.
-Camp Fire
-Fixed bug where characters with items on top could not be picked up.
-Fixed bug where npc's would not drop items if damaged by fire.
-Now gives 3 fences on crafting.
-entity_cleanup() mostly only called in refresh() function. Possible performance improvement.
-Entities with health <= 0 only marked id of -1 in refresh() function. Possible performance improvement.
-Code Cleanup.
-Struct chance for raygun and cyan thing decreased.
+Sawdust
+MDF
+Hay yeilds 3 string now.
+Forgot a "break" in switch
+Sound effect stuff and firefox shenanigans.
+Stained MDF.
+Carpet is now brown.
 */
 if(LZUTF8==undefined){
 	alert("Unable to fetch 'lzutf8.min.js'. This is required to compress/decompress saves. Please make sure Mouse Simulator 2D can fetch this file.");
@@ -70,17 +63,32 @@ function set_scaling(scale){
 	document.getElementById("cga").style.width=320*scale+"px";
 	document.getElementById("cga").style.height=200*scale+"px";
 }
-
+var _sfx=document.getElementById("sfx");
+function sfx_play(){
+	_sfx.play();
+}
 function sfx(sound){
-var x=document.getElementById("sfx");
+if(_sfx.paused==false){
+	return;
+}
 	switch(sound){
 		case "raygun_bang":
-			x.src="./sounds/raygun_bang.wav";
+			_sfx.src="./sounds/raygun_bang.wav";
 			break;
 		case "raygun_cooldown":
-			x.src="./sounds/raygun_cooldown.wav";
+			_sfx.src="./sounds/raygun_cooldown.wav";
+			break;
+		case "player_damaged":
+			switch(Math.floor(Math.random()*65535)%2){
+				case 0:
+					_sfx.src="./sounds/squeak0.wav";
+					break;
+				case 1:
+					_sfx.src="./sounds/squeak1.wav";
+					break;
+			}
+			break;
 	}
-x.play();
 }
 
 var cur_page=0;
@@ -459,7 +467,7 @@ var font=[
 1,0,1,0,1,0,1,0,
 0,1,0,1,0,1,0,1,
 1,0,1,0,1,0,1,0,
-0,1,0,1,0,1,0,1,100,100,100,255,255,255
+0,1,0,1,0,1,0,1,193,113,45,255,255,255
 ],
 //29, water
 [
@@ -901,13 +909,101 @@ var font=[
 0,0,0,1,1,0,0,0,
 0,1,1,0,0,1,1,0,200,0,0,255,255,255
 ],
+//69, Saw Dust
+[
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,1,0,1,0,0,
+0,0,1,0,1,0,1,0,
+0,1,0,1,0,1,0,0,
+0,0,1,0,1,0,1,0,
+0,0,0,1,0,1,0,0,185,122,87,255,255,255
+],
+//70, Bowl of Glue
+[
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,0,
+0,0,1,1,1,1,0,0,
+0,0,0,1,1,0,0,0,200,200,0,255,255,255
+],
+//71, mdf puddy
+[
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,1,1,1,0,0,
+0,0,1,1,1,1,1,0,
+0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,0,
+0,0,1,1,1,1,0,0,185,122,87,255,255,255
+],
+//72, mdf
+[
+1,1,1,1,0,1,1,1,
+0,0,0,0,0,0,0,0,
+1,1,0,1,1,1,1,1,
+0,0,0,0,0,0,0,0,
+1,1,1,1,1,0,1,1,
+0,0,0,0,0,0,0,0,
+1,1,1,0,1,1,1,1,
+0,0,0,0,0,0,0,0,185,122,87,200,137,102
+],
+//73, Grind Stone
+[
+0,0,0,0,0,0,0,0,
+0,0,0,1,1,1,0,0,
+0,0,1,1,1,1,0,0,
+0,0,1,1,1,1,0,0,
+0,0,1,1,1,0,0,0,
+0,0,0,0,0,0,0,0,
+0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,0,120,120,120,255,255,255
+],
+//74, green stained mdf
+[
+1,1,1,1,0,1,1,1,
+0,0,0,0,0,0,0,0,
+1,1,0,1,1,1,1,1,
+0,0,0,0,0,0,0,0,
+1,1,1,1,1,0,1,1,
+0,0,0,0,0,0,0,0,
+1,1,1,0,1,1,1,1,
+0,0,0,0,0,0,0,0,93,141,46,108,156,61
+],
+//75, Red stained mdf
+[
+1,1,1,1,0,1,1,1,
+0,0,0,0,0,0,0,0,
+1,1,0,1,1,1,1,1,
+0,0,0,0,0,0,0,0,
+1,1,1,1,1,0,1,1,
+0,0,0,0,0,0,0,0,
+1,1,1,0,1,1,1,1,
+0,0,0,0,0,0,0,0,220,61,44,235,76,59
+],
+//76, Blue Stained mdf
+[
+1,1,1,1,0,1,1,1,
+0,0,0,0,0,0,0,0,
+1,1,0,1,1,1,1,1,
+0,0,0,0,0,0,0,0,
+1,1,1,1,1,0,1,1,
+0,0,0,0,0,0,0,0,
+1,1,1,0,1,1,1,1,
+0,0,0,0,0,0,0,0,93,189,171,108,204,186
+],
 ];
 var properties={
-walkable:[0,2,6,7,8,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40,43,44,45,46,47,48,49,50,51,52,54,68],
-not_spawnable:[2,28,29,30,31,32,43,68],
-burnable:[12,13,14,15,18,24,28,42,43,45,46,47,48,49,50,51],
+walkable:[0,2,6,7,8,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40,43,44,45,46,47,48,49,50,51,52,54,68,73],
+not_spawnable:[2,28,29,30,31,32,43,68,73],
+burnable:[12,13,14,15,18,24,28,42,43,45,46,47,48,49,50,51,72,74,75,76],
 bangable:[18,42,43,12,5],
-breakable:[3,4,5,6,9,13,21,22,24,25,27,31,37,38,41],
+breakable:[3,4,5,6,9,13,21,22,24,25,27,31,37,38,41,45,46,47,48,49],
 bonemealable:[52,51,50,49,48,47,46,24,17,16,15,13]
 };
 
@@ -964,6 +1060,14 @@ var item_char=[
 66,//Bowl of Water,39
 67,//Suspicious Stew,40
 68,//Camp Fire,41
+69,//Saw Dust,42
+70,//Bowl of Glue,43
+71,//mdf puddy,44
+72,//mdf,45
+73,//Grind Stone,46
+74,//Green Stained MDF,47
+75,//Red Stained MDF,48
+76,//Blue Stained MDF,49
 ];
 
 var item_names=[
@@ -1008,7 +1112,15 @@ var item_names=[
 "Copper Wall",
 "Bowl of Water",
 "Suspicious Stew",
-"Camp Fire"
+"Camp Fire",
+"Saw Dust",
+"Bowl of Glue",
+"MDF Puddy",
+"MDF",
+"Grind Stone",
+"Green Stained MDF",
+"Red Stained MDF",
+"Blue Stained MDF"
 ];
 //crafting
 var recipies=[
@@ -1062,27 +1174,27 @@ output:[[7,1],[10,1]]
 },
 {//hay to string
 input_id:[2,0,0,0,0,0],
-output:[[8,1]]
+output:[[8,3]]
 },
 {//hay to string
 input_id:[0,2,0,0,0,0],
-output:[[8,1]]
+output:[[8,3]]
 },
 {//hay to string
 input_id:[0,0,2,0,0,0],
-output:[[8,1]]
+output:[[8,3]]
 },
 {//hay to string
 input_id:[0,0,0,2,0,0],
-output:[[8,1]]
+output:[[8,3]]
 },
 {//hay to string
 input_id:[0,0,0,0,2,0],
-output:[[8,1]]
+output:[[8,3]]
 },
 {//hay to string
 input_id:[0,0,0,0,0,2],
-output:[[8,1]]
+output:[[8,3]]
 },
 {//2 sticks + 1 string to fence
 input_id:[7,0,8,0,7,0],
@@ -1236,8 +1348,8 @@ output:[[32,1]]
 input_id:[8,32,32,32,0,0],
 output:[[30,1]]
 },
-{//4 Sticks+2 Books to Bookshelf
-input_id:[7,7,30,30,7,7],
+{//4 MDF+2 Books to Bookshelf
+input_id:[45,45,30,30,45,45],
 output:[[31,1]],
 },
 {//1 meat+amber to cooked meat.
@@ -1312,6 +1424,46 @@ output:[[40,1]],
 input_id:[16,7,7,0,0,0],
 output:[[41,1]],
 },
+{//stone+stick to sawdust+stone
+input_id:[23,7,0,0,0,0],
+output:[[42,3],[23,1]]
+},
+{//stone+fence to sawdust+stone
+input_id:[23,6,0,0,0,0],
+output:[[42,3],[23,1]]
+},
+{//stone+bowl to sawdust+stone
+input_id:[23,11,0,0,0,0],
+output:[[42,3],[23,1]]
+},
+{//stone+door to sawdust+stone
+input_id:[23,22,0,0,0,0],
+output:[[42,3],[23,1]]
+},
+{//Bowl of Water+fibers to bowl of glue
+input_id:[39,29,0,0,0,0],
+output:[[43,1]]
+},
+{//bowl of glue+sawdust to mdf puddy+bowl
+input_id:[43,42,0,0,0,0],
+output:[[44,1],[11,1]]
+},
+{//Stone+iron to Grind Stone
+input_id:[23,0,33,0,0,0],
+output:[[46,1]]
+},
+{//MDF+walnut peels to Green Stained MDF
+input_id:[45,27,0,0,0,0],
+output:[[47,1]]
+},
+{//MDF+walnut peels to Red Stained MDF
+input_id:[45,5,0,0,0,0],
+output:[[48,1]]
+},
+{//MDF+walnut peels to Red Stained MDF
+input_id:[45,21,0,0,0,0],
+output:[[49,1]]
+}
 ];
 
 var struct=[
@@ -1435,6 +1587,11 @@ function draw_map(){
 	//player
 	get_font(3);
 	ctx.putImageData(char,player.x*8,player.y*8);
+}
+
+function damage_player(amount){
+	player.health-=amount;
+	sfx("player_damaged");
 }
 
 function item_roulette(drop_list,_x,_y){
@@ -1960,6 +2117,18 @@ switch(standing_on){
 			return;
 		}
 		break;
+	case 73://Camp Fire
+		if(player.inv[player.inv[10]][0]==0){
+			player.inv[player.inv[10]]=[46,1];
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		if(player.inv[player.inv[10]][0]==46){
+			player.inv[player.inv[10]][1]++;
+			pages[cur_page].map[player.y][player.x]=0;
+			return;
+		}
+		break;
 	case 29://water
 		if(player.inv[player.inv[10]][0]==11){//Bowl
 			pages[cur_page].entities.push({
@@ -2296,7 +2465,7 @@ if(pages[cur_page].entities[ptr]==undefined){
 			return;
 		}
 		projectile_effect(ptr);
-        player.health-=pages[cur_page].entities[ptr].damage;
+	damage_player(pages[cur_page].entities[ptr].damage);
         pages[cur_page].entities[ptr].id=-1;
 		return;
     }
@@ -2375,6 +2544,46 @@ function remove_char(x,y){
                 pages[cur_page].map[y][x]=0;
             }
             if(player.inv[player.inv[10]][0]==38){
+                player.inv[player.inv[10]][1]++;
+                pages[cur_page].map[y][x]=0;
+            }
+            return true;
+		case 72://MDF
+            if(player.inv[player.inv[10]][0]==0){
+                player.inv[player.inv[10]][0]=45;
+                pages[cur_page].map[y][x]=0;
+            }
+            if(player.inv[player.inv[10]][0]==45){
+                player.inv[player.inv[10]][1]++;
+                pages[cur_page].map[y][x]=0;
+            }
+            return true;
+		case 74://Green Stained MDF
+            if(player.inv[player.inv[10]][0]==0){
+                player.inv[player.inv[10]][0]=47;
+                pages[cur_page].map[y][x]=0;
+            }
+            if(player.inv[player.inv[10]][0]==47){
+                player.inv[player.inv[10]][1]++;
+                pages[cur_page].map[y][x]=0;
+            }
+            return true;
+		case 75://Red Stained MDF
+            if(player.inv[player.inv[10]][0]==0){
+                player.inv[player.inv[10]][0]=48;
+                pages[cur_page].map[y][x]=0;
+            }
+            if(player.inv[player.inv[10]][0]==48){
+                player.inv[player.inv[10]][1]++;
+                pages[cur_page].map[y][x]=0;
+            }
+            return true;
+		case 76://Red Stained MDF
+            if(player.inv[player.inv[10]][0]==0){
+                player.inv[player.inv[10]][0]=49;
+                pages[cur_page].map[y][x]=0;
+            }
+            if(player.inv[player.inv[10]][0]==49){
                 player.inv[player.inv[10]][1]++;
                 pages[cur_page].map[y][x]=0;
             }
@@ -3159,7 +3368,7 @@ entity_cleanup();
 }
 
 function fire_damage(){
-	player.health--;
+	damage_player(1);
 }
 
 function tick(){
@@ -3238,11 +3447,21 @@ switch(pages[cur_page].entities[ptr].item[0]){
 		item:[36,1]
 		});//cooked meat
 		combine_items(adj_empty(x,y)[0],adj_empty(x,y)[1],36);
-		if(pages[cur_page].entities[ptr].item[1]<=0){
-			pages[cur_page].entities[ptr].id=-1;
-		}
+		break;
+	case 44://MDF puddy
+		pages[cur_page].entities[ptr].item[1]--;
+		pages[cur_page].entities.push({
+		id:2,
+		x:adj_empty(x,y)[0],
+		y:adj_empty(x,y)[1],
+		char:item_char[45],
+		item:[45,1]
+		});//MDF
+		combine_items(adj_empty(x,y)[0],adj_empty(x,y)[1],45);
 		break;
 	case 36://cooked meat
+		break;
+	case 45://mdf
 		break;
 	case 33://iron
 		break;
@@ -3251,7 +3470,7 @@ switch(pages[cur_page].entities[ptr].item[0]){
 	case 21://cyan thing
 		break;
 	default:
-		pages[cur_page].entities[ptr].id=-1;
+		pages[cur_page].entities[ptr].item[1]--;
 		break;
 }
 }
@@ -3496,6 +3715,106 @@ switch(char_value(random_x,random_y)){
 }
 }
 
+function grind_item(x,y){
+var item_ptrs=[];
+for(var i=0;i<pages[cur_page].entities.length;i++){
+	if(pages[cur_page].entities[i].id==2 && pages[cur_page].entities[i].x==x && pages[cur_page].entities[i].y==y){
+		item_ptrs.push(i);
+	}
+}
+for(var i=0;i<item_ptrs.length;i++){
+	switch(pages[cur_page].entities[item_ptrs[i]].item[0]){
+		case 7://stick
+			pages[cur_page].entities[item_ptrs[i]].item[1]--;
+			pages[cur_page].entities.push({
+			id:2,
+			x:adj_empty(x,y)[0],
+			y:adj_empty(x,y)[1],
+			char:item_char[42],
+			item:[42,1]
+			});//Sawdust
+			combine_items(adj_empty(x,y)[0],adj_empty(x,y)[1],42);
+			break;
+		case 11://bowl
+			pages[cur_page].entities[item_ptrs[i]].item[1]--;
+			pages[cur_page].entities.push({
+			id:2,
+			x:adj_empty(x,y)[0],
+			y:adj_empty(x,y)[1],
+			char:item_char[42],
+			item:[42,1]
+			});
+			combine_items(adj_empty(x,y)[0],adj_empty(x,y)[1],42);
+			break;
+		case 22://door
+			pages[cur_page].entities[item_ptrs[i]].item[1]--;
+			pages[cur_page].entities.push({
+			id:2,
+			x:adj_empty(x,y)[0],
+			y:adj_empty(x,y)[1],
+			char:item_char[42],
+			item:[42,1]
+			});
+			combine_items(adj_empty(x,y)[0],adj_empty(x,y)[1],42);
+			break;
+		case 26://walnut stone
+			pages[cur_page].entities[item_ptrs[i]].item[1]--;
+			pages[cur_page].entities.push({
+			id:2,
+			x:adj_empty(x,y)[0],
+			y:adj_empty(x,y)[1],
+			char:item_char[42],
+			item:[42,1]
+			});
+			combine_items(adj_empty(x,y)[0],adj_empty(x,y)[1],42);
+			break;
+		case 6://fence
+			pages[cur_page].entities[item_ptrs[i]].item[1]--;
+			pages[cur_page].entities.push({
+			id:2,
+			x:adj_empty(x,y)[0],
+			y:adj_empty(x,y)[1],
+			char:item_char[42],
+			item:[42,1]
+			});
+			combine_items(adj_empty(x,y)[0],adj_empty(x,y)[1],42);
+			break;
+		case 10://leaves
+			pages[cur_page].entities[item_ptrs[i]].item[1]--;
+			pages[cur_page].entities.push({
+			id:2,
+			x:adj_empty(x,y)[0],
+			y:adj_empty(x,y)[1],
+			char:item_char[29],
+			item:[29,1]
+			});//Fibers
+			combine_items(adj_empty(x,y)[0],adj_empty(x,y)[1],42);
+			break;
+		case 27://Walnut Peels
+			pages[cur_page].entities[item_ptrs[i]].item[1]--;
+			pages[cur_page].entities.push({
+			id:2,
+			x:adj_empty(x,y)[0],
+			y:adj_empty(x,y)[1],
+			char:item_char[29],
+			item:[29,1]
+			});
+			combine_items(adj_empty(x,y)[0],adj_empty(x,y)[1],42);
+			break;
+	}
+}
+}
+
+function grinding(){
+for(var x=0;x<40;x++){
+	for(var y=0;y<25;y++){
+		if(char_value(x,y)==73){//grind stone
+			grind_item(x,y);
+		}
+	}
+}
+}
+
 function fireing(){
 var limit=5;
 for(var x=0;x<40;x++){
@@ -3524,6 +3843,12 @@ for(var i=0;i<pages[cur_page].entities.length;i++){
 				pages[cur_page].entities[i].id=-1;
 				npc_drops(i);
 			}
+			break;
+		case 2://dropped item
+			if(pages[cur_page].entities[i].item[1]<=0){
+				pages[cur_page].entities[i].id=-1;
+			}
+			break;
 		default:
 			break;
 	}
@@ -3552,8 +3877,9 @@ tick();
 if(tick1%40==0){//random tick
 random_tick();
 }
-if(tick1%7==0){//fire
+if(tick1%7==0){//fire, Grind Stone
 fireing();
+grinding();
 }
 }
 const interval = setInterval(function (){refresh();},67);
