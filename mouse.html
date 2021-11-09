@@ -20,15 +20,9 @@
 </body>
 <script id="lzutf8" src="./lzutf8.min.js"></script>
 <script>
-//Mouse Simulator 2D v0.41
+//Mouse Simulator 2D v0.42
 /*
-Sawdust
-MDF
-Hay yeilds 3 string now.
-Forgot a "break" in switch
-Sound effect stuff and firefox shenanigans.
-Stained MDF.
-Carpet is now brown.
+creative
 */
 if(LZUTF8==undefined){
 	alert("Unable to fetch 'lzutf8.min.js'. This is required to compress/decompress saves. Please make sure Mouse Simulator 2D can fetch this file.");
@@ -590,7 +584,7 @@ var font=[
 0,1,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,255,0,0,255,255,255
 ],
-//40, 115
+//40, Cyan Thing
 [
 0,0,0,0,0,0,1,0,
 0,1,0,0,0,0,1,0,
@@ -1004,9 +998,9 @@ not_spawnable:[2,28,29,30,31,32,43,68,73],
 burnable:[12,13,14,15,18,24,28,42,43,45,46,47,48,49,50,51,72,74,75,76],
 bangable:[18,42,43,12,5],
 breakable:[3,4,5,6,9,13,21,22,24,25,27,31,37,38,41,45,46,47,48,49],
-bonemealable:[52,51,50,49,48,47,46,24,17,16,15,13]
+bonemealable:[52,51,50,49,48,47,46,24,17,16,15,13],
+creative_noremove:[1,6,10,11],
 };
-
 var item_drops={
 enemy:[
 {chance:0.3,item_id:34,item_min:1,item_max:1},//Meat
@@ -1068,6 +1062,24 @@ var item_char=[
 74,//Green Stained MDF,47
 75,//Red Stained MDF,48
 76,//Blue Stained MDF,49
+5,//Black Wall,50
+7,//bedding 1,51
+8,//bedding 2,52
+14,//Tree leaves,53
+15,//Tree Trunk,54
+29,//Water,55
+30,//Fire 0,56
+31,//Fire 1,57
+32,//Fire 2,58
+44,//NPC Hole,59
+45,//Walnut Trunk,60
+46,//Walnut Leaves 1,61
+47,//Walnut Leaves 2,62
+48,//Walnut Leaves 3,63
+49,//Walnut Leaves 4,64
+50,//Walnut Leaves 5,65
+51,//Walnut Leaves 6,66
+2,//Dither,67
 ];
 
 var item_names=[
@@ -1120,7 +1132,25 @@ var item_names=[
 "Grind Stone",
 "Green Stained MDF",
 "Red Stained MDF",
-"Blue Stained MDF"
+"Blue Stained MDF",
+"Black Wall",
+"bedding 1",
+"bedding 2",
+"Tree Leaves",
+"Tree Trunk",
+"Water",
+"Fire 0",
+"Fire 1",
+"Fire 2",
+"NPC Hole",
+"Walnut Trunk",
+"Walnut Leaves 1",
+"Walnut Leaves 2",
+"Walnut Leaves 3",
+"Walnut Leaves 4",
+"Walnut Leaves 5",
+"Walnut Leaves 6",
+"Dither"
 ];
 //crafting
 var recipies=[
@@ -1589,7 +1619,20 @@ function draw_map(){
 	ctx.putImageData(char,player.x*8,player.y*8);
 }
 
+function item_id_from_name(str){
+	str=str.toLowerCase();
+	for(var i=0;i<item_names.length;i++){
+		if(str==item_names[i].toLowerCase()){
+			return i;
+		}
+	}
+	return -1;
+}
+
 function damage_player(amount){
+	if(player.creative==1){
+		return;
+	}
 	player.health-=amount;
 	sfx("player_damaged");
 }
@@ -1946,7 +1989,8 @@ for(var i=0;i<pages[cur_page].entities.length;i++){
 	}
 }
 //check block
-
+switch(player.creative){
+case 0://survival
 switch(standing_on){
 	case 6://teleport/goto next map
 		teleport();
@@ -2206,7 +2250,37 @@ if(standing_on==11){//crafting arrow
 		combine_items(38,1+i,recipies[selected].output[i][0]);
 	}
 }
+break;
+case 1://creative
+switch(standing_on){
+	case 6://teleport/goto next map
+		teleport();
+		break;
+	case 7://bedding
+	case 8:
+		if(tick1<=32768){
+			document.getElementById("demonic_announcer").textContent="You can only sleep at day.";
+		}else{
+			tick1=100;
+			document.getElementById("demonic_announcer").textContent="Slept and skipped to night."
+			player.strength=1;//Player strength reset after sleeping.
+		}
+		break;
+	default:
+		var _tile=char_value(player.x,player.y);
+		for(var i=0;i<properties.creative_noremove.length;i++){//prevent removing of some chars
+			if(_tile==properties.creative_noremove[i]){
+				return;
+			}
+		}
+		pages[cur_page].map[player.y][player.x]=0;
+		break;
 }
+break;
+}
+}
+
+
 function drop_item(x){
 if(player.inv[player.inv[10]][0]==0){//Don't want to be creating dropped items with item id of zero...
 	return;
@@ -2221,7 +2295,9 @@ if(x==0){//drop all
 	    y:player.y,
 	    item:player.inv[player.inv[10]]
 	    });
+		if(player.creative!=1){
 	    player.inv[player.inv[10]]=[0,0];
+		}
 		combine_items(player.x,player.y,_id);
 }
 if(x==1){//drop one
@@ -2233,10 +2309,12 @@ if(x==1){//drop one
 	    y:player.y,
 	    item:[player.inv[player.inv[10]][0],1]
 	    });
+		if(player.creative!=1){
 	    player.inv[player.inv[10]]=[player.inv[player.inv[10]][0],player.inv[player.inv[10]][1]-1];
 	    if(player.inv[player.inv[10]][1]<1){
 		player.inv[player.inv[10]]=[0,0];
 	    }
+		}
 		combine_items(player.x,player.y,_id);
 }
 if(x=="half"){
@@ -2244,6 +2322,7 @@ if(x=="half"){
 	if(half_amount<=0){
 		return;
 	}
+	if(player.creative!=1){
 	player.inv[player.inv[10]][1]-=half_amount;
 	pages[cur_page].entities.push(
 	    {
@@ -2254,6 +2333,7 @@ if(x=="half"){
 	    item:[player.inv[player.inv[10]][0],half_amount]
 	    });
 	inv_cleanup();
+	}
 	combine_items(player.x,player.y,_id);
 }
 }
@@ -2487,6 +2567,11 @@ function projectile(ptr){//Code for making projectiles move and interact with Th
 }
 
 function remove_char(x,y){
+	if(player.creative==1){
+		
+	}
+switch(player.creative){
+case 0://Survival
     switch(char_value(x,y)){
         case 18://fence
             if(player.inv[player.inv[10]][0]==0){
@@ -2595,6 +2680,30 @@ function remove_char(x,y){
 			pages[cur_page].map[y][x]=42;
 			return true;
     }
+	break;
+case 1://Creative
+	if(char_value(x,y)==0){
+		return false;
+	}
+    switch(char_value(x,y)){
+		case 42://closed door
+			pages[cur_page].map[y][x]=43;
+			return true;
+		case 43://open door
+			pages[cur_page].map[y][x]=42;
+			return true;
+		default:
+			var _tile=char_value(x,y);
+			for(var i=0;i<properties.creative_noremove.length;i++){//prevent removing of some chars
+				if(_tile==properties.creative_noremove[i]){
+					return true;
+				}
+			}
+			pages[cur_page].map[y][x]=0;
+			return true;
+    }
+	break;
+}
 }
 
 function attack(x){
@@ -2645,11 +2754,13 @@ switch(player.inv[player.inv[10]][0]){
    	       pages[cur_page].entities.push({id:3, x:player.x+1, y:player.y, char:35, direction:3, damage:player.strength*4, decay:8, from_player:1});
    	       break;
 	}
+	if(player.creative!=1){
 	player.inv[player.inv[10]][1]--;
 	if(player.inv[player.inv[10]][1]<=0){
 		player.inv[player.inv[10]]=[14,1];
 	}
 	inv_cleanup();
+	}
     break;
 	case 18://spear
 	switch(x){
@@ -2733,6 +2844,16 @@ function is_bonemealable(x){
 }
 
 function use_item(){
+if(player.creative==1){
+	var top_tile=char_value(player.x,player.y);
+	for(var i=0;i<properties.creative_noremove.length;i++){
+		if(top_tile==properties.creative_noremove[i]){
+			return;
+		}
+	}
+	pages[cur_page].map[player.y][player.x]=item_char[player.inv[player.inv[10]][0]];
+	return;
+}
 if(char_value(player.x,player.y)==0){
 for(var i=0;i<properties.breakable.length;i++){
 	if(player.inv[player.inv[10]][0]==properties.breakable[i]){
@@ -2852,7 +2973,18 @@ function cheats(){
         case "gamemode c":
 			player.tainted=1;
             player.creative=1;
+			player.strength=65535;
             player.health=Infinity;
+			player.inv[0]=[item_id_from_name("Grass"),255];
+			player.inv[1]=[item_id_from_name("red mushroom"),255];
+			player.inv[2]=[item_id_from_name("brown mushroom"),255];
+			player.inv[3]=[item_id_from_name("fence"),255];
+			player.inv[4]=[item_id_from_name("sapling"),255];
+			player.inv[5]=[item_id_from_name("carpet"),255];
+			player.inv[6]=[item_id_from_name("door"),255];
+			player.inv[7]=[item_id_from_name("stone"),255];
+			player.inv[8]=[item_id_from_name("hay bail"),255];
+			player.inv[9]=[item_id_from_name("mdf"),255];
             break;
         case "Give me what I want!":
 			player.tainted=1;
@@ -2939,6 +3071,31 @@ switch(key){
    case 39:
         attack("right");
         break;
+}
+
+if(player.creative==1){
+switch(key){//creative stuff
+	case 219://[
+		player.inv[player.inv[10]][0]--;
+		if(player.inv[player.inv[10]][0]<0){
+			player.inv[player.inv[10]][0]=0;
+		}
+		break;
+	case 221://]
+		player.inv[player.inv[10]][0]++;
+		if(player.inv[player.inv[10]][0]>=item_char.length){
+			player.inv[player.inv[10]][0]=item_char.length-1;
+		}
+		break;
+	case 220://\
+		var _item_id=item_id_from_name(prompt("Item Name?"));
+		if(_item_id==-1){
+			alert("Invalid Item Name");
+			return;
+		}
+		player.inv[player.inv[10]][0]=_item_id;
+		break;
+}
 }
 
 //inventory slot select
@@ -3848,6 +4005,15 @@ for(var i=0;i<pages[cur_page].entities.length;i++){
 			if(pages[cur_page].entities[i].item[1]<=0){
 				pages[cur_page].entities[i].id=-1;
 			}
+			if(pages[cur_page].entities[i].item[1]==null){
+				pages[cur_page].entities[i].id=-1;
+			}
+			if(pages[cur_page].entities[i].item[0]<=0){
+				pages[cur_page].entities[i].id=-1;
+			}
+			if(pages[cur_page].entities[i].item[0]>=item_char.length){
+				pages[cur_page].entities[i].id=-1;
+			}
 			break;
 		default:
 			break;
@@ -3856,15 +4022,36 @@ for(var i=0;i<pages[cur_page].entities.length;i++){
 entity_cleanup();
 draw_map(pages[cur_page]);
 //status bar
-var player_text="Name: "+player.name+" Health: "+player.health+" Strength: "+player.strength+" X: "+player.x+" Y: "+player.y+ " Text Page: "+cur_page+" Time: "+tick1+" "+pages[cur_page].metadata.x+","+pages[cur_page].metadata.y;
+var player_text;
+switch(player.creative){
+	case 0://Survival
+		player_text="Name: "+player.name+" Health: "+player.health+" Strength: "+player.strength+" X: "+player.x+" Y: "+player.y+ " Text Page: "+cur_page+" Time: "+tick1+" "+pages[cur_page].metadata.x+","+pages[cur_page].metadata.y;
+		break;
+	case 1://Creative
+		player_text="Name: "+player.name+" Creative X: "+player.x+" Y: "+player.y+ " Text Page: "+cur_page+" Time: "+tick1+" "+pages[cur_page].metadata.x+","+pages[cur_page].metadata.y;
+		break;
+}
 document.getElementById("player").textContent=player_text;
 var status_bar="Inventory: ";
-for(var i=0;i<10;i++){
-    if(player.inv[10]!=i){
-    status_bar+=i+": "+item_names[player.inv[i][0]]+" x "+player.inv[i][1]+" ";
-    }else{
-    status_bar+=i+": ("+item_names[player.inv[i][0]]+" x "+player.inv[i][1]+") ";
-    }
+switch(player.creative){
+	case 0://Survival
+	for(var i=0;i<10;i++){
+	    if(player.inv[10]!=i){
+	    status_bar+=i+": "+item_names[player.inv[i][0]]+" x "+player.inv[i][1]+" ";
+	    }else{
+	    status_bar+=i+": ("+item_names[player.inv[i][0]]+" x "+player.inv[i][1]+") ";
+	    }
+	}
+	break;
+	case 1://creative
+	for(var i=0;i<10;i++){
+	    if(player.inv[10]!=i){
+	    status_bar+=i+": "+item_names[player.inv[i][0]]+" ";
+	    }else{
+	    status_bar+=i+": ("+item_names[player.inv[i][0]]+") ";
+	    }
+	}
+	break;
 }
 document.getElementById("status").textContent=status_bar;
 tick1++;
