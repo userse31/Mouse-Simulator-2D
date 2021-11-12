@@ -20,9 +20,12 @@
 </body>
 <script id="lzutf8" src="./lzutf8.min.js"></script>
 <script>
-//Mouse Simulator 2D v0.42
+//Mouse Simulator 2D v0.43
 /*
-creative
+creative tweaks
+Tweak to how ticks are used and displayed.
+Enemy chance stuff.
+NPC Love.
 */
 if(LZUTF8==undefined){
 	alert("Unable to fetch 'lzutf8.min.js'. This is required to compress/decompress saves. Please make sure Mouse Simulator 2D can fetch this file.");
@@ -52,7 +55,6 @@ function config(){
 	}
 	saves.setItem("_bigger",bigger);
 }
-
 function set_scaling(scale){
 	document.getElementById("cga").style.width=320*scale+"px";
 	document.getElementById("cga").style.height=200*scale+"px";
@@ -88,7 +90,7 @@ if(_sfx.paused==false){
 var cur_page=0;
 var paused=0;
 var last_dir="";
-var player={brain:{gender:0.0, attraction:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0};
+var player={brain:{gender:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0};
 //inventory: [(item id),(item amount)]; player.inv[10]=selected pointer
 //maps
 var pages=[{
@@ -980,7 +982,7 @@ var font=[
 1,1,1,0,1,1,1,1,
 0,0,0,0,0,0,0,0,220,61,44,235,76,59
 ],
-//76, Blue Stained mdf
+//76, Cyan Stained mdf
 [
 1,1,1,1,0,1,1,1,
 0,0,0,0,0,0,0,0,
@@ -1007,8 +1009,7 @@ enemy:[
 {chance:0.05,item_id:33,item_min:1,item_max:1},//iron
 {chance:0.05,item_id:35,item_min:1,item_max:1},//copper
 {chance:0.01,item_id:21,item_min:1,item_max:1},//cyan thing, 115
-]
-};
+]};
 
 //items
 var item_char=[
@@ -1061,7 +1062,7 @@ var item_char=[
 73,//Grind Stone,46
 74,//Green Stained MDF,47
 75,//Red Stained MDF,48
-76,//Blue Stained MDF,49
+76,//Cyan Stained MDF,49
 5,//Black Wall,50
 7,//bedding 1,51
 8,//bedding 2,52
@@ -1079,7 +1080,6 @@ var item_char=[
 49,//Walnut Leaves 4,64
 50,//Walnut Leaves 5,65
 51,//Walnut Leaves 6,66
-2,//Dither,67
 ];
 
 var item_names=[
@@ -1132,7 +1132,7 @@ var item_names=[
 "Grind Stone",
 "Green Stained MDF",
 "Red Stained MDF",
-"Blue Stained MDF",
+"Cyan Stained MDF",
 "Black Wall",
 "bedding 1",
 "bedding 2",
@@ -1149,8 +1149,7 @@ var item_names=[
 "Walnut Leaves 3",
 "Walnut Leaves 4",
 "Walnut Leaves 5",
-"Walnut Leaves 6",
-"Dither"
+"Walnut Leaves 6"
 ];
 //crafting
 var recipies=[
@@ -1490,7 +1489,7 @@ output:[[47,1]]
 input_id:[45,5,0,0,0,0],
 output:[[48,1]]
 },
-{//MDF+walnut peels to Red Stained MDF
+{//MDF+Cyan thing to Cyan Stained MDF
 input_id:[45,21,0,0,0,0],
 output:[[49,1]]
 }
@@ -1630,10 +1629,7 @@ function item_id_from_name(str){
 }
 
 function damage_player(amount){
-	if(player.creative==1){
-		return;
-	}
-	player.health-=amount;
+	player.creative==1 ? 0 : player.health-=amount;
 	sfx("player_damaged");
 }
 
@@ -1684,9 +1680,8 @@ function combine_items(_x,_y,item_id){//Reduce memory usage and improve the user
 
 function new_npc(_x,_y,_home_x,_home_y){
 //id:1, char:3, x:24,y:5, brain: {no_ai:0, hostile: 0}, health:20, strength:1, attack_cooldown:0, dest_x:24, dest_y:15
-var new_boi={id:1, char:3, x:_x,y:_y, brain: {no_ai:0,hostile:0,identity:{gender:0,attraction:0,dysphoria:0,love_mode:0},home_x:_home_x,home_y:_home_y}, health:20, strength:1, attack_cooldown:0, dest_x:_x, dest_y:_y};
+var new_boi={id:1, char:3, x:_x,y:_y, brain: {no_ai:0,hostile:0,identity:{gender:0,dysphoria:0,love_mode:0},home_x:_home_x,home_y:_home_y}, health:20, strength:1, attack_cooldown:0, dest_x:_x, dest_y:_y};
 new_boi.brain.identity.gender=Math.floor(Math.random()*100)%2;
-new_boi.brain.identity.attraction=Math.floor(Math.random()*100)%2;
 new_boi.brain.identity.dysphoria=(Math.floor(Math.random()*100)%100)<10;
 pages[cur_page].entities.push(new_boi);
 return pages[cur_page].entities.length-1;
@@ -1972,6 +1967,20 @@ for(var i=0;i<x.length;i++){
 return true;
 }
 
+function pick_up_tile(item_id){
+player.creative==1 ? pages[cur_page].map[player.y][player.x]=0 : 0;
+if(player.inv[player.inv[10]][0]==0){
+			player.inv[player.inv[10]]=[item_id,1];
+			pages[cur_page].map[player.y][player.x]=0;
+    	    return;
+}
+if(player.inv[player.inv[10]][0]==item_id){
+	player.inv[player.inv[10]][1]++;
+	pages[cur_page].map[player.y][player.x]=0;
+    return;
+}
+}
+
 function enter_button(){
 var standing_on=pages[cur_page].map[player.y][player.x];
 var on_entity=0;
@@ -1980,6 +1989,10 @@ for(var i=0;i<pages[cur_page].entities.length;i++){
 	if(pages[cur_page].entities[i].x==player.x && pages[cur_page].entities[i].y==player.y){
 		on_entity=pages[cur_page].entities[i];
 		if(on_entity.id==2){//Pick items up.
+			if(player.creative==1){
+				pages[cur_page].entities[i].id=-1;
+				return;
+			}
 			if(on_entity.item[0]==player.inv[player.inv[10]][0] || player.inv[player.inv[10]][0]==0){
 				player.inv[player.inv[10]][0]=on_entity.item[0];
 				player.inv[player.inv[10]][1]+=on_entity.item[1];
@@ -1989,15 +2002,13 @@ for(var i=0;i<pages[cur_page].entities.length;i++){
 	}
 }
 //check block
-switch(player.creative){
-case 0://survival
 switch(standing_on){
 	case 6://teleport/goto next map
 		teleport();
 		break;
 	case 7://bedding
 	case 8:
-		if(tick1<=32768){
+		if(!(tick_hour()>=6 && tick_hour()<=17)){
 			document.getElementById("demonic_announcer").textContent="You can only sleep at day.";
 		}else{
 			tick1=100;
@@ -2006,172 +2017,46 @@ switch(standing_on){
 		}
 		break;
 	case 13://grass
-		if(player.inv[player.inv[10]][0]==0){
-			player.inv[player.inv[10]]=[3,1];
-			pages[cur_page].map[player.y][player.x]=0;
-    	    return;
-		}
-		if(player.inv[player.inv[10]][0]==3){
-			player.inv[player.inv[10]][1]++;
-			pages[cur_page].map[player.y][player.x]=0;
-    	    return;
-		}
+		pick_up_tile(3);
 		break;
 	case 16://brown mushroom
-		if(player.inv[player.inv[10]][0]==0){
-			player.inv[player.inv[10]]=[4,1];
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
-		if(player.inv[player.inv[10]][0]==4){
-			player.inv[player.inv[10]][1]++;
-			pages[cur_page].map[player.y][player.x]=0;
-     	   return;
-		}
+		pick_up_tile(4);
 		break;
 	case 17://red mushroom
-		if(player.inv[player.inv[10]][0]==0){
-			player.inv[player.inv[10]]=[5,1];
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
-		if(player.inv[player.inv[10]][0]==5){
-			player.inv[player.inv[10]][1]++;
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
+		pick_up_tile(5);
 		break;
 	case 24://sapling
-		if(player.inv[player.inv[10]][0]==0){
-			player.inv[player.inv[10]]=[9,1];
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
-		if(player.inv[player.inv[10]][0]==9){
-			player.inv[player.inv[10]][1]++;
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
+		pick_up_tile(9);
 		break;
 	case 28://carpet
-		if(player.inv[player.inv[10]][0]==0){
-			player.inv[player.inv[10]]=[13,1];
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
-		if(player.inv[player.inv[10]][0]==13){
-			player.inv[player.inv[10]][1]++;
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
+		pick_up_tile(13);
 		break;
 	case 38://raygun
-		if(player.inv[player.inv[10]][0]==0){
-			player.inv[player.inv[10]]=[19,1];
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
-		if(player.inv[player.inv[10]][0]==19){
-			player.inv[player.inv[10]][1]++;
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
+		pick_up_tile(19);
 		break;
 	case 40://Cyan Thing
-		if(player.inv[player.inv[10]][0]==0){
-			player.inv[player.inv[10]]=[21,1];
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
-		if(player.inv[player.inv[10]][0]==21){
-			player.inv[player.inv[10]][1]++;
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
+		pick_up_tile(21);
 		break;
 	case 43://Open Door
-		if(player.inv[player.inv[10]][0]==0){
-			player.inv[player.inv[10]]=[22,1];
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
-		if(player.inv[player.inv[10]][0]==22){
-			player.inv[player.inv[10]][1]++;
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
+		pick_up_tile(22);
 		break;
 	case 2://Dither, Stone
-		if(player.inv[player.inv[10]][0]==0){
-			player.inv[player.inv[10]]=[23,1];
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
-		if(player.inv[player.inv[10]][0]==23){
-			player.inv[player.inv[10]][1]++;
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
+		pick_up_tile(23);
 		break;
 	case 12://Hay Bail
-		if(player.inv[player.inv[10]][0]==0){
-			player.inv[player.inv[10]]=[24,1];
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
-		if(player.inv[player.inv[10]][0]==24){
-			player.inv[player.inv[10]][1]++;
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
+		pick_up_tile(24);
 		break;
 	case 52://Walnut Fruit
-		if(player.inv[player.inv[10]][0]==0){
-			player.inv[player.inv[10]]=[25,1];
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
-		if(player.inv[player.inv[10]][0]==25){
-			player.inv[player.inv[10]][1]++;
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
+		pick_up_tile(25);
 		break;
 	case 54://Walnut peels
-		if(player.inv[player.inv[10]][0]==0){
-			player.inv[player.inv[10]]=[27,1];
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
-		if(player.inv[player.inv[10]][0]==27){
-			player.inv[player.inv[10]][1]++;
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
+		pick_up_tile(27);
 		break;
 	case 68://Camp Fire
-		if(player.inv[player.inv[10]][0]==0){
-			player.inv[player.inv[10]]=[41,1];
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
-		if(player.inv[player.inv[10]][0]==41){
-			player.inv[player.inv[10]][1]++;
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
+		pick_up_tile(41);
 		break;
 	case 73://Camp Fire
-		if(player.inv[player.inv[10]][0]==0){
-			player.inv[player.inv[10]]=[46,1];
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
-		if(player.inv[player.inv[10]][0]==46){
-			player.inv[player.inv[10]][1]++;
-			pages[cur_page].map[player.y][player.x]=0;
-			return;
-		}
+		pick_up_tile(46);
 		break;
 	case 29://water
 		if(player.inv[player.inv[10]][0]==11){//Bowl
@@ -2188,6 +2073,16 @@ switch(standing_on){
 		if(player.inv[player.inv[10]][1]<=0){
 			player.inv[player.inv[10]][0]=0;
 			player.inv[player.inv[10]][1]=0;
+		}
+		break;
+	default:
+		if(player.creative==1){
+			for(var i=0;i<properties.creative_noremove.length;i++){
+				if(standing_on==properties.creative_noremove[i]){
+					return;
+				}
+			}
+			pages[cur_page].map[player.y][player.x]=0;
 		}
 		break;
 }
@@ -2250,36 +2145,7 @@ if(standing_on==11){//crafting arrow
 		combine_items(38,1+i,recipies[selected].output[i][0]);
 	}
 }
-break;
-case 1://creative
-switch(standing_on){
-	case 6://teleport/goto next map
-		teleport();
-		break;
-	case 7://bedding
-	case 8:
-		if(tick1<=32768){
-			document.getElementById("demonic_announcer").textContent="You can only sleep at day.";
-		}else{
-			tick1=100;
-			document.getElementById("demonic_announcer").textContent="Slept and skipped to night."
-			player.strength=1;//Player strength reset after sleeping.
-		}
-		break;
-	default:
-		var _tile=char_value(player.x,player.y);
-		for(var i=0;i<properties.creative_noremove.length;i++){//prevent removing of some chars
-			if(_tile==properties.creative_noremove[i]){
-				return;
-			}
-		}
-		pages[cur_page].map[player.y][player.x]=0;
-		break;
 }
-break;
-}
-}
-
 
 function drop_item(x){
 if(player.inv[player.inv[10]][0]==0){//Don't want to be creating dropped items with item id of zero...
@@ -2566,143 +2432,62 @@ function projectile(ptr){//Code for making projectiles move and interact with Th
 	projectile_check(ptr);
 }
 
-function remove_char(x,y){
+function item_pickup_dropoff(item_id,x,y){
 	if(player.creative==1){
-		
+		pages[cur_page].map[y][x]=0;
+		return true;
 	}
-switch(player.creative){
-case 0://Survival
-    switch(char_value(x,y)){
-        case 18://fence
-            if(player.inv[player.inv[10]][0]==0){
-                player.inv[player.inv[10]][0]=6;
-                pages[cur_page].map[y][x]=0;
-            }
-            if(player.inv[player.inv[10]][0]==6){
-                player.inv[player.inv[10]][1]++;
-                pages[cur_page].map[y][x]=0;
-            }
-            return true;
-		case 12://Hay
-            if(player.inv[player.inv[10]][0]==0){
-                player.inv[player.inv[10]][0]=24;
-                pages[cur_page].map[y][x]=0;
-            }
-            if(player.inv[player.inv[10]][0]==24){
-                player.inv[player.inv[10]][1]++;
-                pages[cur_page].map[y][x]=0;
-            }
-            return true;
-		case 54://peels
-            if(player.inv[player.inv[10]][0]==0){
-                player.inv[player.inv[10]][0]=27;
-                pages[cur_page].map[y][x]=0;
-            }
-            if(player.inv[player.inv[10]][0]==27){
-                player.inv[player.inv[10]][1]++;
-                pages[cur_page].map[y][x]=0;
-            }
-			return true;
-		case 58://Bookshelf
-            if(player.inv[player.inv[10]][0]==0){
-                player.inv[player.inv[10]][0]=31;
-                pages[cur_page].map[y][x]=0;
-            }
-            if(player.inv[player.inv[10]][0]==31){
-                player.inv[player.inv[10]][1]++;
-                pages[cur_page].map[y][x]=0;
-            }
-			return true;
-		case 64://Iron wall
-            if(player.inv[player.inv[10]][0]==0){
-                player.inv[player.inv[10]][0]=37;
-                pages[cur_page].map[y][x]=0;
-            }
-            if(player.inv[player.inv[10]][0]==37){
-                player.inv[player.inv[10]][1]++;
-                pages[cur_page].map[y][x]=0;
-            }
-			return true;
-		case 65://Copper wall
-            if(player.inv[player.inv[10]][0]==0){
-                player.inv[player.inv[10]][0]=38;
-                pages[cur_page].map[y][x]=0;
-            }
-            if(player.inv[player.inv[10]][0]==38){
-                player.inv[player.inv[10]][1]++;
-                pages[cur_page].map[y][x]=0;
-            }
-            return true;
-		case 72://MDF
-            if(player.inv[player.inv[10]][0]==0){
-                player.inv[player.inv[10]][0]=45;
-                pages[cur_page].map[y][x]=0;
-            }
-            if(player.inv[player.inv[10]][0]==45){
-                player.inv[player.inv[10]][1]++;
-                pages[cur_page].map[y][x]=0;
-            }
-            return true;
-		case 74://Green Stained MDF
-            if(player.inv[player.inv[10]][0]==0){
-                player.inv[player.inv[10]][0]=47;
-                pages[cur_page].map[y][x]=0;
-            }
-            if(player.inv[player.inv[10]][0]==47){
-                player.inv[player.inv[10]][1]++;
-                pages[cur_page].map[y][x]=0;
-            }
-            return true;
-		case 75://Red Stained MDF
-            if(player.inv[player.inv[10]][0]==0){
-                player.inv[player.inv[10]][0]=48;
-                pages[cur_page].map[y][x]=0;
-            }
-            if(player.inv[player.inv[10]][0]==48){
-                player.inv[player.inv[10]][1]++;
-                pages[cur_page].map[y][x]=0;
-            }
-            return true;
-		case 76://Red Stained MDF
-            if(player.inv[player.inv[10]][0]==0){
-                player.inv[player.inv[10]][0]=49;
-                pages[cur_page].map[y][x]=0;
-            }
-            if(player.inv[player.inv[10]][0]==49){
-                player.inv[player.inv[10]][1]++;
-                pages[cur_page].map[y][x]=0;
-            }
-            return true;
-		case 42://closed door
-			pages[cur_page].map[y][x]=43;
-			return true;
-		case 43://open door
-			pages[cur_page].map[y][x]=42;
-			return true;
+	if(player.inv[player.inv[10]][0]==0){
+            player.inv[player.inv[10]][0]=item_id;
+            pages[cur_page].map[y][x]=0;
     }
-	break;
-case 1://Creative
-	if(char_value(x,y)==0){
-		return false;
-	}
-    switch(char_value(x,y)){
-		case 42://closed door
-			pages[cur_page].map[y][x]=43;
-			return true;
-		case 43://open door
-			pages[cur_page].map[y][x]=42;
-			return true;
-		default:
-			var _tile=char_value(x,y);
-			for(var i=0;i<properties.creative_noremove.length;i++){//prevent removing of some chars
-				if(_tile==properties.creative_noremove[i]){
-					return true;
+    if(player.inv[player.inv[10]][0]==item_id){
+        player.inv[player.inv[10]][1]++;
+        pages[cur_page].map[y][x]=0;
+    }
+return true;
+}
+
+function remove_char(x,y){
+switch(char_value(x,y)){
+    case 18://fence
+		return item_pickup_dropoff(6,x,y);
+	case 12://Hay
+		return item_pickup_dropoff(24,x,y);
+	case 54://peels
+		return item_pickup_dropoff(27,x,y);
+	case 58://Bookshelf
+		return item_pickup_dropoff(31,x,y);
+	case 64://Iron wall
+		return item_pickup_dropoff(37,x,y);
+	case 65://Copper wall
+		return item_pickup_dropoff(38,x,y);
+	case 72://MDF
+		return item_pickup_dropoff(45,x,y);
+	case 74://Green Stained MDF
+		return item_pickup_dropoff(47,x,y);
+	case 75://Red Stained MDF
+		return item_pickup_dropoff(48,x,y);
+	case 76://Cyan Stained MDF
+		return item_pickup_dropoff(49,x,y);
+	case 42://closed door
+		pages[cur_page].map[y][x]=43;
+		return true;
+	case 43://open door
+		pages[cur_page].map[y][x]=42;
+		return true;
+	default:
+		if(player.creative==1){
+			var _char=char_value(x,y);//Performance optimization.
+			for(var i=0;i<properties.creative_noremove.length;i++){
+				if(_char==properties.creative_noremove[i]){
+					return false;
 				}
 			}
 			pages[cur_page].map[y][x]=0;
 			return true;
-    }
-	break;
+		}
+		break;
 }
 }
 
@@ -2844,21 +2629,11 @@ function is_bonemealable(x){
 }
 
 function use_item(){
-if(player.creative==1){
-	var top_tile=char_value(player.x,player.y);
-	for(var i=0;i<properties.creative_noremove.length;i++){
-		if(top_tile==properties.creative_noremove[i]){
-			return;
-		}
-	}
-	pages[cur_page].map[player.y][player.x]=item_char[player.inv[player.inv[10]][0]];
-	return;
-}
 if(char_value(player.x,player.y)==0){
 for(var i=0;i<properties.breakable.length;i++){
 	if(player.inv[player.inv[10]][0]==properties.breakable[i]){
 		pages[cur_page].map[player.y][player.x]=item_char[player.inv[player.inv[10]][0]];
-		player.inv[player.inv[10]][1]--;
+		player.creative==1 ? 0 : player.inv[player.inv[10]][1]--;
 		inv_cleanup();
 		return;
 	}
@@ -2874,7 +2649,7 @@ switch(player.inv[player.inv[10]][0]){//item id
             player.health=20;
         }
 		
-	player.inv[player.inv[10]][1]--;
+	player.creative==1 ? 0 : player.inv[player.inv[10]][1]--;
 	pages[cur_page].entities.push({
 		id:2,
 		x:player.x,
@@ -2887,31 +2662,31 @@ switch(player.inv[player.inv[10]][0]){//item id
 	case 16://amber
 		if(char_value(player.x,player.y)==0){
 			pages[cur_page].map[player.y][player.x]=30;
-			player.inv[player.inv[10]][1]--;
+			player.creative==1 ? 0 : player.inv[player.inv[10]][1]--;
 		}
 		break;
 	case 23://stone
 		if(char_value(player.x,player.y)==0){
 			pages[cur_page].map[player.y][player.x]=2;
-			player.inv[player.inv[10]][1]--;
+			player.creative==1 ? 0 : player.inv[player.inv[10]][1]--;
 		}
 		break;
     case 26://walnut stone
         if(player.health>=20){
             break;
         }
-	player.health+=10;
+		player.health+=10;
         if(player.health>20 && player.creative==0){
             player.health=20;
         }
-	player.inv[player.inv[10]][1]--;
-	break;
+		player.creative==1 ? 0 : player.inv[player.inv[10]][1]--;
+		break;
 	case 28://bone meal
 		if(!is_bonemealable(char_value(player.x,player.y))){
 			return;
 		}
 		random_tick(player.x,player.y,1);
-		player.inv[player.inv[10]][1]--;
+		player.creative==1 ? 0 : player.inv[player.inv[10]][1]--;
 		inv_cleanup();
 		break;
 	case 34: //Meat
@@ -2922,7 +2697,7 @@ switch(player.inv[player.inv[10]][0]){//item id
         if(player.health>20 && player.creative==0){
             player.health=20;
         }
-		player.inv[player.inv[10]][1]--;
+		player.creative==1 ? 0 : player.inv[player.inv[10]][1]--;
 		break;
 	case 36: //Cooked Meat
         if(player.health>=20){
@@ -2932,10 +2707,10 @@ switch(player.inv[player.inv[10]][0]){//item id
         if(player.health>20 && player.creative==0){
             player.health=20;
         }
-		player.inv[player.inv[10]][1]--;
+		player.creative==1 ? 0 : player.inv[player.inv[10]][1]--;
 		break;
 	case 40: //Suspicious Stew
-		player.inv[player.inv[10]][1]--;
+		player.creative==1 ? 0 : player.inv[player.inv[10]][1]--;
 		player.health+=20;
         if(player.health>20 && player.creative==0){
             player.health=20;
@@ -2959,6 +2734,57 @@ switch(player.inv[player.inv[10]][0]){//item id
 			case 2://Nothing
 				break;
 		}
+	case 50://black wall
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[50] : 0;
+		break;
+	case 51://bedding 1
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[51] : 0;
+		break;
+	case 52://bedding 2
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[52] : 0;
+		break;
+	case 53://tree leaves
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[53] : 0;
+		break;
+	case 54://tree trunk
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[54] : 0;
+		break;
+	case 55://water
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[55] : 0;
+		break;
+	case 56://fire 0
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[56] : 0;
+		break;
+	case 57://fire 1
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[57] : 0;
+		break;
+	case 58://fire 2
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[58] : 0;
+		break;
+	case 59://NPC Hole
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[59] : 0;
+		break;
+	case 60://Walnut Trunk
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[60] : 0;
+		break;
+	case 61://Walnut Leaves 1
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[61] : 0;
+		break;
+	case 62://Walnut Leaves 2
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[62] : 0;
+		break;
+	case 63://Walnut Leaves 3
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[63] : 0;
+		break;
+	case 64://Walnut Leaves 4
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[64] : 0;
+		break;
+	case 65://Walnut Leaves 5
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[65] : 0;
+		break;
+	case 66://Walnut Leaves 6
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[66] : 0;
+		break;
 }
 inv_cleanup();
 }
@@ -3445,6 +3271,28 @@ function entity_edge(ptr){//move entity between pages through edges.
 	}
 }
 
+function friendly_npc(ptr){
+	//love
+	for(var i=0;i<pages[cur_page].entities.length;i++){
+		if(i==ptr){
+			continue;
+		}
+		if(pages[cur_page].entities[i].id==1 && pages[cur_page].entities[i].brain.hostile==0){
+			if(pages[cur_page].entities[i].x==pages[cur_page].entities[ptr].x&&
+			pages[cur_page].entities[i].y==pages[cur_page].entities[ptr].y&&
+			pages[cur_page].entities[i].brain.identity.love_mode==1){
+				pages[cur_page].entities[i].brain.identity.love_mode=0;
+				pages[cur_page].entities[ptr].brain.identity.love_mode=0;
+				new_npc(pages[cur_page].entities[ptr].x,
+				pages[cur_page].entities[ptr].y,
+				pages[cur_page].entities[ptr].x,
+				pages[cur_page].entities[ptr].y);//asdf
+				return;
+			}
+		}
+	}
+}
+
 function npc(ptr){//make entity move and interact with environment.
 	if(entity_standing_on(ptr)==1){return;}
     if(pages[cur_page].entities[ptr].brain.no_ai==1){return;}
@@ -3457,6 +3305,7 @@ function npc(ptr){//make entity move and interact with environment.
             pages[cur_page].entities[ptr].dest_y,
 			pages[cur_page].entities[ptr].og_x,
 			pages[cur_page].entities[ptr].og_y);
+			pages[cur_page].entities[ptr].brain.identity.love_mode==1 ? friendly_npc(ptr) : 0;
             break;
         case 1://hostile
             next_xy=pathfind_step(pages[cur_page].entities[ptr].x,
@@ -3473,7 +3322,7 @@ function npc(ptr){//make entity move and interact with environment.
     }
 	pages[cur_page].entities[ptr].last_dir=next_xy[2];
 	var collided=entity_collide_xy(next_xy[0],next_xy[1]);
-	if(collided!=-1 && pages[cur_page].entities[collided].id==1){return;}//prevent multiple npc's from occupying the same char.
+	if(collided!=-1 && pages[cur_page].entities[collided].id==1 && pages[cur_page].entities[ptr].brain.hostile==1){return;}//prevent multiple npc's from occupying the same char.
     pages[cur_page].entities[ptr].x=next_xy[0];pages[cur_page].entities[ptr].y=next_xy[1];//for slipping.
 	entity_standing_on(ptr);
 	entity_edge(ptr);
@@ -3685,7 +3534,7 @@ function do_fire(x,y){
 	}
 }
 
-function enemy_chance(){return Math.floor(-290.0146493+0.014649182*tick1-0.000000149*tick1*tick1);}
+function enemy_chance(){return Math.floor(-180+46.66666667*tick_hour()+-1.944444444*tick_hour()*tick_hour());}
 
 function random_tick(random_x=Math.floor((Math.random()*65535))%40,random_y=Math.floor((Math.random()*65535))%25,bone_meal=0,action=Math.floor((Math.random()*65535))%100){
 if(pages[cur_page].map[random_y][random_x]==13){//grass
@@ -3823,7 +3672,7 @@ if(bone_meal==1){
 	return;
 }
 //non hostile entity random destination
-if(tick1>=32767){//during day, hide
+if(tick_hour()>=6 && tick_hour()<=17){//during day, hide
 for(var i=0;i<pages[cur_page].entities.length;i++){
     if(pages[cur_page].entities[i].id==1){
         if(pages[cur_page].entities[i].brain.hostile==0){
@@ -3833,19 +3682,20 @@ for(var i=0;i<pages[cur_page].entities.length;i++){
     }
 }
 }
-if(action<=30 && tick1<32767){
+if(action<=30 && tick_hour()<=5 || tick_hour()>=18){
 for(var i=0;i<pages[cur_page].entities.length;i++){
     if(pages[cur_page].entities[i].id==1){
-        if(pages[cur_page].entities[i].brain.hostile==0 && Math.random()>0.3){
+        if(pages[cur_page].entities[i].brain.hostile==0 && Math.random()>0.7){
             pages[cur_page].entities[i].dest_x=(Math.floor(Math.random()*65535)%42)-1;
             pages[cur_page].entities[i].dest_y=(Math.floor(Math.random()*65535)%27)-1;
+			pages[cur_page].entities[i].brain.identity.love_mode=1;
         }
     }
 }
 }
 //night: 0-32767
 //day: 32768-65535
-if(tick1>=32767){
+if(tick_hour()>=6 && tick_hour()<=17){
 	//enemy spawning stuff
 	if(pages[cur_page].metadata.safety==0){
 		if(action<enemy_chance()){
@@ -3987,6 +3837,26 @@ for(var x=0;x<40;x++){
 }
 }
 
+function frac(x){
+	return Math.round(x-Math.floor(x));
+}
+
+function leading_zeros(x){
+	return (""+x).length==1 ? "0"+x : x;
+}
+
+function tick_hour(){
+	return Math.floor(tick1/(65535/24))%24;
+}
+
+function tick_to_time(){//%02i:%02i
+	//65535/24=2730.625
+	var hour=Math.floor(tick1/(65535/24))%24;
+	var minute=Math.floor(tick1/(65535/(24*60)))%60;
+	var second=Math.floor(tick1/(65535/(24*60*60)))%60;
+	return leading_zeros(hour)+":"+leading_zeros(minute)+":"+leading_zeros(second);
+}
+
 var tick1=0;//0 to 65535
 function refresh(){//Dang it, no multiple setintervals...
 if(paused==1){
@@ -4025,10 +3895,10 @@ draw_map(pages[cur_page]);
 var player_text;
 switch(player.creative){
 	case 0://Survival
-		player_text="Name: "+player.name+" Health: "+player.health+" Strength: "+player.strength+" X: "+player.x+" Y: "+player.y+ " Text Page: "+cur_page+" Time: "+tick1+" "+pages[cur_page].metadata.x+","+pages[cur_page].metadata.y;
+		player_text="Name: "+player.name+" Health: "+player.health+" Strength: "+player.strength+" X: "+player.x+" Y: "+player.y+ " Text Page: "+cur_page+" Time: "+tick_to_time()+" "+pages[cur_page].metadata.x+","+pages[cur_page].metadata.y;
 		break;
 	case 1://Creative
-		player_text="Name: "+player.name+" Creative X: "+player.x+" Y: "+player.y+ " Text Page: "+cur_page+" Time: "+tick1+" "+pages[cur_page].metadata.x+","+pages[cur_page].metadata.y;
+		player_text="Name: "+player.name+" Creative X: "+player.x+" Y: "+player.y+ " Text Page: "+cur_page+" Time: "+tick_to_time()+" "+pages[cur_page].metadata.x+","+pages[cur_page].metadata.y;
 		break;
 }
 document.getElementById("player").textContent=player_text;
