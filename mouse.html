@@ -2,14 +2,14 @@
 <html>
 <head>
 <!-- sound effects -->
-<audio id="sfx" oncanplay="sfx_play()" type="audio/wav"></audio>
+<audio id="sfx" oncanplay="sfx_play()"></audio>
 <title>Mouse Simulator 2D</title>
 </head>
 <body>
     <center>
     <canvas id="cga" width="320" height="200" style="border:2px solid #777777;width:320;height:200;image-rendering:pixelated;image-rendering:crisp-edges;"></canvas>
     <p id="player"></p>
-    <p id="status">This paragraph tag is left intentionally blank.</p>
+    <p id="status"></p>
     <p id="demonic_announcer">Welcome!</p>
     <button onclick="_load()">Load</button><button onclick="_save()">Save</button><button onclick="_delete()">Delete</button><button onclick="_import()">Import</button><button onclick="_export()">Export</button><button onclick="config()">Config</button>
     </br>
@@ -19,18 +19,18 @@
     </center>
 </body>
 <script id="lzutf8" src="./lzutf8.min.js"></script>
+<script src="./resources.js"></script>
 <script>
-//Mouse Simulator 2D v0.43
+//Mouse Simulator 2D v0.44
 /*
-creative tweaks
-Tweak to how ticks are used and displayed.
-Enemy chance stuff.
-NPC Love.
+Time in UI tweak.
+Pathfinding slightly smarter. Hopefully. Probably not, but whatever.
+Sleeping skips time to 18:00
+Split resource data into resources.js
 */
-if(LZUTF8==undefined){
-	alert("Unable to fetch 'lzutf8.min.js'. This is required to compress/decompress saves. Please make sure Mouse Simulator 2D can fetch this file.");
-}
+LZUTF8==undefined ? alert("Unable to fetch 'lzutf8.min.js'. This is required to compress/decompress saves. Please make sure Mouse Simulator 2D can fetch this file.") : 0;
 //autoconfig
+
 function autoconfig(){
 	var saves=window.localStorage;
 	switch(saves.getItem("_bigger")){
@@ -87,1518 +87,29 @@ if(_sfx.paused==false){
 	}
 }
 
-var cur_page=0;
-var paused=0;
-var last_dir="";
-var player={brain:{gender:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0};
-//inventory: [(item id),(item amount)]; player.inv[10]=selected pointer
-//maps
-var pages=[{
-	//home_page
-	map:[
-	[1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,0,10,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,11,10,1],//craft bench
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,0,10,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,8,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,13,0,0,0,0,0,0,7,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,17,0,16,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,16,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-	],
-	entities:[
-        {id:2, char:9, x:4, y:10, item: [1,10]},//branch
-        {id:2, char:12, x:5, y:10, item: [2,10]},//hay
-        {id:2, char:27, x:5, y:11, item: [12,10]},//stew
-	],
-	holes:[
-		//holes
-		{x:1, y:0, dest_page:-2, next_x: 19, next_y: 12},//gen new page
-	],
-	metadata:{
-	safety:1,//Do enemies spawn here at night?
-	north_goto:-1,//Next page to go to when leaving via north edge
-	south_goto:-1,//Next page to go to when leaving via south edge
-	west_goto:-1,//Next page to go to when leaving via west edge
-	east_goto:-1,//Next page to go to when leaving via north edge
-	x:0,
-	y:0,
-	underground:true,
-	}
-},
-];
-
-//the font/sprites
-var font=[
-//0, solid white
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,255,255,255
-],
-//1, solid black
-[
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,0,0,0,255,255,255
-],
-//2, dither
-[
-0,1,0,1,0,1,0,1,
-1,0,1,0,1,0,1,0,
-0,1,0,1,0,1,0,1,
-1,0,1,0,1,0,1,0,
-0,1,0,1,0,1,0,1,
-1,0,1,0,1,0,1,0,
-0,1,0,1,0,1,0,1,
-1,0,1,0,1,0,1,0,255,255,255,0,0,0
-],
-//3, Deer mouse/player
-[
-0,1,1,1,1,1,1,0,
-1,1,1,1,1,1,1,1,
-1,1,0,1,1,0,1,1,
-1,1,1,1,1,1,1,1,
-1,1,0,0,0,0,1,1,
-1,1,1,0,0,1,1,1,
-1,1,1,1,1,1,1,1,
-0,1,1,1,1,1,1,0,185,122,87,255,255,255
-],
-//4	Enemy?
-[
-0,1,1,1,1,1,1,0,
-1,1,1,1,1,1,1,1,
-1,1,0,1,1,0,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,0,0,1,1,1,
-1,1,0,0,0,0,1,1,
-1,1,1,1,1,1,1,1,
-0,1,1,1,1,1,1,0,185,122,87,255,255,255
-],
-//5, solid black, not invul
-[
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,0,0,0,255,255,255
-],
-//6, hole	
-[
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,0,0,1,1,1,
-1,1,0,0,0,0,1,1,
-1,1,0,0,0,0,1,1,
-1,1,1,0,0,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,0,0,0,128,128,255
-],
-//7, bedding
-[
-1,0,1,0,1,0,1,0,
-1,0,1,0,1,0,1,0,
-0,1,0,1,0,1,0,1,
-0,1,0,1,0,1,0,1,
-1,0,1,0,1,0,1,0,
-1,0,1,0,1,0,1,0,
-0,1,0,1,0,1,0,1,
-0,1,0,1,0,1,0,1,244,164,96,255,255,255
-],
-//8, bedding
-[
-0,0,1,0,0,0,0,0,
-0,0,1,0,0,0,0,0,
-0,0,0,1,0,0,0,1,
-0,0,0,1,0,1,0,0,
-0,0,1,0,1,0,1,0,
-0,0,1,0,1,0,1,0,
-0,1,0,1,0,1,0,1,
-0,1,0,1,0,1,0,1,244,164,96,255,255,255
-],
-//9, Branch
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,1,0,0,0,
-0,0,1,0,1,0,1,0,
-0,0,0,1,0,0,1,0,
-0,0,0,0,1,1,0,0,
-0,0,0,0,1,1,0,0,
-0,0,1,1,0,0,1,0,
-0,0,0,0,0,0,0,1,244,164,96,255,255,255
-],
-//10, craft_space
-[
-1,1,1,1,1,1,1,1,
-1,0,0,0,0,0,0,1,
-1,0,0,0,0,0,0,1,
-1,0,0,0,0,0,0,1,
-1,0,0,0,0,0,0,1,
-1,0,0,0,0,0,0,1,
-1,0,0,0,0,0,0,1,
-1,1,1,1,1,1,1,1,0,0,0,255,255,255
-],
-//11, craft_arrow
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,1,0,0,
-0,0,0,0,0,0,1,0,
-0,1,1,1,1,1,1,1,
-0,1,1,1,1,1,1,1,
-0,0,0,0,0,0,1,0,
-0,0,0,0,0,1,0,0,
-0,0,0,0,0,0,0,0,0,0,0,255,255,255
-],
-//12, hay
-[
-0,0,0,1,1,0,0,0,
-0,0,1,0,1,1,0,0,
-0,1,0,1,0,1,1,0,
-1,0,1,0,1,0,1,1,
-1,1,0,1,0,1,0,1,
-0,1,1,0,1,0,1,0,
-0,0,1,0,0,1,0,0,
-0,0,0,1,1,0,0,0,244,164,96,255,255,255
-],
-//13, Grass
-[
-0,1,0,1,0,1,0,1,
-1,0,0,1,0,1,0,1,
-1,0,0,1,0,0,1,0,
-1,0,0,1,0,0,1,0,
-0,1,1,0,0,1,0,1,
-0,1,1,0,0,1,0,1,
-1,0,0,1,0,1,0,1,
-1,1,1,1,1,1,1,1,0,255,0,255,255,255
-],
-//14, Tree leaves
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,1,1,1,1,0,0,
-0,1,1,1,1,1,1,0,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-0,1,1,1,1,1,1,0,0,255,0,255,255,255
-],
-//15, Tree trunk
-[
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,1,1,1,1,0,0,
-0,1,1,1,1,1,1,0,185,122,87,255,255,255
-],
-//16, brown mushroom
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,1,1,1,1,0,0,
-0,1,1,1,1,1,1,0,
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,179,170,154,255,255,255
-],
-//17, red mushroom
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,1,1,1,1,0,0,
-0,1,1,1,1,1,1,0,
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,255,0,0,255,255,255
-],
-//18, Fence
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-1,0,0,0,0,0,0,1,
-1,0,0,0,0,0,0,1,
-1,1,1,1,1,1,1,1,
-1,0,0,0,0,0,0,1,
-1,1,1,1,1,1,1,1,
-1,0,0,0,0,0,0,1,185,122,87,255,255,255
-],
-//19, attack indicator/projectile
-[
-0,0,0,1,1,0,0,0,
-0,1,0,1,1,0,1,0,
-0,0,1,1,1,1,0,0,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-0,0,1,1,1,1,0,0,
-0,1,0,1,1,0,1,0,
-0,0,0,1,1,0,0,0,255,0,0,255,255,255
-],
-//20, raygun ring
-[
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,1,0,0,1,0,0,
-0,1,0,0,0,0,1,0,
-0,1,0,0,0,0,1,0,
-0,0,1,0,0,1,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,0,0,0,0,0,0,255,0,255,255,255
-],
-//21, stick
-[
-0,0,0,0,0,0,0,0,
-0,1,1,0,0,0,0,0,
-0,1,1,1,0,0,0,0,
-0,0,1,1,1,0,0,0,
-0,0,0,1,1,1,0,0,
-0,0,0,0,1,1,1,0,
-0,0,0,0,0,1,1,0,
-0,0,0,0,0,0,0,0,185,122,87,255,255,255
-],
-//22, String
-[
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,1,0,0,1,0,0,
-0,1,0,0,0,0,0,0,
-0,0,1,1,1,0,0,0,
-0,0,0,0,0,1,0,0,
-0,0,0,0,0,1,1,0,
-0,0,0,0,0,0,0,0,0,0,0,255,255,255
-],
-//23, Bow
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,255,255,255
-],
-//24, Sapling.
-[
-0,1,0,0,1,0,1,0,
-0,1,0,0,1,0,1,0,
-0,0,1,1,1,1,0,0,
-1,0,0,1,1,0,0,1,
-0,1,1,1,1,1,1,0,
-0,0,1,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,0,255,0,255,255,255
-],
-//25, Leaves
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,1,1,1,0,0,0,
-0,0,1,1,1,1,0,0,
-0,0,1,1,1,1,0,0,
-0,0,0,1,1,1,0,0,
-0,0,0,0,0,0,1,0,
-0,0,0,0,0,0,0,0,0,255,0,255,255,255
-],
-//26, Bowl
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,1,0,0,0,0,1,0,
-0,1,0,0,0,0,1,0,
-0,0,1,0,0,1,0,0,
-0,0,0,1,1,0,0,0,0,0,0,255,255,255
-],
-//27, Mushroom Stew
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,0,1,1,1,1,0,0,
-0,0,0,1,1,0,0,0,0,0,0,255,255,255
-],
-//28, Carpet
-[
-1,0,1,0,1,0,1,0,
-0,1,0,1,0,1,0,1,
-1,0,1,0,1,0,1,0,
-0,1,0,1,0,1,0,1,
-1,0,1,0,1,0,1,0,
-0,1,0,1,0,1,0,1,
-1,0,1,0,1,0,1,0,
-0,1,0,1,0,1,0,1,193,113,45,255,255,255
-],
-//29, water
-[
-1,1,0,0,1,1,1,1,
-0,0,1,1,0,0,0,0,
-1,1,0,0,1,1,1,1,
-0,0,1,1,0,0,0,0,
-1,1,0,0,1,1,1,1,
-0,0,1,1,0,0,0,0,
-1,1,0,0,1,1,1,1,
-0,0,1,1,0,0,0,0,0,0,200,0,0,150
-],
-//30, fire 0
-[
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,1,1,1,1,0,0,
-0,0,1,1,1,1,0,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,0,1,1,1,1,0,0,
-0,0,0,1,1,0,0,0,200,0,0,255,255,255
-],
-//31, fire 1
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,1,1,1,1,0,0,
-0,0,1,1,1,1,0,0,
-0,0,1,1,1,1,0,0,
-0,0,0,1,1,0,0,0,200,0,0,255,255,255
-],
-//32, fire 2
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,1,1,1,1,0,0,
-0,0,1,1,1,1,0,0,200,0,0,255,255,255
-],
-//33, bow
-[
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,1,0,0,
-0,0,1,0,1,0,0,0,
-0,1,0,1,0,0,0,0,
-0,1,1,0,0,0,0,0,
-0,1,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,255,255,255
-],
-//34, bow and spindle
-[
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,1,0,0,
-0,0,1,0,1,0,0,0,
-0,1,0,1,0,0,1,0,
-0,1,1,0,0,1,0,0,
-0,1,0,0,1,0,0,0,
-0,0,0,1,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,255,255,255
-],
-//35, Amber
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,1,0,0,
-0,0,1,1,1,1,0,0,
-0,0,1,1,1,1,0,0,
-0,0,1,1,1,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,200,0,0,255,255,255
-],
-//36, Fire Bow
-[
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,1,0,0,
-0,0,1,0,1,0,0,0,
-0,1,0,1,0,0,0,0,
-0,1,1,0,0,1,1,0,
-0,1,0,0,1,1,1,0,
-0,0,0,0,1,1,0,0,
-0,0,0,0,0,0,0,0,0,0,0,255,255,255
-],
-//37, spear
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,1,1,1,0,
-0,0,0,0,0,1,1,0,
-0,0,0,0,1,0,1,0,
-0,0,0,1,0,0,0,0,
-0,0,1,0,0,0,0,0,
-0,1,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,185,122,87,255,255,255
-],
-//38, Raygun
-[
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,1,1,1,1,0,0,
-0,0,1,1,1,1,0,0,
-0,0,1,1,1,1,0,0,
-0,0,0,0,0,0,0,0,255,0,0,255,255,255
-],
-//39, Poisonous Spear
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,1,1,1,0,
-0,0,0,0,0,1,1,0,
-0,0,0,0,1,0,1,0,
-0,0,0,1,0,0,0,0,
-0,0,1,0,0,0,0,0,
-0,1,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,255,0,0,255,255,255
-],
-//40, Cyan Thing
-[
-0,0,0,0,0,0,1,0,
-0,1,0,0,0,0,1,0,
-0,0,0,1,1,0,0,0,
-0,0,0,1,0,0,0,0,
-0,1,0,0,0,0,0,0,
-1,1,1,0,1,1,0,0,
-0,1,0,0,1,1,0,0,
-0,0,0,0,0,0,0,0,0,255,255,120,120,120
-],
-//41, stone
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,1,0,0,
-0,0,1,1,1,1,0,0,
-0,0,1,1,1,1,0,0,
-0,0,1,1,1,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,120,120,120,255,255,255
-],
-//42, Door closed
-[
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,185,122,87,255,255,255
-],
-//43, Door open
-[
-0,1,1,1,1,1,1,0,
-0,1,0,0,0,0,1,0,
-0,1,0,0,0,0,1,0,
-0,1,0,0,0,0,1,0,
-0,1,0,0,0,0,1,0,
-0,1,0,0,0,0,1,0,
-0,1,0,0,0,0,1,0,
-0,1,0,0,0,0,1,0,185,122,87,255,255,255
-],
-//44, npc hole
-[
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,0,0,1,1,1,
-1,1,0,0,0,0,1,1,
-1,1,0,0,0,0,1,1,
-1,1,1,0,0,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,0,0,0,255,255,255
-],
-//45, Walnut trunk
-[
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,1,1,1,1,0,0,
-0,1,1,1,1,1,1,0,165,102,67,255,255,255
-],
-//46, Walnut leaves 1 (middle)
-[
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,0,215,0,255,255,255
-],
-//47, Walnut leaves 2 (left)
-[
-0,0,1,1,1,1,1,1,
-0,0,1,1,1,1,1,1,
-0,0,1,1,1,1,1,1,
-0,0,1,1,1,1,1,1,
-0,0,1,1,1,1,1,1,
-0,0,1,1,1,1,1,1,
-0,0,1,1,1,1,1,1,
-0,0,0,1,1,1,1,1,0,215,0,255,255,255
-],
-//48, Walnut leaves 3 (right)
-[
-1,1,1,1,1,1,0,0,
-1,1,1,1,1,1,0,0,
-1,1,1,1,1,1,0,0,
-1,1,1,1,1,1,0,0,
-1,1,1,1,1,1,0,0,
-1,1,1,1,1,1,0,0,
-1,1,1,1,1,1,0,0,
-1,1,1,1,1,0,0,0,0,215,0,255,255,255
-],
-//49, Walnut leaves 4 (top)
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,0,215,0,255,255,255
-],
-//50, Walnut leaves 5 (top left)
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,1,1,1,
-0,0,1,1,1,1,1,1,
-0,0,1,1,1,1,1,1,
-0,0,1,1,1,1,1,1,
-0,0,1,1,1,1,1,1,0,215,0,255,255,255
-],
-//51, Walnut leaves 6 (top right)
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-1,1,1,1,1,0,0,0,
-1,1,1,1,1,1,0,0,
-1,1,1,1,1,1,0,0,
-1,1,1,1,1,1,0,0,
-1,1,1,1,1,1,0,0,0,215,0,255,255,255
-],
-//52, walnut fruit
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,1,1,1,1,0,0,
-0,0,1,1,1,1,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,160,0,255,255,255
-],
-//53, walnut stone
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,1,1,1,1,0,0,
-0,0,1,1,1,1,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,165,102,67,255,255,255
-],
-//54, walnut peels
-[
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,0,0,0,1,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,1,0,
-0,1,0,0,0,0,1,0,
-0,0,1,1,0,0,0,0,
-0,0,0,0,0,0,0,0,0,160,0,255,255,255
-],
-//55, Bone meal
-[
-0,0,0,0,0,0,0,0,
-0,1,0,1,0,0,0,0,
-0,0,0,0,1,0,0,0,
-0,0,0,1,0,1,1,0,
-0,0,0,1,0,0,1,0,
-0,1,0,0,1,0,1,0,
-0,0,1,1,1,0,0,0,
-0,0,0,0,0,0,0,0,160,160,160,255,255,255
-],
-//56, Fibers
-[
-0,0,0,0,0,0,0,0,
-0,1,0,0,1,0,1,0,
-0,1,0,0,1,0,1,0,
-0,0,1,0,1,0,1,0,
-0,0,1,0,0,1,0,0,
-1,0,1,1,0,1,0,0,
-1,0,0,1,0,1,0,0,
-0,0,0,0,0,0,0,0,0,160,0,255,255,255
-],
-//57, book
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,1,0,0,0,
-0,0,0,1,1,1,0,0,
-0,0,1,1,1,1,1,0,
-0,1,1,1,1,1,0,0,
-0,0,1,1,1,0,0,0,
-0,0,0,1,0,0,0,0,
-0,0,0,0,0,0,0,0,139,69,19,255,255,255
-],
-//58, bookshelf
-[
-1,1,1,1,1,1,1,1,
-1,0,1,0,1,0,0,1,
-1,0,1,0,1,0,0,1,
-1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,
-1,0,1,0,0,1,0,1,
-1,0,1,0,0,1,0,1,
-1,1,1,1,1,1,1,1,165,102,67,255,255,255
-],
-//59, Paper
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,1,0,0,0,
-0,0,0,1,1,1,0,0,
-0,0,1,1,1,1,1,0,
-0,1,1,1,1,1,0,0,
-0,0,1,1,1,0,0,0,
-0,0,0,1,0,0,0,0,
-0,0,0,0,0,0,0,0,160,160,160,255,255,255
-],
-//60, Iron
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,1,0,0,0,
-0,0,0,1,1,1,0,0,
-0,0,1,1,1,1,1,0,
-0,1,1,1,1,1,0,0,
-0,0,1,1,1,0,0,0,
-0,0,0,1,0,0,0,0,
-0,0,0,0,0,0,0,0,211,211,211,255,255,255
-],
-//61, Meat
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,1,1,0,
-0,0,0,0,1,1,1,1,
-0,0,0,0,1,1,1,1,
-0,0,1,1,1,1,1,1,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,0,0,
-0,0,1,1,1,0,0,0,249,144,111,255,255,255
-],
-//62, Copper
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,1,0,0,0,
-0,0,0,1,1,1,0,0,
-0,0,1,1,1,1,1,0,
-0,1,1,1,1,1,0,0,
-0,0,1,1,1,0,0,0,
-0,0,0,1,0,0,0,0,
-0,0,0,0,0,0,0,0,184,115,51,255,255,255
-],
-//63, Cooked Meat
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,1,1,0,
-0,0,0,0,1,1,1,1,
-0,0,0,0,1,1,1,1,
-0,0,1,1,1,1,1,1,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,0,0,
-0,0,1,1,1,0,0,0,76,32,5,255,255,255
-],
-//64, Iron Wall
-[
-0,0,0,0,0,0,0,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,0,0,0,0,0,0,0,211,211,211,160,160,160
-],
-//65, Copper Wall
-[
-0,0,0,0,0,0,0,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,0,0,0,0,0,0,0,184,115,51,169,100,26
-],
-//66, Bowl of Water
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,0,1,1,1,1,0,0,
-0,0,0,1,1,0,0,0,0,0,255,255,255,255
-],
-//67, Suspicious Stew
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,0,1,1,1,1,0,0,
-0,0,0,1,1,0,0,0,0,255,255,255,255,255
-],
-//68, Camp Fire
-[
-0,0,0,1,1,0,0,0,
-0,0,0,1,1,0,0,0,
-0,0,1,1,1,1,0,0,
-0,0,1,1,1,1,0,0,
-0,0,0,0,0,0,0,0,
-0,1,1,0,0,1,1,0,
-0,0,0,1,1,0,0,0,
-0,1,1,0,0,1,1,0,200,0,0,255,255,255
-],
-//69, Saw Dust
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,1,0,1,0,0,
-0,0,1,0,1,0,1,0,
-0,1,0,1,0,1,0,0,
-0,0,1,0,1,0,1,0,
-0,0,0,1,0,1,0,0,185,122,87,255,255,255
-],
-//70, Bowl of Glue
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,0,1,1,1,1,0,0,
-0,0,0,1,1,0,0,0,200,200,0,255,255,255
-],
-//71, mdf puddy
-[
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,1,0,0,
-0,0,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,
-0,0,1,1,1,1,0,0,185,122,87,255,255,255
-],
-//72, mdf
-[
-1,1,1,1,0,1,1,1,
-0,0,0,0,0,0,0,0,
-1,1,0,1,1,1,1,1,
-0,0,0,0,0,0,0,0,
-1,1,1,1,1,0,1,1,
-0,0,0,0,0,0,0,0,
-1,1,1,0,1,1,1,1,
-0,0,0,0,0,0,0,0,185,122,87,200,137,102
-],
-//73, Grind Stone
-[
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,1,0,0,
-0,0,1,1,1,1,0,0,
-0,0,1,1,1,1,0,0,
-0,0,1,1,1,0,0,0,
-0,0,0,0,0,0,0,0,
-0,1,1,1,1,1,1,0,
-0,1,1,1,1,1,1,0,120,120,120,255,255,255
-],
-//74, green stained mdf
-[
-1,1,1,1,0,1,1,1,
-0,0,0,0,0,0,0,0,
-1,1,0,1,1,1,1,1,
-0,0,0,0,0,0,0,0,
-1,1,1,1,1,0,1,1,
-0,0,0,0,0,0,0,0,
-1,1,1,0,1,1,1,1,
-0,0,0,0,0,0,0,0,93,141,46,108,156,61
-],
-//75, Red stained mdf
-[
-1,1,1,1,0,1,1,1,
-0,0,0,0,0,0,0,0,
-1,1,0,1,1,1,1,1,
-0,0,0,0,0,0,0,0,
-1,1,1,1,1,0,1,1,
-0,0,0,0,0,0,0,0,
-1,1,1,0,1,1,1,1,
-0,0,0,0,0,0,0,0,220,61,44,235,76,59
-],
-//76, Cyan Stained mdf
-[
-1,1,1,1,0,1,1,1,
-0,0,0,0,0,0,0,0,
-1,1,0,1,1,1,1,1,
-0,0,0,0,0,0,0,0,
-1,1,1,1,1,0,1,1,
-0,0,0,0,0,0,0,0,
-1,1,1,0,1,1,1,1,
-0,0,0,0,0,0,0,0,93,189,171,108,204,186
-],
-];
-var properties={
-walkable:[0,2,6,7,8,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40,43,44,45,46,47,48,49,50,51,52,54,68,73],
-not_spawnable:[2,28,29,30,31,32,43,68,73],
-burnable:[12,13,14,15,18,24,28,42,43,45,46,47,48,49,50,51,72,74,75,76],
-bangable:[18,42,43,12,5],
-breakable:[3,4,5,6,9,13,21,22,24,25,27,31,37,38,41,45,46,47,48,49],
-bonemealable:[52,51,50,49,48,47,46,24,17,16,15,13],
-creative_noremove:[1,6,10,11],
-};
-var item_drops={
-enemy:[
-{chance:0.3,item_id:34,item_min:1,item_max:1},//Meat
-{chance:0.05,item_id:33,item_min:1,item_max:1},//iron
-{chance:0.05,item_id:35,item_min:1,item_max:1},//copper
-{chance:0.01,item_id:21,item_min:1,item_max:1},//cyan thing, 115
-]};
-
-//items
-var item_char=[
-0,//Nothing,0
-9,//Branch,1
-12,//Hay,2
-13,//Grass,3
-16,//Brown Mushroom,4
-17,//Red Mushroom,5
-18,//Fence,6
-21,//stick,7
-22,//string,8
-24,//Sapling,9
-25,//Leaves,10
-26,//Bowl,11
-27,//Mushroom Stew,12
-28,//Carpet,13
-33,//Bow,14
-34,//Bow and spindle,15
-35,//Amber,16
-36,//Fire bow, 17
-37,//Spear,18
-38,//Raygun,19
-39,//Poisonous Spear, 20
-40,//cyan thing, 21
-42,//Door, 22
-41,//Stone, 23
-12,//hay bail, 24
-52,//walnut fruit, 25
-53,//walnut stone, 26
-54,//walnut peels, 27
-55,//bone meal, 28
-56,//Fibers, 29
-57,//Book, 30
-58,//Bookshelf, 31
-59,//Paper, 32
-60,//Iron,33
-61,//Meat,34
-62,//Copper,35
-63,//Cooked Meat,36
-64,//Iron Wall,37
-65,//Copper Wall,38
-66,//Bowl of Water,39
-67,//Suspicious Stew,40
-68,//Camp Fire,41
-69,//Saw Dust,42
-70,//Bowl of Glue,43
-71,//mdf puddy,44
-72,//mdf,45
-73,//Grind Stone,46
-74,//Green Stained MDF,47
-75,//Red Stained MDF,48
-76,//Cyan Stained MDF,49
-5,//Black Wall,50
-7,//bedding 1,51
-8,//bedding 2,52
-14,//Tree leaves,53
-15,//Tree Trunk,54
-29,//Water,55
-30,//Fire 0,56
-31,//Fire 1,57
-32,//Fire 2,58
-44,//NPC Hole,59
-45,//Walnut Trunk,60
-46,//Walnut Leaves 1,61
-47,//Walnut Leaves 2,62
-48,//Walnut Leaves 3,63
-49,//Walnut Leaves 4,64
-50,//Walnut Leaves 5,65
-51,//Walnut Leaves 6,66
-];
-
-var item_names=[
-"Nothing",
-"Branch",
-"Hay",
-"Grass",
-"Brown Mushroom",
-"Red Mushroom",
-"Fence",
-"Stick",
-"String",
-"Sapling",
-"Leaves",
-"Bowl",
-"Mushroom Stew",
-"Carpet",
-"Bow",
-"Bow and Spindle",
-"Amber",
-"Fire Bow",
-"Spear",
-"Raygun",
-"Poisonous Spear",
-"Cyan Thing",
-"Door",
-"Stone",
-"Hay Bail",
-"Walnut Fruit",
-"Walnut Stone",
-"Walnut Peels",
-"Bone Meal",
-"Fibers",
-"Book",
-"Bookshelf",
-"Paper",
-"Iron",
-"Meat",
-"Copper",
-"Cooked Meat",
-"Iron Wall",
-"Copper Wall",
-"Bowl of Water",
-"Suspicious Stew",
-"Camp Fire",
-"Saw Dust",
-"Bowl of Glue",
-"MDF Puddy",
-"MDF",
-"Grind Stone",
-"Green Stained MDF",
-"Red Stained MDF",
-"Cyan Stained MDF",
-"Black Wall",
-"bedding 1",
-"bedding 2",
-"Tree Leaves",
-"Tree Trunk",
-"Water",
-"Fire 0",
-"Fire 1",
-"Fire 2",
-"NPC Hole",
-"Walnut Trunk",
-"Walnut Leaves 1",
-"Walnut Leaves 2",
-"Walnut Leaves 3",
-"Walnut Leaves 4",
-"Walnut Leaves 5",
-"Walnut Leaves 6"
-];
-//crafting
-var recipies=[
-{//sapling to stick+leaves
-input_id:[9,0,0,0,0,0],
-output:[[7,1],[10,1]]
-},
-{//sapling to stick+leaves
-input_id:[0,9,0,0,0,0],
-output:[[7,1],[10,1]]
-},
-{//sapling to stick+leaves
-input_id:[0,0,9,0,0,0],
-output:[[7,1],[10,1]]
-},
-{//sapling to stick+leaves
-input_id:[0,0,0,9,0,0],
-output:[[7,1],[10,1]]
-},
-{//sapling to stick+leaves
-input_id:[0,0,0,0,9,0],
-output:[[7,1],[10,1]]
-},
-{//sapling to stick+leaves
-input_id:[0,0,0,0,0,9],
-output:[[7,1],[10,1]]
-},
-{//branch to stick+leaves
-input_id:[1,0,0,0,0,0],
-output:[[7,1],[10,1]]
-},
-{//branch to stick+leaves
-input_id:[0,1,0,0,0,0],
-output:[[7,1],[10,1]]
-},
-{//branch to stick+leaves
-input_id:[0,0,1,0,0,0],
-output:[[7,1],[10,1]]
-},
-{//branch to stick+leaves
-input_id:[0,0,0,1,0,0],
-output:[[7,1],[10,1]]
-},
-{//branch to stick+leaves
-input_id:[0,0,0,0,1,0],
-output:[[7,1],[10,1]]
-},
-{//branch to stick+leaves
-input_id:[0,0,0,0,0,1],
-output:[[7,1],[10,1]]
-},
-{//hay to string
-input_id:[2,0,0,0,0,0],
-output:[[8,3]]
-},
-{//hay to string
-input_id:[0,2,0,0,0,0],
-output:[[8,3]]
-},
-{//hay to string
-input_id:[0,0,2,0,0,0],
-output:[[8,3]]
-},
-{//hay to string
-input_id:[0,0,0,2,0,0],
-output:[[8,3]]
-},
-{//hay to string
-input_id:[0,0,0,0,2,0],
-output:[[8,3]]
-},
-{//hay to string
-input_id:[0,0,0,0,0,2],
-output:[[8,3]]
-},
-{//2 sticks + 1 string to fence
-input_id:[7,0,8,0,7,0],
-output:[[6,3]]
-},
-{//2 sticks + 1 string to fence
-input_id:[0,7,0,8,0,7],
-output:[[6,3]]
-},
-{//2 string + 1 leaves to bowl
-input_id:[8,0,10,0,8,0],
-output:[[11,1]]
-},
-{//2 string + 1 leaves to bowl
-input_id:[0,8,0,10,0,8],
-output:[[11,1]]
-},
-{//bowl + brown mushroom to mushroom stew
-input_id:[0,0,4,0,11,0],
-output:[[11,1]]
-},
-{//bowl + brown mushroom to mushroom stew
-input_id:[4,0,11,0,0,0],
-output:[[12,1]]
-},
-{//4 grass to hay
-input_id:[3,3,3,3,0,0],
-output:[[2,1]]
-},
-{//4 grass to hay
-input_id:[0,0,3,3,3,3],
-output:[[2,1]]
-},
-{//4 string + 2 hay to carpet
-input_id:[8,8,2,2,8,8],
-output:[[13,1]]
-},
-{//bow
-input_id:[7,0,8,7,7,0],
-output:[[14,1]]
-},
-{//bow
-input_id:[0,7,7,8,0,7],
-output:[[14,1]]
-},
-{//bow+stick to bow and spindle
-input_id:[14,7,0,0,0,0],
-output:[[15,1]]
-},
-{//bow and spindle+hay+stick to amber and bow and spindle
-input_id:[15,2,1,0,0,0],
-output:[[15,1],[16,5]]
-},
-{//bow + amber to fire bow
-input_id:[14,16,16,16,16,16],
-output:[[17,5]]
-},
-{//2 sticks+iron to spear.
-input_id:[33,0,7,0,7,0],
-output:[[18,1]]
-},
-{//2 sticks+iron to spear.
-input_id:[0,33,0,7,0,7],
-output:[[18,1]]
-},
-{//Spear+Red Mushroom to Poisonous Spear.
-input_id:[18,5,0,0,0,0],
-output:[[20,1]]
-},
-{//6 sticks to door.
-input_id:[7,7,7,7,7,7],
-output:[[22,1]]
-},
-{//6 hay to hay bail.
-input_id:[2,2,2,2,2,2],
-output:[[24,1]]
-},
-{//hay bail to 6 hay.
-input_id:[24,0,0,0,0,0],
-output:[[2,6]]
-},
-{//hay bail to 6 hay.
-input_id:[0,24,0,0,0,0],
-output:[[2,6]]
-},
-{//hay bail to 6 hay.
-input_id:[0,0,24,0,0,0],
-output:[[2,6]]
-},
-{//hay bail to 6 hay.
-input_id:[0,0,0,24,0,0],
-output:[[2,6]]
-},
-{//hay bail to 6 hay.
-input_id:[0,0,0,0,24,0],
-output:[[2,6]]
-},
-{//hay bail to 6 hay.
-input_id:[0,0,0,0,0,24],
-output:[[2,6]]
-},
-{//Walnut fruit to walnut stone and peels
-input_id:[25,0,0,0,0,0],
-output:[[26,1],[27,1]]
-},
-{//Walnut fruit to walnut stone and peels
-input_id:[0,25,0,0,0,0],
-output:[[26,1],[27,1]]
-},
-{//Walnut fruit to walnut stone and peels
-input_id:[0,0,25,0,0,0],
-output:[[26,1],[27,1]]
-},
-{//Walnut fruit to walnut stone and peels
-input_id:[0,0,0,25,0,0],
-output:[[26,1],[27,1]]
-},
-{//Walnut fruit to walnut stone and peels
-input_id:[0,0,0,0,25,0],
-output:[[26,1],[27,1]]
-},
-{//Walnut fruit to walnut stone and peels
-input_id:[0,0,0,0,0,25],
-output:[[26,1],[27,1]]
-},
-{//Brown mushroom+red mushroom to Bone meal
-input_id:[4,0,10,0,5,0],
-output:[[28,3]]
-},
-{//Brown mushroom+red mushroom to Bone meal
-input_id:[0,4,0,10,0,5],
-output:[[28,3]]
-},
-{//Brown mushroom+red mushroom to Bone meal
-input_id:[5,0,10,0,4,0],
-output:[[28,3]]
-},
-{//Brown mushroom+red mushroom to Bone meal
-input_id:[0,5,0,10,0,4],
-output:[[28,3]]
-},
-{//stone+5 leaves to 3 Fibers+stone
-input_id:[23,10,10,10,10,10],
-output:[[23,1],[29,3]]
-},
-{//6 fibers to paper
-input_id:[29,29,29,29,29,29],
-output:[[32,1]]
-},
-{//3 Paper+String to book
-input_id:[8,32,32,32,0,0],
-output:[[30,1]]
-},
-{//4 MDF+2 Books to Bookshelf
-input_id:[45,45,30,30,45,45],
-output:[[31,1]],
-},
-{//1 meat+amber to cooked meat.
-input_id:[34,16,0,0,0,0],
-output:[[36,1]],
-},
-{//6 iron to iron wall
-input_id:[33,33,33,33,33,33],
-output:[[37,1]],
-},
-{//iron wall to 6 iron
-input_id:[37,0,0,0,0,0],
-output:[[33,6]],
-},
-{//iron wall to 6 iron
-input_id:[0,37,0,0,0,0],
-output:[[33,6]],
-},
-{//iron wall to 6 iron
-input_id:[0,0,37,0,0,0],
-output:[[33,6]],
-},
-{//iron wall to 6 iron
-input_id:[0,0,0,37,0,0],
-output:[[33,6]],
-},
-{//iron wall to 6 iron
-input_id:[0,0,0,0,37,0],
-output:[[33,6]],
-},
-{//iron wall to 6 iron
-input_id:[0,0,0,0,0,37],
-output:[[33,6]],
-},
-{//6 copper to copper wall
-input_id:[35,35,35,35,35,35],
-output:[[38,1]],
-},
-{//copper wall to 6 copper
-input_id:[38,0,0,0,0,0],
-output:[[35,6]],
-},
-{//copper wall to 6 copper
-input_id:[0,38,0,0,0,0],
-output:[[35,6]],
-},
-{//copper wall to 6 copper
-input_id:[0,0,38,0,0,0],
-output:[[35,6]],
-},
-{//copper wall to 6 copper
-input_id:[0,0,0,38,0,0],
-output:[[35,6]],
-},
-{//copper wall to 6 copper
-input_id:[0,0,0,0,38,0],
-output:[[35,6]],
-},
-{//copper wall to 6 copper
-input_id:[0,0,0,0,0,38],
-output:[[35,6]],
-},
-{//Amber+Bowl of Water+Brown Mushroom+Red Mushroom to Suspicious Stew
-input_id:[4,5,39,21,16,0],
-output:[[40,1]],
-},
-{//Amber+Bowl of Water+Brown Mushroom+Red Mushroom to Suspicious Stew
-input_id:[5,4,39,21,16,0],
-output:[[40,1]],
-},
-{//Amber+2 Sticks to Camp Fire
-input_id:[16,7,7,0,0,0],
-output:[[41,1]],
-},
-{//stone+stick to sawdust+stone
-input_id:[23,7,0,0,0,0],
-output:[[42,3],[23,1]]
-},
-{//stone+fence to sawdust+stone
-input_id:[23,6,0,0,0,0],
-output:[[42,3],[23,1]]
-},
-{//stone+bowl to sawdust+stone
-input_id:[23,11,0,0,0,0],
-output:[[42,3],[23,1]]
-},
-{//stone+door to sawdust+stone
-input_id:[23,22,0,0,0,0],
-output:[[42,3],[23,1]]
-},
-{//Bowl of Water+fibers to bowl of glue
-input_id:[39,29,0,0,0,0],
-output:[[43,1]]
-},
-{//bowl of glue+sawdust to mdf puddy+bowl
-input_id:[43,42,0,0,0,0],
-output:[[44,1],[11,1]]
-},
-{//Stone+iron to Grind Stone
-input_id:[23,0,33,0,0,0],
-output:[[46,1]]
-},
-{//MDF+walnut peels to Green Stained MDF
-input_id:[45,27,0,0,0,0],
-output:[[47,1]]
-},
-{//MDF+walnut peels to Red Stained MDF
-input_id:[45,5,0,0,0,0],
-output:[[48,1]]
-},
-{//MDF+Cyan thing to Cyan Stained MDF
-input_id:[45,21,0,0,0,0],
-output:[[49,1]]
-}
-];
-
-var struct=[
-{weight:0.8,tries:10,sub:[0,1],id:0},//tree
-{weight:0.6,tries:1,sub:[2,2],id:9},//walnut tree
-{weight:0.8,tries:10,sub:[0,0],id:1},//grass
-{weight:0.1,tries:3,sub:[0,0],id:10},//brown mushroom
-{weight:0.1,tries:3,sub:[0,0],id:11},//red mushroom
-{weight:0.01,tries:1,sub:[1,1],id:2},//115
-{weight:0.2,tries:1,sub:[4,4],id:3},//abandoned shed
-{weight:-1,tries:2,sub:[0,0],id:4},//hole
-{weight:0.1,tries:2,sub:[3,3],id:5},//pond
-{weight:0.01,tries:1,sub:[0,0],id:6},//raygun
-{weight:0.1,tries:1,sub:[11,5],id:7},//facility
-{weight:0.3,tries:1,sub:[2,2],id:8,entity:{offset_x:1,offset_y:1}},//Mouse Nest
-];
-
-var structures=[
-//tree,0
-[
-[14],
-[15]
-],
-//grass, 1
-[
-[13]
-],
-//115, 2
-[
-[40]
-],
-//Human_abandoned_shed, 3
-[
-[5,5,5,0,5],
-[13,28,28,28,5],
-[5,28,28,28,13],
-[5,28,28,28,5],
-[5,2,5,5,5],
-],
-//hole, 4
-[
-[0,2,0],
-[2,6,2],
-[0,2,0]
-],
-//pond,5
-[
-[0,29,29,0],
-[29,29,29,29],
-[29,29,29,29],
-[0,29,29,0],
-],
-//raygun,6
-[
-[38]
-],
-//group 935, 7
-[
-[5,5,5,2,5,5,5,5,5,5,5,5],
-[5,13,13,30,13,13,13,13,13,13,13,5],
-[5,13,13,13,13,13,13,13,14,13,13,5],
-[14,13,13,13,13,13,13,13,15,13,13,5],
-[5,13,13,13,13,13,13,13,13,13,13,5],
-[5,5,5,5,13,5,5,5,5,5,5,5],
-],
-//mouse nest (ncp), 8
-[
-[0,7,0],
-[7,44,7],
-[0,7,0],
-],
-//walnut tree, 9
-[
-[50,49,51],
-[47,46,48],
-[0,45,0],
-],
-//brown mushroom, 10
-[[16]],
-//red mushroom, 11
-[[17]],
-];
-
 var ctx=document.getElementById("cga").getContext("2d");
 var char=ctx.getImageData(0,0,8,8);
-function write_1bit(pos,val,r1,g1,b1,r2,g2,b2){
-	if(!val){
-		char.data[4*pos]=r2;
-		char.data[4*pos+1]=g2;
-		char.data[4*pos+2]=b2;
-		char.data[4*pos+3]=255;
-		return 0;
-	}
-	if(val){
-		char.data[4*pos]=r1
-		char.data[4*pos+1]=g1;
-		char.data[4*pos+2]=b1;
-		char.data[4*pos+3]=255;
-		return 0;
+function write_1bit(pos,val,id){
+	switch(val){
+		case 0:
+			char.data[4*pos]=font[id][67];
+			char.data[4*pos+1]=font[id][68];
+			char.data[4*pos+2]=font[id][69];
+			char.data[4*pos+3]=255;
+			break;
+		case 1:
+			char.data[4*pos]=font[id][64];
+			char.data[4*pos+1]=font[id][65];
+			char.data[4*pos+2]=font[id][66];
+			char.data[4*pos+3]=255;
+			break;
 	}
 }
 function get_font(val){
-for(var i=0;i<64;i++){
-write_1bit(i,font[val][i],font[val][64],font[val][65],font[val][66],font[val][67],font[val][68],font[val][69]);
-}
-return val;
+	for(var i=0;i<64;i++){
+		write_1bit(i,font[val][i],val);
+	}
+	return val;
 }
 function draw_map(){
 	//block map
@@ -1610,12 +121,24 @@ function draw_map(){
 	}
 	//entity map
 	for(var i=0;i<pages[cur_page].entities.length;i++){
-	   get_font(pages[cur_page].entities[i].char);
-	   ctx.putImageData(char,pages[cur_page].entities[i].x*8,pages[cur_page].entities[i].y*8);
+		get_font(pages[cur_page].entities[i].char);
+		ctx.putImageData(char,pages[cur_page].entities[i].x*8,pages[cur_page].entities[i].y*8);
 	}
 	//player
 	get_font(3);
 	ctx.putImageData(char,player.x*8,player.y*8);
+}
+
+function map_search(tile){
+	var coords=[];
+	var cur_index=-1;
+	for(var i=0;i<25;i++){//y
+		do{
+			cur_index=pages[cur_page].map[i].indexOf(tile,cur_index+1);
+			cur_index!=-1 ? coords.push({x:cur_index,y:i}) : 0;
+		} while(cur_index!=-1)
+	}
+	return coords;
 }
 
 function item_id_from_name(str){
@@ -1679,8 +202,7 @@ function combine_items(_x,_y,item_id){//Reduce memory usage and improve the user
 }
 
 function new_npc(_x,_y,_home_x,_home_y){
-//id:1, char:3, x:24,y:5, brain: {no_ai:0, hostile: 0}, health:20, strength:1, attack_cooldown:0, dest_x:24, dest_y:15
-var new_boi={id:1, char:3, x:_x,y:_y, brain: {no_ai:0,hostile:0,identity:{gender:0,dysphoria:0,love_mode:0},home_x:_home_x,home_y:_home_y}, health:20, strength:1, attack_cooldown:0, dest_x:_x, dest_y:_y};
+	var new_boi={id:1,char:3,x:_x,y:_y,brain:{no_ai:0,hostile:0,identity:{gender:0,dysphoria:0,love_mode:0},home_x:_home_x,home_y:_home_y},health:20,strength:1,attack_cooldown:0,dest_x:_x, dest_y:_y};
 new_boi.brain.identity.gender=Math.floor(Math.random()*100)%2;
 new_boi.brain.identity.dysphoria=(Math.floor(Math.random()*100)%100)<10;
 pages[cur_page].entities.push(new_boi);
@@ -1778,25 +300,25 @@ function new_page(hole_from=-1,direction="none"){
 	pages.push(n_page);
 	if(hole_from==-1){
 		switch(direction){//direction _entering_ new page
-	    case "none":
+		case "none":
 		struct_copy(4,18,11);
 		pages[cur_page].holes.push({x:19, y:12, dest_page:old_cur_page, next_x: 1, next_y: 0});
 		pages[cur_page].metadata.x=0;
 		pages[cur_page].metadata.y=0;
-	    	break;
-	    case "up"://up
-	    	pages[cur_page].metadata.north_goto=pages.length-1;
-	    	break;
-	    case "down"://down
-	    	pages[cur_page].metadata.south_goto=pages.length-1;
-	    	break;
-	    case "left"://left
-	    	pages[cur_page].metadata.west_goto=pages.length-1;
-	    	break;
-	    case "right"://right
-	    	pages[cur_page].metadata.east_goto=pages.length-1;
-	    	break;
-	    }
+			break;
+		case "up"://up
+			pages[cur_page].metadata.north_goto=pages.length-1;
+			break;
+		case "down"://down
+			pages[cur_page].metadata.south_goto=pages.length-1;
+			break;
+		case "left"://left
+			pages[cur_page].metadata.west_goto=pages.length-1;
+			break;
+		case "right"://right
+			pages[cur_page].metadata.east_goto=pages.length-1;
+			break;
+		}
 	}else{
 		pages[cur_page].holes[hole_from].dest_page=pages.length-1;
 	}
@@ -2011,7 +533,7 @@ switch(standing_on){
 		if(!(tick_hour()>=6 && tick_hour()<=17)){
 			document.getElementById("demonic_announcer").textContent="You can only sleep at day.";
 		}else{
-			tick1=100;
+			tick1=49200;
 			document.getElementById("demonic_announcer").textContent="Slept and skipped to night."
 			player.strength=1;//Player strength reset after sleeping.
 		}
@@ -2476,6 +998,11 @@ switch(char_value(x,y)){
 	case 43://open door
 		pages[cur_page].map[y][x]=42;
 		return true;
+	case 30://fire 0
+	case 31://fire 1
+	case 32://fire 2
+		pages[cur_page].map[y][x]=0;
+		return true;
 	default:
 		if(player.creative==1){
 			var _char=char_value(x,y);//Performance optimization.
@@ -2485,7 +1012,7 @@ switch(char_value(x,y)){
 				}
 			}
 			pages[cur_page].map[y][x]=0;
-			return true;
+			return false;
 		}
 		break;
 }
@@ -2996,15 +1523,11 @@ function death(){
     key_manager=function(){};
 }
 
-function pathfind_step(x1,y1,x2,y2,og_x,og_y){
+function pathfind_step(x1,y1,x2,y2,og_x,og_y){//asdf
 var nodes=[];
 var dir="";
-if(og_x==undefined){
-	og_x=20;
-}
-if(og_y==undefined){
-	og_y=12;
-}
+og_x==undefined ? og_x=20 : 0;
+og_y==undefined ? og_y=12 : 0;
 nodes.push({x:x1,y:y1,h:Math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))});
 if(is_walkable(char_value(x1,y1-1))){//up
 	nodes.push({x:x1,y:y1-1,h:Math.sqrt((x2-x1)*(x2-x1)+(y2-(y1-1))*(y2-(y1-1)))});
@@ -3034,6 +1557,19 @@ if(is_walkable(char_value(x1+1,y1-1)) && (is_walkable(char_value(x1+1,y1)) || is
 if(is_walkable(char_value(x1+1,y1+1)) && (is_walkable(char_value(x1+1,y1)) || is_walkable(char_value(x1,y1+1)))){//down right
 	nodes.push({x:x1+1,y:y1+1,h:Math.sqrt((x2-(x1+1))*(x2-(x1+1))+(y2-(y1+1))*(y2-(y1+1)))});
 }
+var collided;
+var new_nodes=[];
+new_nodes.push(JSON.parse(JSON.stringify(nodes[0])));
+for(var i=1;i<nodes.length;i++){
+	collided=entity_collide_xy(nodes[i].x,nodes[i].y);
+	if(collided!=-1){
+		if(pages[cur_page].entities[collided].id==1){
+			continue;
+		}
+	}
+	new_nodes.push(JSON.parse(JSON.stringify(nodes[i])));
+}
+nodes=new_nodes;
 var smallest=nodes[0];
 for(var i=1;i<nodes.length;i++){
 	if(smallest.h>=nodes[i].h){
@@ -3133,9 +1669,7 @@ function is_54(x,y){
 	return char_value(x,y)==54;
 }
 
-//pages[cur_page].entities[0].last_dir="left"
-
-function entity_slip(ptr){//pages[cur_page].entities[0].dest_x=35;pages[cur_page].entities[0].dest_y=10
+function entity_slip(ptr){
 switch(pages[cur_page].entities[ptr].last_dir){
 	case "up":
 		if(is_walkable(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y-1)) && !hit_bounds(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y-1)){
@@ -3634,23 +2168,23 @@ switch(pages[cur_page].map[random_y][random_x]){
 		pages[cur_page].entities.push({id:2, char:52, x:random_x, y:random_y, item: [25,1]});
 		combine_items(random_x,random_y,25);
 		break;
-	case 47://walnut leaves
+	case 47:
 		pages[cur_page].entities.push({id:2, char:52, x:random_x, y:random_y, item: [25,1]});
 		combine_items(random_x,random_y,25);
 		break;
-	case 48://walnut leaves
+	case 48:
 		pages[cur_page].entities.push({id:2, char:52, x:random_x, y:random_y, item: [25,1]});
 		combine_items(random_x,random_y,25);
 		break;
-	case 49://walnut leaves
+	case 49:
 		pages[cur_page].entities.push({id:2, char:52, x:random_x, y:random_y, item: [25,1]});
 		combine_items(random_x,random_y,25);
 		break;
-	case 50://walnut leaves
+	case 50:
 		pages[cur_page].entities.push({id:2, char:52, x:random_x, y:random_y, item: [25,1]});
 		combine_items(random_x,random_y,25);
 		break;
-	case 51://walnut leaves
+	case 51:
 		pages[cur_page].entities.push({id:2, char:52, x:random_x, y:random_y, item: [25,1]});
 		combine_items(random_x,random_y,25);
 		break;
@@ -3693,8 +2227,6 @@ for(var i=0;i<pages[cur_page].entities.length;i++){
     }
 }
 }
-//night: 0-32767
-//day: 32768-65535
 if(tick_hour()>=6 && tick_hour()<=17){
 	//enemy spawning stuff
 	if(pages[cur_page].metadata.safety==0){
@@ -3708,17 +2240,6 @@ if(tick_hour()>=6 && tick_hour()<=17){
             }
 		}
 	}
-}
-switch(char_value(random_x,random_y)){
-	case 30://fire 0
-		do_fire(random_x,random_y);
-		break;
-	case 31://fire 1
-		do_fire(random_x,random_y);
-		break;
-	case 32://fire 2
-		do_fire(random_x,random_y);
-		break;
 }
 }
 
@@ -3813,20 +2334,19 @@ for(var i=0;i<item_ptrs.length;i++){
 }
 
 function grinding(){
-for(var x=0;x<40;x++){
-	for(var y=0;y<25;y++){
-		if(char_value(x,y)==73){//grind stone
-			grind_item(x,y);
-		}
+	var grind_stones=map_search(73);
+	for(var i=0;i<grind_stones.length;i++){
+		grind_item(grind_stones[i].x,grind_stones[i].y);
 	}
-}
 }
 
 function fireing(){
 var limit=5;
+var tmp=0;
 for(var x=0;x<40;x++){
 	for(var y=0;y<25;y++){
-		if(char_value(x,y)==30 || char_value(x,y)==31 || char_value(x,y)==32 || char_value(x,y)==68){//Fire, Camp Fire
+		tmp=char_value(x,y);
+		if(tmp==30 || tmp==31 || tmp==32 || tmp==68){//Fire, Camp Fire
 			if(limit==0){
 				return;
 			}
@@ -3852,9 +2372,8 @@ function tick_hour(){
 function tick_to_time(){//%02i:%02i
 	//65535/24=2730.625
 	var hour=Math.floor(tick1/(65535/24))%24;
-	var minute=Math.floor(tick1/(65535/(24*60)))%60;
-	var second=Math.floor(tick1/(65535/(24*60*60)))%60;
-	return leading_zeros(hour)+":"+leading_zeros(minute)+":"+leading_zeros(second);
+	var minute=Math.floor(tick1/(65535/(1440)))%60;
+	return hour+":"+leading_zeros(minute);
 }
 
 var tick1=0;//0 to 65535
