@@ -21,16 +21,12 @@
 <script id="lzutf8" src="./lzutf8.min.js"></script>
 <script src="./resources.js"></script>
 <script>
-//Mouse Simulator 2D v0.44
+//Mouse Simulator 2D v0.45
 /*
-Time in UI tweak.
-Pathfinding slightly smarter. Hopefully. Probably not, but whatever.
-Sleeping skips time to 18:00
-Split resource data into resources.js
+electricity!
+wire junctions.
 */
-LZUTF8==undefined ? alert("Unable to fetch 'lzutf8.min.js'. This is required to compress/decompress saves. Please make sure Mouse Simulator 2D can fetch this file.") : 0;
 //autoconfig
-
 function autoconfig(){
 	var saves=window.localStorage;
 	switch(saves.getItem("_bigger")){
@@ -90,18 +86,17 @@ if(_sfx.paused==false){
 var ctx=document.getElementById("cga").getContext("2d");
 var char=ctx.getImageData(0,0,8,8);
 function write_1bit(pos,val,id){
+	char.data[4*pos+3]=255;
 	switch(val){
 		case 0:
 			char.data[4*pos]=font[id][67];
 			char.data[4*pos+1]=font[id][68];
 			char.data[4*pos+2]=font[id][69];
-			char.data[4*pos+3]=255;
 			break;
 		case 1:
 			char.data[4*pos]=font[id][64];
 			char.data[4*pos+1]=font[id][65];
 			char.data[4*pos+2]=font[id][66];
-			char.data[4*pos+3]=255;
 			break;
 	}
 }
@@ -580,6 +575,51 @@ switch(standing_on){
 	case 73://Camp Fire
 		pick_up_tile(46);
 		break;
+	case 77://Copper wire (off)
+		pick_up_tile(67);
+		break;
+	case 78://Copper wire (off)
+		pick_up_tile(67);
+		break;
+	case 79://Copper wire (off)
+		pick_up_tile(67);
+		break;
+	case 80://Copper wire (off)
+		pick_up_tile(67);
+		break;
+	case 81://Copper wire (on)
+		pick_up_tile(67);
+		break;
+	case 82://Copper wire (on)
+		pick_up_tile(67);
+		break;
+	case 83://Copper wire (on)
+		pick_up_tile(67);
+		break;
+	case 84://Copper wire (on)
+		pick_up_tile(67);
+		break;
+	case 86://Switch (off)
+		pick_up_tile(68);
+		break;
+	case 87://switch (on)
+		pick_up_tile(68);
+		break;
+	case 88://Not Gate (off)
+		pick_up_tile(69);//nice
+		break;
+	case 89://Not Gate (on)
+		pick_up_tile(69);
+		break;
+	case 90://Gate (off)
+		pick_up_tile(70);
+		break;
+	case 91://Gate (on)
+		pick_up_tile(70);
+		break;
+	case 92://Wire Jumper
+		pick_up_tile(71);
+		break;
 	case 29://water
 		if(player.inv[player.inv[10]][0]==11){//Bowl
 			pages[cur_page].entities.push({
@@ -971,6 +1011,9 @@ return true;
 }
 
 function remove_char(x,y){
+if(player.inv[player.inv[10]][0]==67){
+	return;
+}
 switch(char_value(x,y)){
     case 18://fence
 		return item_pickup_dropoff(6,x,y);
@@ -992,6 +1035,10 @@ switch(char_value(x,y)){
 		return item_pickup_dropoff(48,x,y);
 	case 76://Cyan Stained MDF
 		return item_pickup_dropoff(49,x,y);
+	case 90://Gate, off
+		return item_pickup_dropoff(70,x,y);
+	case 91://Gate, on
+		return item_pickup_dropoff(70,x,y);
 	case 42://closed door
 		pages[cur_page].map[y][x]=43;
 		return true;
@@ -1002,6 +1049,12 @@ switch(char_value(x,y)){
 	case 31://fire 1
 	case 32://fire 2
 		pages[cur_page].map[y][x]=0;
+		return true;
+	case 86://switch off
+		pages[cur_page].map[y][x]=87;
+		return true;
+	case 87://switch on
+		pages[cur_page].map[y][x]=86;
 		return true;
 	default:
 		if(player.creative==1){
@@ -1128,6 +1181,29 @@ switch(player.inv[player.inv[10]][0]){
    	       break;
 	}
 	break;
+	case 67://copper wire
+		if(char_value(player.x,player.y)!=0){
+			break;
+		}
+		switch(x){
+			case "up":
+				pages[cur_page].map[player.y][player.x]=77;
+				break;
+			case "down":
+				pages[cur_page].map[player.y][player.x]=78;
+				break;
+			case "left":
+				pages[cur_page].map[player.y][player.x]=79;
+				break;
+			case "right":
+				pages[cur_page].map[player.y][player.x]=80;
+				break;
+		}
+		player.creative==1 ? 0 : player.inv[player.inv[10]][1]--;
+		if(player.inv[player.inv[10]][1]<=0){
+			player.inv[player.inv[10]][0]=0;
+		}
+		break;
 	default:
 		switch(x){
  		 	case "up":
@@ -2333,10 +2409,244 @@ for(var i=0;i<item_ptrs.length;i++){
 }
 }
 
-function grinding(){
+function not_gate(x,y){
+	var inputs=0;
+	if(char_value(x+1,y)==83){
+		inputs=1;
+	}
+	if(char_value(x-1,y)==84){
+		inputs=1;
+	}
+	if(char_value(x,y-1)==82){
+		inputs=1;
+	}
+	if(char_value(x,y+1)==81){
+		inputs=1;
+	}
+	inputs==1 ? pages[cur_page].map[y][x]=88 : pages[cur_page].map[y][x]=89;
+}
+
+function gate(x,y){
+	var inputs=0;
+	if(char_value(x+1,y)==83){
+		inputs=1;
+	}
+	if(char_value(x-1,y)==84){
+		inputs=1;
+	}
+	if(char_value(x,y-1)==82){
+		inputs=1;
+	}
+	if(char_value(x,y+1)==81){
+		inputs=1;
+	}
+	inputs==1 ? pages[cur_page].map[y][x]=91 : pages[cur_page].map[y][x]=90;
+}
+
+function wire_jumper(x,y){
+	//up, wire down
+	if(char_value(x,y-1)==78){
+		if(char_value(x,y+1)==82){
+			pages[cur_page].map[y+1][x]=78;
+		}
+	}
+	if(char_value(x,y-1)==82){
+		if(char_value(x,y+1)==78){
+			pages[cur_page].map[y+1][x]=82;
+		}
+	}
+	//down, wire up
+	if(char_value(x,y+1)==77){
+		if(char_value(x,y-1)==81){
+			pages[cur_page].map[y-1][x]=77;
+		}
+	}
+	if(char_value(x,y+1)==81){
+		if(char_value(x,y-1)==77){
+			pages[cur_page].map[y-1][x]=81;
+		}
+	}
+	//left, wire right
+	if(char_value(x-1,y)==80){
+		if(char_value(x+1,y)==84){
+			pages[cur_page].map[y][x+1]=80;
+		}
+	}
+	if(char_value(x-1,y)==84){
+		if(char_value(x+1,y)==80){
+			pages[cur_page].map[y][x+1]=84;
+		}
+	}
+	//right, wire left
+	if(char_value(x+1,y)==79){
+		if(char_value(x-1,y)==83){
+			pages[cur_page].map[y][x-1]=79;
+		}
+	}
+	if(char_value(x+1,y)==83){
+		if(char_value(x-1,y)==79){
+			pages[cur_page].map[y][x-1]=83;
+		}
+	}
+}
+
+function elec_misc(tile,x,y,value,dir){
+	switch(tile){
+		case 88://not gate (off)
+		case 89://not gate (on)
+			not_gate(x,y);
+			break;
+		case 90://Gate (off)
+		case 91://Gate (on)
+			gate(x,y);
+			break;
+		case 92://wire jumper
+			wire_jumper(x,y);
+			break;
+		case 42://door closed
+		case 43://door open
+			value==1 ? pages[cur_page].map[y][x]=43 : pages[cur_page].map[y][x]=42;
+			break;
+		default:
+			break;
+	}
+}
+
+function is_wire(x){
+	return (properties.wires.indexOf(x)!=-1 ? true : false);
+}
+
+function is_on(x){
+	return (properties.elec_on.indexOf(x)!=-1 ? true : false);
+}
+
+function is_off(x){
+	return (properties.elec_off.indexOf(x)!=-1 ? true : false);
+}
+
+function active_tiles(){
 	var grind_stones=map_search(73);
 	for(var i=0;i<grind_stones.length;i++){
 		grind_item(grind_stones[i].x,grind_stones[i].y);
+	}
+	//wire up
+	var wires=map_search(77);//Wire up, off
+	var before_tile;
+	var j;
+	for(var i=0;i<wires.length;i++){
+		if(is_on(char_value(wires[i].x,wires[i].y+1))){
+			j=wires[i].y;
+			do{
+				pages[cur_page].map[j][wires[i].x]+=4;
+				j--;
+			}while(char_value(wires[i].x,j)==77)
+			elec_misc(char_value(wires[i].x,j),wires[i].x,j,1,"up");
+		}
+		
+	}
+	wires=map_search(81);//wire up,on
+	for(var i=0;i<wires.length;i++){
+		if(is_off(char_value(wires[i].x,wires[i].y+1))){
+			j=wires[i].y;
+			do{
+				pages[cur_page].map[j][wires[i].x]-=4;
+				j--;
+			}while(char_value(wires[i].x,j)==81)
+			elec_misc(char_value(wires[i].x,j),wires[i].x,j,0,"up");
+		}
+	}
+	//wire down
+	wires=map_search(78);//wire down,off
+	for(var i=0;i<wires.length;i++){
+		if(is_on(char_value(wires[i].x,wires[i].y-1))){
+			j=wires[i].y;
+			do{
+				pages[cur_page].map[j][wires[i].x]+=4;
+				j++;
+			}while(char_value(wires[i].x,j)==82)
+			elec_misc(char_value(wires[i].x,j),wires[i].x,j,1,"down");
+		}
+	}
+	wires=map_search(82);//wire down,on
+	for(var i=0;i<wires.length;i++){
+		if(is_off(char_value(wires[i].x,wires[i].y-1))){
+			j=wires[i].y;
+			do{
+				pages[cur_page].map[j][wires[i].x]-=4;
+				j++;
+			}while(char_value(wires[i].x,j)==78)
+			elec_misc(char_value(wires[i].x,j),wires[i].x,j,0,"down");
+		}
+	}
+	//wire left
+	wires=map_search(79);//wire left,off
+	for(var i=0;i<wires.length;i++){
+		if(is_on(char_value(wires[i].x+1,wires[i].y))){
+			j=wires[i].x;
+			
+			do{
+				pages[cur_page].map[wires[i].y][j]+=4;
+				j--;
+			}while(char_value(j,wires[i].y)==79)
+			elec_misc(char_value(j,wires[i].y),j,wires[i].y,1,"left");
+		}
+		
+	}
+	wires=map_search(83);//wire left,on
+	for(var i=0;i<wires.length;i++){
+		if(is_off(char_value(wires[i].x+1,wires[i].y))){
+			j=wires[i].x;
+			
+			do{
+				pages[cur_page].map[wires[i].y][j]-=4;
+				j--;
+			}while(char_value(j,wires[i].y)==83)
+			elec_misc(char_value(j,wires[i].y),j,wires[i].y,0,"left");
+		}
+	}
+	//wire right
+	wires=map_search(80);//wire right,off
+	for(var i=0;i<wires.length;i++){
+		if(is_on(char_value(wires[i].x-1,wires[i].y))){
+			j=wires[i].x;
+			do{
+				pages[cur_page].map[wires[i].y][j]+=4;
+				j++;
+			}while(char_value(j,wires[i].y)==84)
+			elec_misc(char_value(j,wires[i].y),j,wires[i].y,1,"right");
+		}
+		
+	}
+	wires=map_search(84);//wire right,on
+	for(var i=0;i<wires.length;i++){
+		if(is_off(char_value(wires[i].x-1,wires[i].y))){
+			j=wires[i].x;
+			do{
+				pages[cur_page].map[wires[i].y][j]-=4;
+				j++;
+			}while(char_value(j,wires[i].y)==80)
+			elec_misc(char_value(j,wires[i].y),j,wires[i].y,0,"right");
+		}
+	}
+	var gates=map_search(90);//gate off
+	for(var i=0;i<gates.length;i++){
+		gate(gates[i].x,gates[i].y);
+	}
+	gates=map_search(91);//gate on
+	for(var i=0;i<gates.length;i++){
+		gate(gates[i].x,gates[i].y);
+	}
+	gates=map_search(88);//not gate off
+	for(var i=0;i<gates.length;i++){
+		not_gate(gates[i].x,gates[i].y);
+	}
+	gates=map_search(89);//not gate on
+	for(var i=0;i<gates.length;i++){
+		not_gate(gates[i].x,gates[i].y);
+	}
+	gates=map_search(92);//wire jumper
+	for(var i=0;i<gates.length;i++){
+		wire_jumper(gates[i].x,gates[i].y);
 	}
 }
 
@@ -2370,9 +2680,8 @@ function tick_hour(){
 }
 
 function tick_to_time(){//%02i:%02i
-	//65535/24=2730.625
-	var hour=Math.floor(tick1/(65535/24))%24;
-	var minute=Math.floor(tick1/(65535/(1440)))%60;
+	var hour=Math.floor(tick1/2730.625)%24;
+	var minute=Math.floor(tick1/45.510416)%60;
 	return hour+":"+leading_zeros(minute);
 }
 
@@ -2443,19 +2752,12 @@ switch(player.creative){
 	break;
 }
 document.getElementById("status").textContent=status_bar;
-tick1++;
-if(tick1>=65536){tick1=0;}
-//night: 0-32767
-//day: 32768-65535
-if(tick1%2==0){//projectiles and path finding
-tick();
-}
-if(tick1%40==0){//random tick
-random_tick();
-}
+tick1=(tick1>=65536 ? 0:tick1+1);
+tick1%2==0 ? tick():0;
+tick1%40==0 ? random_tick():0;
 if(tick1%7==0){//fire, Grind Stone
 fireing();
-grinding();
+active_tiles();
 }
 }
 const interval = setInterval(function (){refresh();},67);
