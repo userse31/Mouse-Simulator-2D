@@ -21,39 +21,36 @@
 <script id="lzutf8" src="./lzutf8.min.js"></script>
 <script src="./resources.js"></script>
 <script>
-//Mouse Simulator 2D v0.45
+//Mouse Simulator 2D v0.46
 /*
-electricity!
-wire junctions.
+Code size optimizations.
+Pumps!
+Entity rendering priority!
+Fans!
+Electrodes!
 */
 //autoconfig
+var saves=window.localStorage;
+var cga=document.getElementById("cga");
+var dem_ann=document.getElementById("demonic_announcer");
 function autoconfig(){
-	var saves=window.localStorage;
-	switch(saves.getItem("_bigger")){
-		case "true":
-			set_scaling(2);
-			break;
-		case "false":
-			set_scaling(1);
-			break;
-	}
+	saves.getItem("_bigger")=="t" ? set_scaling(2) : set_scaling(1);
 }
 autoconfig();
 function config(){
-	var saves=window.localStorage;
 	var bigger;
 	if(confirm("Increase canvas size? (Hard of sight)")){
 		set_scaling(2);
-		bigger="true";
+		bigger="t";
 	}else{
 		set_scaling(1);
-		bigger="false";
+		bigger="f";
 	}
 	saves.setItem("_bigger",bigger);
 }
 function set_scaling(scale){
-	document.getElementById("cga").style.width=320*scale+"px";
-	document.getElementById("cga").style.height=200*scale+"px";
+	cga.style.width=320*scale+"px";
+	cga.style.height=200*scale+"px";
 }
 var _sfx=document.getElementById("sfx");
 function sfx_play(){
@@ -83,7 +80,7 @@ if(_sfx.paused==false){
 	}
 }
 
-var ctx=document.getElementById("cga").getContext("2d");
+var ctx=cga.getContext("2d");
 var char=ctx.getImageData(0,0,8,8);
 function write_1bit(pos,val,id){
 	char.data[4*pos+3]=255;
@@ -115,9 +112,27 @@ function draw_map(){
 		}
 	}
 	//entity map
+	//entity drawing priorities.
+	var e_item=[];
+	var e_npc=[];
+	var e_proj=[];
 	for(var i=0;i<pages[cur_page].entities.length;i++){
-		get_font(pages[cur_page].entities[i].char);
-		ctx.putImageData(char,pages[cur_page].entities[i].x*8,pages[cur_page].entities[i].y*8);
+		switch(pages[cur_page].entities[i].id){
+			case 1://npc
+				e_npc.push(i);
+				break;
+			case 2://dropped item
+				e_item.push(i);
+				break;
+			case 3://projectile
+				e_proj.push(i);
+				break;
+		}
+	}
+	var e_ordered=e_item.concat(e_npc,e_proj);
+	for(var i=0;i<e_ordered.length;i++){
+		get_font(pages[cur_page].entities[e_ordered[i]].char);
+		ctx.putImageData(char,pages[cur_page].entities[e_ordered[i]].x*8,pages[cur_page].entities[e_ordered[i]].y*8);
 	}
 	//player
 	get_font(3);
@@ -213,7 +228,7 @@ function struct_copy(struct_id,offset_x,offset_y,fill_nonzero=1){
 			if(char_value(offset_x+x,offset_y+y)!=0 && fill_nonzero==0){
 				continue;
 			}
-			pages[cur_page].map[offset_y+y][offset_x+x]=structures[struct_id][y][x];
+			pages[cur_page].map[offset_y+y][offset_x+x]=structures[struct_id][y][x]==-1 ? pages[cur_page].map[offset_y+y][offset_x+x] : structures[struct_id][y][x];
 		}
 	}
 }
@@ -526,10 +541,10 @@ switch(standing_on){
 	case 7://bedding
 	case 8:
 		if(!(tick_hour()>=6 && tick_hour()<=17)){
-			document.getElementById("demonic_announcer").textContent="You can only sleep at day.";
+			dem_ann.textContent="You can only sleep at day.";
 		}else{
 			tick1=49200;
-			document.getElementById("demonic_announcer").textContent="Slept and skipped to night."
+			dem_ann.textContent="Slept and skipped to night."
 			player.strength=1;//Player strength reset after sleeping.
 		}
 		break;
@@ -619,6 +634,9 @@ switch(standing_on){
 		break;
 	case 92://Wire Jumper
 		pick_up_tile(71);
+		break;
+	case 93://Pump
+		pick_up_tile(72);
 		break;
 	case 29://water
 		if(player.inv[player.inv[10]][0]==11){//Bowl
@@ -1039,6 +1057,8 @@ switch(char_value(x,y)){
 		return item_pickup_dropoff(70,x,y);
 	case 91://Gate, on
 		return item_pickup_dropoff(70,x,y);
+	case 93://pump
+		return item_pickup_dropoff(72,x,y);
 	case 42://closed door
 		pages[cur_page].map[y][x]=43;
 		return true;
@@ -1055,6 +1075,9 @@ switch(char_value(x,y)){
 		return true;
 	case 87://switch on
 		pages[cur_page].map[y][x]=86;
+		return true;
+	case 94://Fan
+		return item_pickup_dropoff(73,x,y);
 		return true;
 	default:
 		if(player.creative==1){
@@ -1437,11 +1460,11 @@ if(key==80){//pause, p
 	switch(paused){
 		case 0:
 			paused=1;
-			document.getElementById("demonic_announcer").textContent="Paused";
+			dem_ann.textContent="Paused";
 			break;
 		case 1:
 			paused=0;
-			document.getElementById("demonic_announcer").textContent="Unpaused";
+			dem_ann.textContent="Unpaused";
 			break;
 	}
 }
@@ -1583,7 +1606,7 @@ switch(key){
         use_item();
         break;
     case 192://"~" key
-        document.getElementById("demonic_announcer").textContent="Stop there criminal!";
+        dem_ann.textContent="Stop there criminal!";
         cheats();
         break;
 }
@@ -1796,7 +1819,8 @@ switch(pages[cur_page].entities[ptr].last_dir){
 		}
 		break;
 	default:
-		break;
+		//pages[cur_page].entities[ptr].last_dir="up";
+		return;
 }
 return 1;
 }
@@ -1815,14 +1839,8 @@ switch(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].
 		return 1;
 		break;
 	case 30://fire
-		pages[cur_page].entities[ptr].health--;
-		break;
 	case 31:
-		pages[cur_page].entities[ptr].health--;
-		break;
 	case 32:
-		pages[cur_page].entities[ptr].health--;
-		break;
 	case 68://Camp Fire
 		pages[cur_page].entities[ptr].health--;
 		break;
@@ -2006,11 +2024,7 @@ function tick(){
 			slip();
 			break;
 		case 30://fire
-			fire_damage();
-			break;
 		case 31:
-			fire_damage();
-			break;
 		case 32:
 			fire_damage();
 			break;
@@ -2241,25 +2255,10 @@ if(pages[cur_page].map[random_y][random_x]==17){//red mushroom growth
 }
 switch(pages[cur_page].map[random_y][random_x]){
 	case 46://walnut leaves
-		pages[cur_page].entities.push({id:2, char:52, x:random_x, y:random_y, item: [25,1]});
-		combine_items(random_x,random_y,25);
-		break;
 	case 47:
-		pages[cur_page].entities.push({id:2, char:52, x:random_x, y:random_y, item: [25,1]});
-		combine_items(random_x,random_y,25);
-		break;
 	case 48:
-		pages[cur_page].entities.push({id:2, char:52, x:random_x, y:random_y, item: [25,1]});
-		combine_items(random_x,random_y,25);
-		break;
 	case 49:
-		pages[cur_page].entities.push({id:2, char:52, x:random_x, y:random_y, item: [25,1]});
-		combine_items(random_x,random_y,25);
-		break;
 	case 50:
-		pages[cur_page].entities.push({id:2, char:52, x:random_x, y:random_y, item: [25,1]});
-		combine_items(random_x,random_y,25);
-		break;
 	case 51:
 		pages[cur_page].entities.push({id:2, char:52, x:random_x, y:random_y, item: [25,1]});
 		combine_items(random_x,random_y,25);
@@ -2410,87 +2409,176 @@ for(var i=0;i<item_ptrs.length;i++){
 }
 
 function not_gate(x,y){
-	var inputs=0;
-	if(char_value(x+1,y)==83){
-		inputs=1;
-	}
-	if(char_value(x-1,y)==84){
-		inputs=1;
-	}
-	if(char_value(x,y-1)==82){
-		inputs=1;
-	}
-	if(char_value(x,y+1)==81){
-		inputs=1;
-	}
-	inputs==1 ? pages[cur_page].map[y][x]=88 : pages[cur_page].map[y][x]=89;
+	pages[cur_page].map[y][x]=(char_value(x+1,y)==83||char_value(x-1,y)==84||char_value(x,y-1)==82||char_value(x,y+1)==81 ? 88 : 89);
 }
 
 function gate(x,y){
-	var inputs=0;
-	if(char_value(x+1,y)==83){
-		inputs=1;
-	}
-	if(char_value(x-1,y)==84){
-		inputs=1;
-	}
-	if(char_value(x,y-1)==82){
-		inputs=1;
-	}
-	if(char_value(x,y+1)==81){
-		inputs=1;
-	}
-	inputs==1 ? pages[cur_page].map[y][x]=91 : pages[cur_page].map[y][x]=90;
+	pages[cur_page].map[y][x]=(char_value(x+1,y)==83||char_value(x-1,y)==84||char_value(x,y-1)==82||char_value(x,y+1)==81 ? 91 : 90);
+}
+
+function electrodes(x,y){
+	pages[cur_page].map[y][x]=(char_value(x+1,y)==29||char_value(x-1,y)==29||char_value(x,y-1)==29||char_value(x,y+1)==29 ? 96 : 95);
 }
 
 function wire_jumper(x,y){
 	//up, wire down
-	if(char_value(x,y-1)==78){
-		if(char_value(x,y+1)==82){
-			pages[cur_page].map[y+1][x]=78;
-		}
+	if(char_value(x,y-1)==78&&char_value(x,y+1)==82){
+		pages[cur_page].map[y+1][x]=78;
 	}
-	if(char_value(x,y-1)==82){
-		if(char_value(x,y+1)==78){
-			pages[cur_page].map[y+1][x]=82;
-		}
+	if(char_value(x,y-1)==82&&char_value(x,y+1)==78){
+		pages[cur_page].map[y+1][x]=82;
 	}
 	//down, wire up
-	if(char_value(x,y+1)==77){
-		if(char_value(x,y-1)==81){
-			pages[cur_page].map[y-1][x]=77;
-		}
+	if(char_value(x,y+1)==77&&char_value(x,y-1)==81){
+		pages[cur_page].map[y-1][x]=77;
 	}
-	if(char_value(x,y+1)==81){
-		if(char_value(x,y-1)==77){
+	if(char_value(x,y+1)==81&&char_value(x,y-1)==77){
 			pages[cur_page].map[y-1][x]=81;
-		}
 	}
 	//left, wire right
-	if(char_value(x-1,y)==80){
-		if(char_value(x+1,y)==84){
-			pages[cur_page].map[y][x+1]=80;
-		}
+	if(char_value(x-1,y)==80&&char_value(x+1,y)==84){
+		pages[cur_page].map[y][x+1]=80;
 	}
-	if(char_value(x-1,y)==84){
-		if(char_value(x+1,y)==80){
-			pages[cur_page].map[y][x+1]=84;
-		}
+	if(char_value(x-1,y)==84&&char_value(x+1,y)==80){
+		pages[cur_page].map[y][x+1]=84;
 	}
 	//right, wire left
-	if(char_value(x+1,y)==79){
-		if(char_value(x-1,y)==83){
-			pages[cur_page].map[y][x-1]=79;
-		}
+	if(char_value(x+1,y)==79&&char_value(x-1,y)==83){
+		pages[cur_page].map[y][x-1]=79;
 	}
-	if(char_value(x+1,y)==83){
-		if(char_value(x-1,y)==79){
-			pages[cur_page].map[y][x-1]=83;
-		}
+	if(char_value(x+1,y)==83&&char_value(x-1,y)==79){
+		pages[cur_page].map[y][x-1]=83;
 	}
 }
 
-function elec_misc(tile,x,y,value,dir){
+function pump(x,y){//water: 29
+	if(char_value(x,y-1)==29){
+		if(char_value(x,y+1)==0){
+		pages[cur_page].map[y-1][x]=0;
+		pages[cur_page].map[y+1][x]=29;
+		return;
+		}
+		if(hit_bounds(x,y+1)){//map edge, south
+			if(pages[cur_page].metadata.south_goto>=0){
+				if(pages[pages[cur_page].metadata.south_goto].map[0][x]==0){
+					pages[cur_page].map[y-1][x]=0;
+					pages[pages[cur_page].metadata.south_goto].map[0][x]=29;
+					return;
+				}
+			}
+		}
+	}else{
+	if(hit_bounds(x,y-1)){
+		if(pages[cur_page].metadata.north_goto>=0){
+			if(pages[pages[cur_page].metadata.north_goto].map[24][x]==29&&char_value(x,y+1)==0){
+				pages[pages[cur_page].metadata.north_goto].map[24][x]=0;
+				pages[cur_page].map[y+1][x]=29;
+				return;
+			}
+		}
+	}
+	}
+	if(char_value(x,y+1)==29){
+		if(char_value(x,y-1)==0){
+		pages[cur_page].map[y+1][x]=0;
+		pages[cur_page].map[y-1][x]=29;
+		return;
+		}
+		if(hit_bounds(x,y-1)){//map edge, north
+			if(pages[cur_page].metadata.north_goto>=0){
+				if(pages[pages[cur_page].metadata.north_goto].map[24][x]==0){
+					pages[cur_page].map[y+1][x]=0;
+					pages[pages[cur_page].metadata.north_goto].map[24][x]=29;
+					return;
+				}
+			}
+		}
+	}else{
+	if(hit_bounds(x,y+1)){
+		if(pages[cur_page].metadata.south_goto>=0){
+			if(pages[pages[cur_page].metadata.south_goto].map[0][x]==29&&char_value(x,y-1)==0){
+				pages[pages[cur_page].metadata.south_goto].map[0][x]=0;
+				pages[cur_page].map[y-1][x]=29;
+				return;
+			}
+		}
+	}
+	}
+	if(char_value(x-1,y)==29){
+		if(char_value(x+1,y)==0){
+		pages[cur_page].map[y][x-1]=0;
+		pages[cur_page].map[y][x+1]=29;
+		return;
+		}
+		if(hit_bounds(x+1,y)){//map edge, east
+			if(pages[cur_page].metadata.east_goto>=0){
+				if(pages[pages[cur_page].metadata.east_goto].map[y][0]==0){
+					alert(1);
+					pages[cur_page].map[y][x-1]=0;
+					pages[pages[cur_page].metadata.east_goto].map[y][0]=29;
+					return;
+				}
+			}
+		}
+	}else{
+	if(hit_bounds(x-1,y)){
+		if(pages[cur_page].metadata.west_goto>=0){
+			if(pages[pages[cur_page].metadata.west_goto].map[y][39]==29&&char_value(x+1,y)==0){
+				pages[pages[cur_page].metadata.west_goto].map[y][39]=0;
+				pages[cur_page].map[y][x+1]=29;
+				return;
+			}
+		}
+	}
+	}
+	if(char_value(x+1,y)==29){
+		if(char_value(x-1,y)==0){
+		pages[cur_page].map[y][x+1]=0;
+		pages[cur_page].map[y][x-1]=29;
+		return;
+		}
+		if(hit_bounds(x-1,y)){//map edge, west
+			if(pages[cur_page].metadata.west_goto>=0){
+				if(pages[pages[cur_page].metadata.west_goto].map[y][39]==0){
+					pages[cur_page].map[y][x+1]=0;
+					pages[pages[cur_page].metadata.west_goto].map[y][39]=29;
+					return;
+				}
+			}
+		}
+	}else{
+	if(hit_bounds(x+1,y)){
+		if(pages[cur_page].metadata.east_goto>=0){
+			if(pages[pages[cur_page].metadata.east_goto].map[y][0]==29&&char_value(x-1,y)==0){
+				pages[pages[cur_page].metadata.east_goto].map[y][0]=0;
+				pages[cur_page].map[y][x-1]=29;
+				return;
+			}
+		}
+	}
+	}
+}
+
+function fan(x,y){//water: 29
+	if(char_value(x,y-1)==29 && char_value(x,y-2)==0){
+		pages[cur_page].map[y-1][x]=0;
+		pages[cur_page].map[y-2][x]=29;
+	}
+	if(char_value(x,y+1)==29 && char_value(x,y+2)==0){
+		pages[cur_page].map[y+1][x]=0;
+		pages[cur_page].map[y+2][x]=29;
+	}
+	if(char_value(x-1,y)==29 && char_value(x-2,y)==0){
+		pages[cur_page].map[y][x-1]=0;
+		pages[cur_page].map[y][x-2]=29;
+	}
+	if(char_value(x+1,y)==29 && char_value(x+2,y)==0){
+		pages[cur_page].map[y][x+1]=0;
+		pages[cur_page].map[y][x+2]=29;
+	}
+}
+
+function elec_misc(tile,x,y,value){
 	switch(tile){
 		case 88://not gate (off)
 		case 89://not gate (on)
@@ -2505,23 +2593,28 @@ function elec_misc(tile,x,y,value,dir){
 			break;
 		case 42://door closed
 		case 43://door open
-			value==1 ? pages[cur_page].map[y][x]=43 : pages[cur_page].map[y][x]=42;
+			pages[cur_page].map[y][x]=(value==1 ? 43 : 42);
 			break;
+		case 93://pump
+			value==1 ? pump(x,y) : 0;
+			break;
+		case 94://fan
+			value==1 ? fan(x,y) : 0;
 		default:
 			break;
 	}
 }
 
 function is_wire(x){
-	return (properties.wires.indexOf(x)!=-1 ? true : false);
+	return properties.wires.indexOf(x)!=-1;
 }
 
 function is_on(x){
-	return (properties.elec_on.indexOf(x)!=-1 ? true : false);
+	return properties.elec_on.indexOf(x)!=-1;
 }
 
 function is_off(x){
-	return (properties.elec_off.indexOf(x)!=-1 ? true : false);
+	return properties.elec_off.indexOf(x)!=-1;
 }
 
 function active_tiles(){
@@ -2537,22 +2630,21 @@ function active_tiles(){
 		if(is_on(char_value(wires[i].x,wires[i].y+1))){
 			j=wires[i].y;
 			do{
-				pages[cur_page].map[j][wires[i].x]+=4;
+				pages[cur_page].map[j][wires[i].x]=81;
 				j--;
 			}while(char_value(wires[i].x,j)==77)
-			elec_misc(char_value(wires[i].x,j),wires[i].x,j,1,"up");
+			elec_misc(char_value(wires[i].x,j),wires[i].x,j,1);
 		}
-		
 	}
 	wires=map_search(81);//wire up,on
 	for(var i=0;i<wires.length;i++){
 		if(is_off(char_value(wires[i].x,wires[i].y+1))){
 			j=wires[i].y;
 			do{
-				pages[cur_page].map[j][wires[i].x]-=4;
+				pages[cur_page].map[j][wires[i].x]=77;
 				j--;
 			}while(char_value(wires[i].x,j)==81)
-			elec_misc(char_value(wires[i].x,j),wires[i].x,j,0,"up");
+			elec_misc(char_value(wires[i].x,j),wires[i].x,j,0);
 		}
 	}
 	//wire down
@@ -2561,10 +2653,10 @@ function active_tiles(){
 		if(is_on(char_value(wires[i].x,wires[i].y-1))){
 			j=wires[i].y;
 			do{
-				pages[cur_page].map[j][wires[i].x]+=4;
+				pages[cur_page].map[j][wires[i].x]=82;
 				j++;
 			}while(char_value(wires[i].x,j)==82)
-			elec_misc(char_value(wires[i].x,j),wires[i].x,j,1,"down");
+			elec_misc(char_value(wires[i].x,j),wires[i].x,j,1);
 		}
 	}
 	wires=map_search(82);//wire down,on
@@ -2572,10 +2664,10 @@ function active_tiles(){
 		if(is_off(char_value(wires[i].x,wires[i].y-1))){
 			j=wires[i].y;
 			do{
-				pages[cur_page].map[j][wires[i].x]-=4;
+				pages[cur_page].map[j][wires[i].x]=78;
 				j++;
 			}while(char_value(wires[i].x,j)==78)
-			elec_misc(char_value(wires[i].x,j),wires[i].x,j,0,"down");
+			elec_misc(char_value(wires[i].x,j),wires[i].x,j,0);
 		}
 	}
 	//wire left
@@ -2585,12 +2677,11 @@ function active_tiles(){
 			j=wires[i].x;
 			
 			do{
-				pages[cur_page].map[wires[i].y][j]+=4;
+				pages[cur_page].map[wires[i].y][j]=83;
 				j--;
 			}while(char_value(j,wires[i].y)==79)
-			elec_misc(char_value(j,wires[i].y),j,wires[i].y,1,"left");
+			elec_misc(char_value(j,wires[i].y),j,wires[i].y,1);
 		}
-		
 	}
 	wires=map_search(83);//wire left,on
 	for(var i=0;i<wires.length;i++){
@@ -2598,10 +2689,10 @@ function active_tiles(){
 			j=wires[i].x;
 			
 			do{
-				pages[cur_page].map[wires[i].y][j]-=4;
+				pages[cur_page].map[wires[i].y][j]=79;
 				j--;
 			}while(char_value(j,wires[i].y)==83)
-			elec_misc(char_value(j,wires[i].y),j,wires[i].y,0,"left");
+			elec_misc(char_value(j,wires[i].y),j,wires[i].y,0);
 		}
 	}
 	//wire right
@@ -2610,10 +2701,10 @@ function active_tiles(){
 		if(is_on(char_value(wires[i].x-1,wires[i].y))){
 			j=wires[i].x;
 			do{
-				pages[cur_page].map[wires[i].y][j]+=4;
+				pages[cur_page].map[wires[i].y][j]=84;
 				j++;
-			}while(char_value(j,wires[i].y)==84)
-			elec_misc(char_value(j,wires[i].y),j,wires[i].y,1,"right");
+			}while(char_value(j,wires[i].y)==80)
+			elec_misc(char_value(j,wires[i].y),j,wires[i].y,1);
 		}
 		
 	}
@@ -2622,31 +2713,25 @@ function active_tiles(){
 		if(is_off(char_value(wires[i].x-1,wires[i].y))){
 			j=wires[i].x;
 			do{
-				pages[cur_page].map[wires[i].y][j]-=4;
+				pages[cur_page].map[wires[i].y][j]=80;
 				j++;
-			}while(char_value(j,wires[i].y)==80)
-			elec_misc(char_value(j,wires[i].y),j,wires[i].y,0,"right");
+			}while(char_value(j,wires[i].y)==84)
+			elec_misc(char_value(j,wires[i].y),j,wires[i].y,0);
 		}
 	}
-	var gates=map_search(90);//gate off
+	var gates=[map_search(90),map_search(91),map_search(88),map_search(89),map_search(92),map_search(95),map_search(96)];//gate off,gate on,not gate off, not gate on, wire jumper,electrode off,electrode on
+	var longest=gates[0].length;
 	for(var i=0;i<gates.length;i++){
-		gate(gates[i].x,gates[i].y);
+		longest=longest<gates[i].length ? gates[i].length : longest;
 	}
-	gates=map_search(91);//gate on
-	for(var i=0;i<gates.length;i++){
-		gate(gates[i].x,gates[i].y);
-	}
-	gates=map_search(88);//not gate off
-	for(var i=0;i<gates.length;i++){
-		not_gate(gates[i].x,gates[i].y);
-	}
-	gates=map_search(89);//not gate on
-	for(var i=0;i<gates.length;i++){
-		not_gate(gates[i].x,gates[i].y);
-	}
-	gates=map_search(92);//wire jumper
-	for(var i=0;i<gates.length;i++){
-		wire_jumper(gates[i].x,gates[i].y);
+	for(var i=0;i<longest;i++){
+		i<gates[0].length ? gate(gates[0][i].x,gates[0][i].y) : 0;
+		i<gates[1].length ? gate(gates[1][i].x,gates[1][i].y) : 0;
+		i<gates[2].length ? not_gate(gates[2][i].x,gates[2][i].y) : 0;
+		i<gates[3].length ? not_gate(gates[3][i].x,gates[3][i].y) : 0;
+		i<gates[4].length ? wire_jumper(gates[4][i].x,gates[4][i].y) : 0;
+		i<gates[5].length ? electrodes(gates[5][i].x,gates[5][i].y) : 0;
+		i<gates[6].length ? electrodes(gates[6][i].x,gates[6][i].y) : 0;
 	}
 }
 
@@ -2734,20 +2819,12 @@ var status_bar="Inventory: ";
 switch(player.creative){
 	case 0://Survival
 	for(var i=0;i<10;i++){
-	    if(player.inv[10]!=i){
-	    status_bar+=i+": "+item_names[player.inv[i][0]]+" x "+player.inv[i][1]+" ";
-	    }else{
-	    status_bar+=i+": ("+item_names[player.inv[i][0]]+" x "+player.inv[i][1]+") ";
-	    }
+		status_bar+=(player.inv[10]!=i ? i+": "+item_names[player.inv[i][0]]+" x "+player.inv[i][1]+" " : i+": ("+item_names[player.inv[i][0]]+" x "+player.inv[i][1]+") ");
 	}
 	break;
 	case 1://creative
 	for(var i=0;i<10;i++){
-	    if(player.inv[10]!=i){
-	    status_bar+=i+": "+item_names[player.inv[i][0]]+" ";
-	    }else{
-	    status_bar+=i+": ("+item_names[player.inv[i][0]]+") ";
-	    }
+		status_bar+=(player.inv[10]!=i ? i+": "+item_names[player.inv[i][0]]+" " : i+": ("+item_names[player.inv[i][0]]+") ");
 	}
 	break;
 }
@@ -2767,7 +2844,6 @@ window.onload=function(){
 	}
 };
 function _load(){
-	var saves=window.localStorage;
 	var compressed_save=saves.getItem("_save");
 	var save_file=JSON.parse(LZUTF8.decompress(compressed_save,{outputEncoding:"String",inputEncoding:"Base64"}));
 	if(save_file==null){
@@ -2777,10 +2853,9 @@ function _load(){
     player=save_file[1];
     pages=save_file[2];
 	tick1=save_file[3];
-	document.getElementById("demonic_announcer").textContent="Loaded. Size:"+compressed_save.length+" bytes.";
+	dem_ann.textContent="Loaded. Size:"+compressed_save.length+" bytes.";
 }
 function _save(){
-	var saves=window.localStorage;
 	if(saves.getItem("_save")!="empty"){
 		if(!confirm("Save already exists, overwrite?")){
 			return;
@@ -2788,11 +2863,10 @@ function _save(){
 	}
 	var compressed_save=LZUTF8.compress(JSON.stringify([cur_page,player,pages,tick1]),{outputEncoding:"Base64"});
 	saves.setItem("_save",compressed_save);
-	document.getElementById("demonic_announcer").textContent="Saved. Size:"+compressed_save.length+" bytes";
+	dem_ann.textContent="Saved. Size:"+compressed_save.length+" bytes";
 }
 function _delete(){
 	if(confirm("Delete Save?")){
-		var saves=window.localStorage;
 		saves.setItem("_save","empty");
 	}
 }
@@ -2806,7 +2880,7 @@ function _import(){
     player=save_file[1];
     pages=save_file[2];
 	tick1=save_file[3];
-	document.getElementById("demonic_announcer").textContent="Loaded. Size:"+compressed_save.length+" bytes.";
+	dem_ann.textContent="Loaded. Size:"+compressed_save.length+" bytes.";
 }
 function _export(){
 	if(confirm("This will end your session.")){
