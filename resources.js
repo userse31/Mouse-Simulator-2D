@@ -2,7 +2,7 @@
 var cur_page=0;
 var paused=0;
 var last_dir="";
-var player={brain:{gender:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0};
+var player={brain:{gender:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0, days:0};
 //inventory: [(item id),(item amount)]; player.inv[10]=selected pointer
 //maps
 var pages=[{
@@ -1141,7 +1141,7 @@ wires:[77,78,79,80,81,82,83,84],
 };
 var item_drops={
 enemy:[
-{chance:0.3,item_id:34,item_min:1,item_max:1},//Meat
+{chance:0.1,item_id:34,item_min:1,item_max:1},//Meat
 {chance:0.05,item_id:33,item_min:1,item_max:1},//iron
 {chance:0.05,item_id:35,item_min:1,item_max:1},//copper
 {chance:0.01,item_id:21,item_min:1,item_max:1},//cyan thing, 115

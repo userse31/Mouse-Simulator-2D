@@ -21,13 +21,12 @@
 <script id="lzutf8" src="./lzutf8.min.js"></script>
 <script src="./resources.js"></script>
 <script>
-//Mouse Simulator 2D v0.46
+//Mouse Simulator 2D v0.47
 /*
-Code size optimizations.
-Pumps!
-Entity rendering priority!
-Fans!
-Electrodes!
+Bug Fixes.
+Days!
+Seasons!
+Fans act differently now.
 */
 //autoconfig
 var saves=window.localStorage;
@@ -137,6 +136,91 @@ function draw_map(){
 	//player
 	get_font(3);
 	ctx.putImageData(char,player.x*8,player.y*8);
+}
+
+function rtc(days=player.days){
+	return {year:Math.floor(days/256),month:Math.floor(days/16)%16,monthlets:days%16};
+}
+
+function seasons(){
+	switch(rtc().month){
+		case 0:
+		case 1:
+		case 2:
+		case 3://summer
+			//grass
+			font[13][64]=0;
+			font[13][65]=255;
+			font[13][66]=0;
+			//tree leaves
+			font[14][64]=0;
+			font[14][65]=255;
+			font[14][66]=0;
+			//walnut leaves
+			for(var i=0;i<6;i++){
+				font[46+i][64]=0;
+				font[46+i][65]=215;
+				font[46+i][66]=0;
+			}
+			break;
+		case 4:
+		case 5:
+		case 6:
+		case 7://fall
+			//grass
+			font[13][64]=224;
+			font[13][65]=204;
+			font[13][66]=119;
+			//tree leaves
+			font[14][64]=224;
+			font[14][65]=204;
+			font[14][66]=119;
+			//walnut leaves
+			for(var i=0;i<6;i++){
+				font[46+i][64]=0x224;
+				font[46+i][65]=0x204;
+				font[46+i][66]=119;
+			}
+			break;
+		case 8:
+		case 9:
+		case 10:
+		case 11://winter
+			//grass
+			font[13][64]=160;
+			font[13][65]=140;
+			font[13][66]=55;
+			//tree leaves
+			font[14][64]=255;
+			font[14][65]=255;
+			font[14][66]=255;
+			//walnut leaves
+			for(var i=0;i<6;i++){
+				font[46+i][64]=255;
+				font[46+i][65]=255;
+				font[46+i][66]=255;
+			}
+			break;
+		case 12:
+		case 13:
+		case 14:
+		case 15://spring
+			//grass
+			font[13][64]=160;
+			font[13][65]=255;
+			font[13][66]=160;
+			//tree leaves
+			font[14][64]=160;
+			font[14][65]=255;
+			font[14][66]=160;
+			//walnut leaves
+			for(var i=0;i<6;i++){
+				font[46+i][64]=0;
+				font[46+i][65]=255;
+				font[46+i][66]=0;
+			}
+			break
+	}
 }
 
 function map_search(tile){
@@ -2161,6 +2245,8 @@ function do_fire(x,y){
 function enemy_chance(){return Math.floor(-180+46.66666667*tick_hour()+-1.944444444*tick_hour()*tick_hour());}
 
 function random_tick(random_x=Math.floor((Math.random()*65535))%40,random_y=Math.floor((Math.random()*65535))%25,bone_meal=0,action=Math.floor((Math.random()*65535))%100){
+var season=rtc().month;
+if(!(season>3 && season<12)){//no growth in winter
 if(pages[cur_page].map[random_y][random_x]==13){//grass
     if(action%2==0){//create hay
         pages[cur_page].entities.push({id:2, char:12, x:random_x, y:random_y, item: [2,1]});
@@ -2202,6 +2288,7 @@ if(pages[cur_page].map[random_y][random_x]==15){//tree trunk
         pages[cur_page].entities.push({id:2, char:24, x:random_x, y:random_y, item: [9,1]});//sapling
 		combine_items(random_x,random_y,9);
     }
+}
 }
 if(pages[cur_page].map[random_y][random_x]==16){//brown mushroom growth
     var direction=Math.floor(Math.random()*65535)%4;
@@ -2253,6 +2340,7 @@ if(pages[cur_page].map[random_y][random_x]==17){//red mushroom growth
             pages[cur_page].map[y][x]=17;
         }
 }
+if(!(season>3 && season<12)){//no growth in winter
 switch(pages[cur_page].map[random_y][random_x]){
 	case 46://walnut leaves
 	case 47:
@@ -2280,6 +2368,7 @@ if(char_value(random_x,random_y)==24){//sapling
 if(bone_meal==1){
 	return;
 }
+}
 //non hostile entity random destination
 if(tick_hour()>=6 && tick_hour()<=17){//during day, hide
 for(var i=0;i<pages[cur_page].entities.length;i++){
@@ -2291,7 +2380,7 @@ for(var i=0;i<pages[cur_page].entities.length;i++){
     }
 }
 }
-if(action<=30 && tick_hour()<=5 || tick_hour()>=18){
+if(action<=30 && tick_hour()<=5 || tick_hour()>=18 && action<20){
 for(var i=0;i<pages[cur_page].entities.length;i++){
     if(pages[cur_page].entities[i].id==1){
         if(pages[cur_page].entities[i].brain.hostile==0 && Math.random()>0.7){
@@ -2454,9 +2543,9 @@ function wire_jumper(x,y){
 function pump(x,y){//water: 29
 	if(char_value(x,y-1)==29){
 		if(char_value(x,y+1)==0){
-		pages[cur_page].map[y-1][x]=0;
-		pages[cur_page].map[y+1][x]=29;
-		return;
+			pages[cur_page].map[y-1][x]=0;
+			pages[cur_page].map[y+1][x]=29;
+			return;
 		}
 		if(hit_bounds(x,y+1)){//map edge, south
 			if(pages[cur_page].metadata.south_goto>=0){
@@ -2513,7 +2602,6 @@ function pump(x,y){//water: 29
 		if(hit_bounds(x+1,y)){//map edge, east
 			if(pages[cur_page].metadata.east_goto>=0){
 				if(pages[pages[cur_page].metadata.east_goto].map[y][0]==0){
-					alert(1);
 					pages[cur_page].map[y][x-1]=0;
 					pages[pages[cur_page].metadata.east_goto].map[y][0]=29;
 					return;
@@ -2560,21 +2648,42 @@ function pump(x,y){//water: 29
 }
 
 function fan(x,y){//water: 29
+	var j=0;
 	if(char_value(x,y-1)==29 && char_value(x,y-2)==0){
+		j=y-2;
+		while(char_value(x,j)==0){
+			j--;
+		}
+		j++;
 		pages[cur_page].map[y-1][x]=0;
-		pages[cur_page].map[y-2][x]=29;
+		pages[cur_page].map[j][x]=29;
 	}
 	if(char_value(x,y+1)==29 && char_value(x,y+2)==0){
+		j=y+2;
+		while(char_value(x,j)==0){
+			j++;
+		}
+		j--;
 		pages[cur_page].map[y+1][x]=0;
-		pages[cur_page].map[y+2][x]=29;
+		pages[cur_page].map[j][x]=29;
 	}
 	if(char_value(x-1,y)==29 && char_value(x-2,y)==0){
+		j=x-2;
+		while(char_value(j,y)==0){
+			j--;
+		}
+		j++;
 		pages[cur_page].map[y][x-1]=0;
-		pages[cur_page].map[y][x-2]=29;
+		pages[cur_page].map[y][j]=29;
 	}
 	if(char_value(x+1,y)==29 && char_value(x+2,y)==0){
+		j=x+2;
+		while(char_value(j,y)==0){
+			j++;
+		}
+		j--;
 		pages[cur_page].map[y][x+1]=0;
-		pages[cur_page].map[y][x+2]=29;
+		pages[cur_page].map[y][j]=29;
 	}
 }
 
@@ -2600,6 +2709,7 @@ function elec_misc(tile,x,y,value){
 			break;
 		case 94://fan
 			value==1 ? fan(x,y) : 0;
+			break;
 		default:
 			break;
 	}
@@ -2629,10 +2739,10 @@ function active_tiles(){
 	for(var i=0;i<wires.length;i++){
 		if(is_on(char_value(wires[i].x,wires[i].y+1))){
 			j=wires[i].y;
-			do{
+			while(char_value(wires[i].x,j)==77){
 				pages[cur_page].map[j][wires[i].x]=81;
 				j--;
-			}while(char_value(wires[i].x,j)==77)
+			}
 			elec_misc(char_value(wires[i].x,j),wires[i].x,j,1);
 		}
 	}
@@ -2640,10 +2750,10 @@ function active_tiles(){
 	for(var i=0;i<wires.length;i++){
 		if(is_off(char_value(wires[i].x,wires[i].y+1))){
 			j=wires[i].y;
-			do{
+			while(char_value(wires[i].x,j)==81){
 				pages[cur_page].map[j][wires[i].x]=77;
 				j--;
-			}while(char_value(wires[i].x,j)==81)
+			}
 			elec_misc(char_value(wires[i].x,j),wires[i].x,j,0);
 		}
 	}
@@ -2652,10 +2762,10 @@ function active_tiles(){
 	for(var i=0;i<wires.length;i++){
 		if(is_on(char_value(wires[i].x,wires[i].y-1))){
 			j=wires[i].y;
-			do{
+			while(char_value(wires[i].x,j)==78){
 				pages[cur_page].map[j][wires[i].x]=82;
 				j++;
-			}while(char_value(wires[i].x,j)==82)
+			}
 			elec_misc(char_value(wires[i].x,j),wires[i].x,j,1);
 		}
 	}
@@ -2663,10 +2773,10 @@ function active_tiles(){
 	for(var i=0;i<wires.length;i++){
 		if(is_off(char_value(wires[i].x,wires[i].y-1))){
 			j=wires[i].y;
-			do{
+			while(char_value(wires[i].x,j)==82){
 				pages[cur_page].map[j][wires[i].x]=78;
 				j++;
-			}while(char_value(wires[i].x,j)==78)
+			}
 			elec_misc(char_value(wires[i].x,j),wires[i].x,j,0);
 		}
 	}
@@ -2675,11 +2785,10 @@ function active_tiles(){
 	for(var i=0;i<wires.length;i++){
 		if(is_on(char_value(wires[i].x+1,wires[i].y))){
 			j=wires[i].x;
-			
-			do{
+			while(char_value(j,wires[i].y)==79){
 				pages[cur_page].map[wires[i].y][j]=83;
 				j--;
-			}while(char_value(j,wires[i].y)==79)
+			}
 			elec_misc(char_value(j,wires[i].y),j,wires[i].y,1);
 		}
 	}
@@ -2687,11 +2796,10 @@ function active_tiles(){
 	for(var i=0;i<wires.length;i++){
 		if(is_off(char_value(wires[i].x+1,wires[i].y))){
 			j=wires[i].x;
-			
-			do{
+			while(char_value(j,wires[i].y)==83){
 				pages[cur_page].map[wires[i].y][j]=79;
 				j--;
-			}while(char_value(j,wires[i].y)==83)
+			}
 			elec_misc(char_value(j,wires[i].y),j,wires[i].y,0);
 		}
 	}
@@ -2700,10 +2808,10 @@ function active_tiles(){
 	for(var i=0;i<wires.length;i++){
 		if(is_on(char_value(wires[i].x-1,wires[i].y))){
 			j=wires[i].x;
-			do{
+			while(char_value(j,wires[i].y)==80){
 				pages[cur_page].map[wires[i].y][j]=84;
 				j++;
-			}while(char_value(j,wires[i].y)==80)
+			}
 			elec_misc(char_value(j,wires[i].y),j,wires[i].y,1);
 		}
 		
@@ -2712,10 +2820,10 @@ function active_tiles(){
 	for(var i=0;i<wires.length;i++){
 		if(is_off(char_value(wires[i].x-1,wires[i].y))){
 			j=wires[i].x;
-			do{
+			while(char_value(j,wires[i].y)==84){
 				pages[cur_page].map[wires[i].y][j]=80;
 				j++;
-			}while(char_value(j,wires[i].y)==84)
+			}
 			elec_misc(char_value(j,wires[i].y),j,wires[i].y,0);
 		}
 	}
@@ -2830,6 +2938,10 @@ switch(player.creative){
 }
 document.getElementById("status").textContent=status_bar;
 tick1=(tick1>=65536 ? 0:tick1+1);
+if(tick1==0){
+player.days++;
+seasons();
+}
 tick1%2==0 ? tick():0;
 tick1%40==0 ? random_tick():0;
 if(tick1%7==0){//fire, Grind Stone
@@ -2853,6 +2965,7 @@ function _load(){
     player=save_file[1];
     pages=save_file[2];
 	tick1=save_file[3];
+	player.days=(player.days===undefined)? 0 : player.days;
 	dem_ann.textContent="Loaded. Size:"+compressed_save.length+" bytes.";
 }
 function _save(){
@@ -2880,6 +2993,7 @@ function _import(){
     player=save_file[1];
     pages=save_file[2];
 	tick1=save_file[3];
+	player.days=(player.days===undefined)? 0 : player.days;
 	dem_ann.textContent="Loaded. Size:"+compressed_save.length+" bytes.";
 }
 function _export(){
