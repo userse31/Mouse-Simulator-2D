@@ -1,8 +1,11 @@
 //preinitialized data
+const MAX_MAP_SIZE_NEG=-64;
+const MAX_MAP_SIZE_POS=63;
+const MICROWAVE_PWM=2;
 var cur_page=0;
 var paused=0;
 var last_dir="";
-var player={brain:{gender:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0, days:0};
+var player={brain:{gender:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0, days:0, noclip:0,seed:0,};
 //inventory: [(item id),(item amount)]; player.inv[10]=selected pointer
 //maps
 var pages=[{
@@ -16,7 +19,7 @@ var pages=[{
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,8,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,13,0,0,0,0,0,0,7,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 	[1,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
@@ -41,23 +44,26 @@ var pages=[{
 	],
 	holes:[
 		//holes
-		{x:1, y:0, dest_page:-2, next_x: 19, next_y: 12},//gen new page
+		{x:1, y:0, dest_page:[0,0,0], next_x: 19, next_y: 12},//gen new page
+		//{x:2, y:0, dest_page:[null,null,1], next_x: 19, next_y: 12},//gen new slip page
+		//dest_page:[page_x,page_y,page_layer]
 	],
 	metadata:{
 	safety:1,//Do enemies spawn here at night?
-	north_goto:-1,//Next page to go to when leaving via north edge
-	south_goto:-1,//Next page to go to when leaving via south edge
-	west_goto:-1,//Next page to go to when leaving via west edge
-	east_goto:-1,//Next page to go to when leaving via north edge
+	north_goto:false,//Can leave north edge
+	south_goto:false,//Can leave south edge
+	west_goto:false,//Can leave west edge
+	east_goto:false,//Can leave north edge
 	x:0,
 	y:0,
-	underground:true,
+	layer:-1,
+	//underground:true,
 	}
 },
 ];
 
 //the font/sprites
-var font=[
+const font=[
 //0, solid white
 [
 0,0,0,0,0,0,0,0,
@@ -146,16 +152,16 @@ var font=[
 0,1,0,1,0,1,0,1,
 0,1,0,1,0,1,0,1,244,164,96,255,255,255
 ],
-//8, bedding
+//8, border
 [
-0,0,1,0,0,0,0,0,
-0,0,1,0,0,0,0,0,
-0,0,0,1,0,0,0,1,
-0,0,0,1,0,1,0,0,
-0,0,1,0,1,0,1,0,
-0,0,1,0,1,0,1,0,
-0,1,0,1,0,1,0,1,
-0,1,0,1,0,1,0,1,244,164,96,255,255,255
+1,1,1,1,1,1,1,1,
+1,0,1,0,0,1,0,1,
+1,1,0,0,1,0,0,1,
+1,0,0,1,0,0,1,1,
+1,0,1,0,0,1,0,1,
+1,1,0,0,1,0,0,1,
+1,0,0,1,0,0,1,1,
+1,1,1,1,1,1,1,1,0,255,255,255,255,255
 ],
 //9, Branch
 [
@@ -1125,29 +1131,101 @@ var font=[
 0,1,0,0,0,0,1,0,
 0,1,0,0,0,0,1,0,184,115,255,255,255,255
 ],
+//97, napkin, (black-red plaid)
+[
+0,1,0,1,0,1,0,1,
+1,0,1,0,1,0,1,0,
+0,1,0,1,0,1,0,1,
+1,0,1,0,1,0,1,0,
+0,1,0,1,0,1,0,1,
+1,0,1,0,1,0,1,0,
+0,1,0,1,0,1,0,1,
+1,0,1,0,1,0,1,0,255,0,0,0,0,0
+],
+//98, Vacuum Tube
+[
+0,1,1,1,1,1,1,0,
+1,0,0,0,0,0,0,1,
+1,1,1,1,1,0,0,1,
+1,0,0,0,0,0,0,1,
+1,0,0,1,1,1,1,1,
+1,0,0,0,0,0,0,1,
+1,0,0,1,1,0,0,1,
+0,1,1,1,1,1,1,0,0,0,0,255,255,255
+],
+//99, thread
+[
+0,0,0,0,0,0,0,0,
+0,0,0,0,1,0,1,0,
+0,0,0,0,1,1,0,0,
+0,0,0,1,1,1,1,0,
+0,1,1,1,1,0,0,0,
+0,0,1,1,0,0,0,0,
+0,1,0,1,0,0,0,0,
+0,0,0,0,0,0,0,0,213,200,181,255,255,255
+],
+//100, House Carpet
+[
+1,0,1,0,1,0,1,0,
+0,1,0,1,0,1,0,1,
+1,0,1,0,1,0,1,0,
+0,1,0,1,0,1,0,1,
+1,0,1,0,1,0,1,0,
+0,1,0,1,0,1,0,1,
+1,0,1,0,1,0,1,0,
+0,1,0,1,0,1,0,1,244,226,198,255,255,255
+],
+//101, Glass
+[
+1,1,1,1,1,1,1,1,
+1,0,1,0,0,1,0,1,
+1,1,0,0,1,0,0,1,
+1,0,0,1,0,0,1,1,
+1,0,1,0,0,1,0,1,
+1,1,0,0,1,0,0,1,
+1,0,0,1,0,0,1,1,
+1,1,1,1,1,1,1,1,0,0,0,255,255,255
+],
+//102, Microwave Cannon
+[
+0,0,1,1,1,1,0,0,
+0,1,0,0,0,0,1,0,
+0,0,0,1,1,0,0,0,
+0,0,1,0,0,1,0,0,
+1,0,0,0,0,0,0,1,
+1,0,0,1,1,0,0,1,
+0,1,0,1,1,0,1,0,
+0,0,1,1,1,1,0,0,0,0,0,255,255,255
+],
 ];
 
-var properties={
-walkable:[0,2,6,7,8,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40,43,44,45,46,47,48,49,50,51,52,54,68,73,77,78,79,80,81,82,83,84,86,87,88,89,92,95,96],
-not_spawnable:[2,28,29,30,31,32,43,68,73,88,89,86,87,77,78,79,80,81,82,83,84],
-burnable:[12,13,14,15,18,24,28,42,43,45,46,47,48,49,50,51,72,74,75,76],
-bangable:[18,42,43,12,5,93],
-breakable:[3,4,5,6,9,13,21,22,24,25,27,31,37,38,41,45,46,47,48,49,68,69,70,71,72,73,74],
+const properties={
+walkable:[0,2,6,7,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40,43,44,45,46,47,48,49,50,51,52,54,68,73,77,78,79,80,81,82,83,84,86,87,88,89,92,95,96,100],
+not_spawnable:[2,28,29,30,31,32,43,68,73,88,89,86,87,77,78,79,80,81,82,83,84,8],
+burnable:[12,13,14,15,18,24,28,42,43,45,46,47,48,49,50,51,72,74,75,76,100],
+bangable:[18,42,43,12,5,93,94,97,72,74,75,76,101],
+placeable_breakable:[3,4,5,6,9,13,21,22,24,25,27,31,37,38,41,45,46,47,48,49,68,69,70,71,72,73,74,51,52,78],
 bonemealable:[52,51,50,49,48,47,46,24,17,16,15,13],
-creative_noremove:[1,6,10,11],
+creative_noremove:[1,6,10,11,8],
 elec_on:[87,81,82,83,84,89,91,96],
 elec_off:[86,77,78,79,80,88,90,95],
 wires:[77,78,79,80,81,82,83,84],
+attack_items:[17,18,19,20,79],
 };
-var item_drops={
+const item_drops={
 enemy:[
 {chance:0.1,item_id:34,item_min:1,item_max:1},//Meat
 {chance:0.05,item_id:33,item_min:1,item_max:1},//iron
 {chance:0.05,item_id:35,item_min:1,item_max:1},//copper
 {chance:0.01,item_id:21,item_min:1,item_max:1},//cyan thing, 115
+],
+enemy_slip:[
+{chance:0.1,item_id:75,item_min:1,item_max:1},//Napkin
+{chance:0.1,item_id:77,item_min:1,item_max:1},//Thread
+{chance:0.05,item_id:78,item_min:1,item_max:10},//Glass
 ]};
 //items
-var item_char=[
+const item_char=[
 0,//Nothing,0
 9,//Branch,1
 12,//Hay,2
@@ -1199,8 +1277,8 @@ var item_char=[
 75,//Red Stained MDF,48
 76,//Cyan Stained MDF,49
 5,//Black Wall,50
-7,//bedding 1,51
-8,//bedding 2,52
+7,//bedding,51
+100,//House Carpet,52
 14,//Tree leaves,53
 15,//Tree Trunk,54
 29,//Water,55
@@ -1223,9 +1301,14 @@ var item_char=[
 93,//Pump,72
 94,//Fan,73
 95,//Electrodes,74
+97,//Napkin,75
+98,//Vacuum Tube,76
+99,//Thread,77
+101,//Glass,78
+102,//Microwave Cannon,79
 ];
 
-var item_names=[
+const item_names=[
 "Nothing",
 "Branch",
 "Hay",
@@ -1277,8 +1360,8 @@ var item_names=[
 "Red Stained MDF",
 "Cyan Stained MDF",
 "Black Wall",
-"bedding 1",
-"bedding 2",
+"Bedding",
+"House Carpet",
 "Tree Leaves",
 "Tree Trunk",
 "Water",
@@ -1300,10 +1383,15 @@ var item_names=[
 "Wire Jumper",
 "Pump",
 "Fan",
-"Electrodes"
+"Electrodes",
+"Napkin",
+"Vacuum Tube",
+"Thread",
+"Glass",
+"Microwave Cannon"
 ];
 //crafting
-var recipies=[
+const recipies=[
 {//sapling to stick+leaves
 input_id:[9,0,0,0,0,0],
 output:[[7,1],[10,1]]
@@ -1684,17 +1772,53 @@ output:[[72,1]]
 input_id:[33,33,32,7,33,33],
 output:[[72,1]]
 },
-{//2 iron+1 stick to fat
+{//2 iron+1 stick to fan
 input_id:[33,0,7,0,33,0],
 output:[[73,1]]
 },
-{//2 iron+1 stick to fat
+{//2 iron+1 stick to fan
 input_id:[0,33,0,7,0,33],
 output:[[73,1]]
 },
+{//thread to 32 string
+input_id:[77,0,0,0,0,0],
+output:[[8,32]]
+},
+{//thread to 32 string
+input_id:[0,77,0,0,0,0],
+output:[[8,32]]
+},
+{//thread to 32 string
+input_id:[0,0,77,0,0,0],
+output:[[8,32]]
+},
+{//thread to 32 string
+input_id:[0,0,0,77,0,0],
+output:[[8,32]]
+},
+{//thread to 32 string
+input_id:[0,0,0,0,77,0],
+output:[[8,32]]
+},
+{//thread to 32 string
+input_id:[0,0,0,0,0,77],
+output:[[8,32]]
+},
+{//Napkin+Hay to bedding 51
+input_id:[75,2,0,0,0,0],
+output:[[51,1]]
+},
+{//wire+glass+iron to Vacuum Tube
+input_id:[67,78,33,0,0,0],
+output:[[76,1]]
+},
+{//Vacuum Tube+Wire+Iron Wall+Cyan thing to Microwave Cannon
+input_id:[76,67,37,21,0,0],
+output:[[79,1]]
+},
 ];
 
-var struct=[
+const struct=[
 {weight:0.8,tries:10,sub:[0,1],id:0},//tree
 {weight:0.6,tries:1,sub:[2,2],id:9},//walnut tree
 {weight:0.8,tries:10,sub:[0,0],id:1},//grass
@@ -1709,7 +1833,7 @@ var struct=[
 {weight:0.3,tries:1,sub:[2,2],id:8,entity:{offset_x:1,offset_y:1}},//Mouse Nest
 ];
 
-var structures=[
+const structures=[
 //tree,0
 [[14],[15]],
 //grass, 1
@@ -1735,3 +1859,102 @@ var structures=[
 //red mushroom, 11
 [[17]],
 ];
+
+const SLIP_CARPET_DECAY=0.25;
+const SLIP_CARPET_TILE=100;
+
+const struct_slip=[
+{weight:0.3,tries:6,sub:[1,5],id:0,decay:true,decay_rate:0.75},//broken chair leg
+{weight:0.3,tries:2,sub:[4,4],id:1,decay:true,decay_rate:0.75},//broken chair seat
+{weight:0.3,tries:2,sub:[4,4],id:2,decay:true,decay_rate:0.75},
+{weight:0.3,tries:1,sub:[5,3],id:3,decay:true,decay_rate:0.25},//broken chair head
+//shreaded pillow, cushion, mattress, etc...
+];
+//pages[cur_page].map[player.y][player.x]
+const structures_slip=[
+[[-1,72],
+[-1,72],
+[-1,72],
+[72,-1],
+[72,-1],
+[72,-1]],//chair leg
+
+[[72,72,72,72,72],
+[72,72,72,72,72],
+[72,72,72,72,72],
+[72,72,72,72,72]],//chair seat
+
+[[-1,72,-1,72,-1],
+[72,-1,72,-1,72],
+[72,-1,72,-1,72],
+[72,-1,72,-1,72],
+[72,-1,72,-1,72],],//chair head
+
+[[28,28,28,28,28,28],
+[28,28,28,28,28,28],
+[28,28,28,28,28,28],
+[28,28,28,28,28,28]],//shreaded pillow, cushion, mattress, etc...
+];
+
+function new_save(){
+	paused=true;
+	player={brain:{gender:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0, days:0, noclip:0,seed:(Math.floor(Math.random()*0xffffffff)),};
+	player.name=prompt("Name?","Alex");
+	player.name=(player.name=="")?"Alex":player.name;
+	player.creative=(confirm("Enable Creative?"))?1:0;
+	pages=[{
+	//home_page
+	map:[
+	[1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,0,10,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,11,10,1],//craft bench
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,0,10,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,13,0,0,0,0,0,0,7,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,17,0,16,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,16,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+	],
+	entities:[
+        {id:2, char:9, x:4, y:10, item: [1,10]},//branch
+        {id:2, char:12, x:5, y:10, item: [2,10]},//hay
+        {id:2, char:27, x:5, y:11, item: [12,10]},//stew
+	],
+	holes:[
+		//holes
+		{x:1, y:0, dest_page:[0,0,0], next_x: 19, next_y: 12},//gen new page
+		//{x:2, y:0, dest_page:[null,null,1], next_x: 19, next_y: 12},//gen new slip page
+		//dest_page:[page_x,page_y,page_layer]
+	],
+	metadata:{
+	safety:1,//Do enemies spawn here at night?
+	north_goto:false,//Can leave north edge
+	south_goto:false,//Can leave south edge
+	west_goto:false,//Can leave west edge
+	east_goto:false,//Can leave north edge
+	x:0,
+	y:0,
+	layer:-1,
+	//underground:true,
+	}
+},
+];
+	cur_page=0;
+	paused=false;
+}

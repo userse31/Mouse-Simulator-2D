@@ -11,7 +11,7 @@
     <p id="player"></p>
     <p id="status"></p>
     <p id="demonic_announcer">Welcome!</p>
-    <button onclick="_load()">Load</button><button onclick="_save()">Save</button><button onclick="_delete()">Delete</button><button onclick="_import()">Import</button><button onclick="_export()">Export</button><button onclick="config()">Config</button>
+    <button onclick="_new()">New</button><button onclick="_load()">Load</button><button onclick="_save()">Save</button><button onclick="_delete()">Delete</button><button onclick="_import()">Import</button><button onclick="_export()">Export</button><button onclick="config()">Config</button>
     </br>
 	<a href="./help.html">Help</a>
 	</br>
@@ -19,19 +19,34 @@
     </center>
 </body>
 <script id="lzutf8" src="./lzutf8.min.js"></script>
+<script src="./hashmap.js"></script>
 <script src="./resources.js"></script>
 <script>
-//Mouse Simulator 2D v0.47
+//Mouse Simulator 2D v0.48
 /*
-Bug Fixes.
-Days!
-Seasons!
-Fans act differently now.
+<strikeout>World Border. Max X: -128 to 127; Max Y: -128 to 127</strikeout>
+World Border. Max X: -64 to 63; Max Y: -64 to 63
+Save file format changes
+noclip cheat!
+The slip
+LocalStorage Memory Warning
+Napkins, Glass, Thread, Vacuum Tubes.
+World generation seed and hashmap.
+New world button.
+Microwave Cannon.
 */
 //autoconfig
 var saves=window.localStorage;
 var cga=document.getElementById("cga");
 var dem_ann=document.getElementById("demonic_announcer");
+var CUR_RAND=0;
+function srand32(x){
+	CUR_RAND=x;
+}
+function rand32(){
+	CUR_RAND=(CUR_RAND*1609+1)%0xffffffff;
+	return CUR_RAND;
+}
 function autoconfig(){
 	saves.getItem("_bigger")=="t" ? set_scaling(2) : set_scaling(1);
 }
@@ -250,10 +265,27 @@ function damage_player(amount){
 	sfx("player_damaged");
 }
 
+function pagexy_to_ptr(page_x,page_y,page_layer){
+	for(var i=0;i<pages.length;i++){
+		if(pages[i].metadata.x==page_x && pages[i].metadata.y==page_y && pages[i].metadata.layer==page_layer){
+			return i;
+		}
+	}
+	return -1;
+}
+
 function item_roulette(drop_list,_x,_y){
 for(var i=0;i<drop_list.length;i++){
 	if(Math.random()<=drop_list[i].chance){
-		pages[cur_page].entities.push({id:2,x:_x,y:_y,char:item_char[drop_list[i].item_id],item:[drop_list[i].item_id,(Math.floor(Math.random()*65535)%drop_list[i].item_max)+drop_list[i].item_min]});
+		pages[cur_page].entities.push({id:2,
+		x:_x,
+		y:_y,
+		char:item_char[drop_list[i].item_id],
+		item:
+			[drop_list[i].item_id,
+			(Math.floor(Math.random()*65535)%drop_list[i].item_max)+drop_list[i].item_min
+			]
+		});
 		combine_items(_x,_y,drop_list[i].item_id);
 	}
 }
@@ -264,6 +296,9 @@ switch(set){
 	case "enemy":
 		item_roulette(item_drops.enemy,x,y);
 		break;
+	case "enemy_slip":
+		item_roulette(item_drops.enemy_slip,x,y);
+		break;
 }
 }
 
@@ -271,7 +306,13 @@ function npc_drops(ptr){//items to drop after npc death.
 //id=1
 switch(pages[cur_page].entities[ptr].char){
 	case 4://enemy
-		drop_set_selection("enemy",pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y);
+		switch(pages[cur_page].metadata.layer){
+			case 0://Surface
+				drop_set_selection("enemy",pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y);
+				break;
+			case 1://Slip
+				drop_set_selection("enemy_slip",pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y);
+		}
 		break;
 	default:
 		break;
@@ -317,20 +358,21 @@ function struct_copy(struct_id,offset_x,offset_y,fill_nonzero=1){
 	}
 }
 
-function generate_stuff(){
+function generate_stuff(layer=0){
 	var rand_x=0;
 	var rand_y=0;
 	var rand_action=0;
 	//structures
+	srand32((player.seed+HASHMAP[pages[cur_page].metadata.y+64][pages[cur_page].metadata.x+64])%0xffffffff);
 	for(var i=0;i<struct.length;i++){
 		for(var j=0;j<struct[i].tries;j++){
 		if(struct.weight==-1){
 			continue;
 		}
-		rand_x=Math.floor(Math.random()*100)%(40-struct[i].sub[0]);
-		rand_y=Math.floor(Math.random()*100)%(25-struct[i].sub[1]);
+		rand_x=rand32()%(40-struct[i].sub[0]);
+		rand_y=rand32()%(25-struct[i].sub[1]);
 		if(char_value(rand_x,rand_y)==0){
-			if(Math.random()<struct[i].weight){
+			if((rand32()/0xffffffff)<struct[i].weight){
 				struct_copy(struct[i].id,rand_x,rand_y);
 				if(struct[i].entity!=undefined){//entities
 					new_npc(rand_x+struct[i].entity.offset_x,rand_y+struct[i].entity.offset_y,rand_x+struct[i].entity.offset_x,rand_y+struct[i].entity.offset_y);
@@ -341,48 +383,109 @@ function generate_stuff(){
 	}
 }
 
-//if two pages next to each other, link them.
-function check_page_sides(){
-	if(pages[cur_page].metadata.underground==true){
-		return;
-	}
-	var x=pages[cur_page].metadata.x;
-	var y=pages[cur_page].metadata.y;
-	for(var i=2;i<pages.length;i++){
-		//Above
-		if(pages[i].metadata.x==pages[cur_page].metadata.x && pages[i].metadata.y==pages[cur_page].metadata.y-1){
-			pages[cur_page].metadata.north_goto=i;
-		}
-		//Below
-		if(pages[i].metadata.x==pages[cur_page].metadata.x && pages[i].metadata.y==pages[cur_page].metadata.y+1){
-			pages[cur_page].metadata.south_goto=i;
-		}
-		//left
-		if(pages[i].metadata.x==pages[cur_page].metadata.x-1 && pages[i].metadata.y==pages[cur_page].metadata.y){
-			pages[cur_page].metadata.west_goto=i;
-		}
-		//right
-		if(pages[i].metadata.x==pages[cur_page].metadata.x+1 && pages[i].metadata.y==pages[cur_page].metadata.y){
-			pages[cur_page].metadata.east_goto=i;
+function struct_copy_slip(struct_id,offset_x,offset_y,do_decay,decay_rate=-1){
+	for(var y=0;y<structures_slip[struct_id].length;y++){
+		for(var x=0;x<structures_slip[struct_id][y].length;x++){
+			if(hit_bounds(offset_x+x,offset_y+y)){
+				continue;
+			}
+			//alert(typeof structures_slip[struct_id].special);
+			/*if((typeof structures_slip[struct_id].special)=="Function"){
+				alert(0);
+			}*/
+			/*if(char_value(offset_x+x,offset_y+y)!=0 && fill_nonzero==0){
+				continue;
+			}*/
+			if(do_decay&&(rand32()/0xffffffff)<decay_rate){
+				continue;
+			}
+			pages[cur_page].map[offset_y+y][offset_x+x]=structures_slip[struct_id][y][x]==-1 ? pages[cur_page].map[offset_y+y][offset_x+x] : structures_slip[struct_id][y][x];
 		}
 	}
 }
 
-function get_ptr_from_page_xy(x,y){
-	for(var i=0;i<pages.length;i++){
-		if(pages[i].metadata.x==x && pages[i].metadata.y==y){
-			if(pages[i].metadata.underground==true){
+function generate_slip(){
+	var rand_x=0;
+	var rand_y=0;
+	var rand_action=0;
+	//structures
+	srand32((player.seed+HASHMAP[pages[cur_page].metadata.y+64][pages[cur_page].metadata.x+64])%0xffffffff);
+	for(var y=0;y<25;y++){//the slip has carpet.
+		for(var x=0;x<40;x++){
+			if((rand32()/0xffffffff)<SLIP_CARPET_DECAY){
 				continue;
 			}
+			pages[cur_page].map[y][x]=SLIP_CARPET_TILE;
+		}
+	}
+	for(var i=0;i<struct_slip.length;i++){
+		for(var j=0;j<struct[i].tries;j++){
+		if(struct_slip.weight==-1){
+			continue;
+		}
+		rand_x=rand32()%(40-struct_slip[i].sub[0]);
+		rand_y=rand32()%(25-struct_slip[i].sub[1]);
+		if(char_value(rand_x,rand_y)==0){
+			if((rand32()/0xffffffff)<struct_slip[i].weight){
+				struct_copy_slip(struct_slip[i].id,rand_x,rand_y,struct_slip[i].decay,struct_slip[i].decay_rate);
+				if(struct_slip[i].entity!=undefined){//entities
+					new_npc(rand_x+struct[i].entity.offset_x,rand_y+struct[i].entity.offset_y,rand_x+struct[i].entity.offset_x,rand_y+struct[i].entity.offset_y);
+				}
+			}
+		}
+		}
+	}
+}
+
+function map_border(){
+	if(pages[cur_page].metadata.x>=MAX_MAP_SIZE_POS){
+		for(var i=0;i<25;i++){
+			pages[cur_page].map[i][39]=8;
+		}
+	}
+	if(pages[cur_page].metadata.x<=MAX_MAP_SIZE_NEG){
+		for(var i=0;i<25;i++){
+			pages[cur_page].map[i][0]=8;
+		}
+	}
+	if(pages[cur_page].metadata.y<=MAX_MAP_SIZE_NEG){
+		for(var i=0;i<40;i++){
+			pages[cur_page].map[0][i]=8;
+		}
+	}
+	if(pages[cur_page].metadata.y>=MAX_MAP_SIZE_POS){
+		for(var i=0;i<40;i++){
+			pages[cur_page].map[24][i]=8;
+		}
+	}
+}
+
+function get_ptr_from_page_xy(x,y,layer){
+	for(var i=0;i<pages.length;i++){
+		if(pages[i].metadata.x==x && pages[i].metadata.y==y && pages[i].metadata.layer==layer){
 			return i;
 		}
 	}
 	return -1;
 }
 
-function new_page(hole_from=-1,direction="none"){
+function new_page(context="",direction="none",hole_ptr){
 	var old_cur_page=cur_page;
-	var n_page={map:new Array(25),entities:[],holes:[],metadata:{safety:0, north_goto:-2, south_goto:-2, west_goto:-2, east_goto:-2, x:pages[cur_page].metadata.x,y:pages[cur_page].metadata.y,underground:false}};
+	var n_page={
+	map:new Array(25),
+	entities:[],
+	holes:[],
+	metadata:{
+	safety:0,
+	north_goto:true,
+	south_goto:true,
+	west_goto:true,
+	east_goto:true,
+	x:pages[cur_page].metadata.x,
+	y:pages[cur_page].metadata.y,
+	layer:pages[cur_page].metadata.layer
+	}
+	}
 	for(var i=0;i<25;i++){
 		n_page.map[i]=new Array(40);
 	}
@@ -391,167 +494,196 @@ function new_page(hole_from=-1,direction="none"){
 			n_page.map[j][i]=0;
 		}
 	}
-	pages.push(n_page);
-	if(hole_from==-1){
-		switch(direction){//direction _entering_ new page
-		case "none":
-		struct_copy(4,18,11);
-		pages[cur_page].holes.push({x:19, y:12, dest_page:old_cur_page, next_x: 1, next_y: 0});
-		pages[cur_page].metadata.x=0;
-		pages[cur_page].metadata.y=0;
+	switch(context){
+		case "surface_hole":
+			var og_points=[pages[cur_page].metadata.x,pages[cur_page].metadata.y,pages[cur_page].metadata.layer];
+			//pages[cur_page].holes[0].dest_page=[0,0,0];
+			n_page.holes.push({
+			x:19,
+			y:12,
+			dest_page:[og_points[0],og_points[1],og_points[2]],
+			next_x:pages[cur_page].holes[hole_ptr].x,
+			next_y:pages[cur_page].holes[hole_ptr].x
+			});
+			n_page.metadata.layer=0;
+			player.x=19;
+			player.y=12;
+			pages.push(JSON.parse(JSON.stringify(n_page)));
+			cur_page=pages.length-1;
+			generate_stuff();
+			pages[cur_page].map[12][19]=6;
+			pages[cur_page].map[12][18]=2;
+			pages[cur_page].map[12][20]=2;
+			pages[cur_page].map[11][19]=2;
+			pages[cur_page].map[13][19]=2;
 			break;
-		case "up"://up
-			pages[cur_page].metadata.north_goto=pages.length-1;
+		case "cross_edge":
+			switch(direction){
+				case "up":
+					n_page.metadata.y--;
+					break;
+				case "down":
+					n_page.metadata.y++;
+					break;
+				case "left":
+					n_page.metadata.x--;
+					break;
+				case "right":
+					n_page.metadata.x++;
+					break;
+			}
+			pages.push(JSON.parse(JSON.stringify(n_page)));
+			cur_page=pages.length-1;
+			switch(pages[cur_page].metadata.layer){
+				case 0://surface
+					generate_stuff();
+					break;
+				case 1://slip
+					generate_slip();
+					break;
+			}
 			break;
-		case "down"://down
-			pages[cur_page].metadata.south_goto=pages.length-1;
+		case "npc_hole":
 			break;
-		case "left"://left
-			pages[cur_page].metadata.west_goto=pages.length-1;
+		case "slip_enter":
+			var og_points=[pages[cur_page].metadata.x,pages[cur_page].metadata.y,pages[cur_page].metadata.layer];
+			//pages[cur_page].holes[hole_ptr].dest_page=[og_points[0],og_points[1],1];
+			n_page.holes.push({
+			x:19,
+			y:12,
+			dest_page:[og_points[0],og_points[1],og_points[2]],
+			next_x:pages[cur_page].holes[hole_ptr].x,
+			next_y:pages[cur_page].holes[hole_ptr].y,
+			});
+			n_page.metadata.layer=1;
+			n_page.metadata.x=og_points[0];
+			n_page.metadata.y=og_points[1];
+			pages.push(JSON.parse(JSON.stringify(n_page)));
+			cur_page=pages.length-1;
+			generate_slip();
+			pages[cur_page].map[12][19]=6;
+			pages[cur_page].map[12][18]=2;
+			pages[cur_page].map[12][20]=2;
+			pages[cur_page].map[11][19]=2;
+			pages[cur_page].map[13][19]=2;
 			break;
-		case "right"://right
-			pages[cur_page].metadata.east_goto=pages.length-1;
-			break;
+	}
+		if(pages[cur_page].metadata.x<=MAX_MAP_SIZE_NEG){
+			for(var i=0;i<25;i++){
+				pages[cur_page].map[i][0]=8;
+			}
 		}
-	}else{
-		pages[cur_page].holes[hole_from].dest_page=pages.length-1;
-	}
-	cur_page=pages.length-1;
-	generate_stuff();
-	switch(direction){//direction _entering_ new page
-	    case "none":
-		struct_copy(4,18,11);
-		n_page.holes.push({x:19, y:12, dest_page:old_cur_page, next_x: 1, next_y: 0});
-	    	break;
-	    case "up"://up
-	    	pages[cur_page].metadata.south_goto=old_cur_page;
-		pages[cur_page].metadata.x;
-		pages[cur_page].metadata.y--;
-	    	break;
-	    case "down"://down
-	    	pages[cur_page].metadata.north_goto=old_cur_page;
-		pages[cur_page].metadata.x;
-		pages[cur_page].metadata.y++;
-	    	break;
-	    case "left"://left
-	    	pages[cur_page].metadata.east_goto=old_cur_page;
-		pages[cur_page].metadata.x--;
-		pages[cur_page].metadata.y;
-	    	break;
-	    case "right"://right
-	    	pages[cur_page].metadata.west_goto=old_cur_page;
-		pages[cur_page].metadata.x++;
-		pages[cur_page].metadata.y;
-	    	break;
-	}
-	check_page_sides();
+		if(pages[cur_page].metadata.y<=MAX_MAP_SIZE_NEG){
+			for(var i=0;i<40;i++){
+				pages[cur_page].map[0][i]=8;
+			}
+		}
+		if(pages[cur_page].metadata.x>=MAX_MAP_SIZE_POS){
+			for(var i=0;i<25;i++){
+				pages[cur_page].map[i][39]=8;
+			}
+		}
+		if(pages[cur_page].metadata.y>=MAX_MAP_SIZE_POS){
+			for(var i=0;i<40;i++){
+				pages[cur_page].map[24][i]=8;
+			}
+		}
 }
 
 function teleport(){
 for(var i=0;i<pages[cur_page].holes.length;i++){
 	if(pages[cur_page].holes[i].x==player.x && pages[cur_page].holes[i].y==player.y){
-		if(pages[cur_page].holes[i].dest_page==-1){//go nowhere
-			return;
-		}
-		if(pages[cur_page].holes[i].dest_page==-2){//gen new page
+		if(get_ptr_from_page_xy(pages[cur_page].holes[i].dest_page[0],pages[cur_page].holes[i].dest_page[1],pages[cur_page].holes[i].dest_page[2])==-1){//gen new page
 			player.x=pages[cur_page].holes[i].next_x;
 			player.y=pages[cur_page].holes[i].next_y;
-	    		new_page(i);
+			switch(pages[cur_page].holes[i].dest_page[2]){
+				case 0://Surface
+		    		new_page("surface_hole","",i);
+					break;
+				case 1://The Slip
+					new_page("slip_enter","",i);//asdf
+					break;
+			}
 			return;
 		}
 		player.x=pages[cur_page].holes[i].next_x;
 		player.y=pages[cur_page].holes[i].next_y;
-		cur_page=pages[cur_page].holes[i].dest_page;
-	    	break;
+		cur_page=pagexy_to_ptr(
+		pages[cur_page].holes[i].dest_page[0],
+		pages[cur_page].holes[i].dest_page[1],
+		pages[cur_page].holes[i].dest_page[2]);
+	    break;
 	}
 }
 }
 
 function off_edge(direction){//generate new page when walking off map and page edge metadata = -2
-check_page_sides();
-var edge_action=-3
+var next_page=-1;
 var next_x=player.x;
-var next_y=player.y
+var next_y=player.y;
 switch(direction){
 	case "up":
-	    edge_action=pages[cur_page].metadata.north_goto;
-		next_y=24;
+			if(pages[cur_page].metadata.y<=MAX_MAP_SIZE_NEG){
+				return;
+			}
+	   		if(!pages[cur_page].metadata.north_goto){
+				return;
+			}
+			next_page=get_ptr_from_page_xy(pages[cur_page].metadata.x,
+			pages[cur_page].metadata.y-1,
+			pages[cur_page].metadata.layer);
+			next_y=24;
 	    	break;
 	case "down":
-		edge_action=pages[cur_page].metadata.south_goto;
-		next_y=0;
+			if(pages[cur_page].metadata.y>=MAX_MAP_SIZE_POS){
+				return;
+			}
+			if(!pages[cur_page].metadata.south_goto){
+				return;
+			}
+			next_page=get_ptr_from_page_xy(pages[cur_page].metadata.x,
+			pages[cur_page].metadata.y+1,
+			pages[cur_page].metadata.layer);
+			next_y=0;
 	    	break;
 	case "left":
-		edge_action=pages[cur_page].metadata.west_goto;
-		next_x=39;
+			if(pages[cur_page].metadata.x<=MAX_MAP_SIZE_NEG){
+				return;
+			}
+			if(!pages[cur_page].metadata.west_goto){
+				return;
+			}
+			next_page=get_ptr_from_page_xy(pages[cur_page].metadata.x-1,
+			pages[cur_page].metadata.y,
+			pages[cur_page].metadata.layer);
+			next_x=39;
 	    	break;
 	case "right":
-		edge_action=pages[cur_page].metadata.east_goto;
-		next_x=0;
+			if(pages[cur_page].metadata.x>=MAX_MAP_SIZE_POS){
+				return;
+			}
+			if(!pages[cur_page].metadata.east_goto){
+				return;
+			}
+			next_page=get_ptr_from_page_xy(pages[cur_page].metadata.x+1,
+			pages[cur_page].metadata.y,
+			pages[cur_page].metadata.layer);
+			next_x=0;
 	    	break;
 }
-if(edge_action==-3 || edge_action==-1){
-	return;
+if(next_page==-1){//new page!
+	new_page("cross_edge",direction)
+}else{
+	cur_page=next_page;
 }
-if(edge_action==-2){
-	var tmp2=0;
-	switch(direction){
-	case "up":
-			if(get_ptr_from_page_xy(pages[cur_page].metadata.x,pages[cur_page].metadata.y-1)!=-1){
-				tmp2=get_ptr_from_page_xy(pages[cur_page].metadata.x,pages[cur_page].metadata.y-1);
-				pages[cur_page].metadata.north_goto=tmp2;
-				player.y=24;
-				cur_page=tmp2;
-				pages[cur_page].metadata.south_goto=tmp2;
-				return;
-			}
-	    	new_page(-1,"up");
-			player.y=24;
-	    	return;
-	case "down":
-			if(get_ptr_from_page_xy(pages[cur_page].metadata.x,pages[cur_page].metadata.y+1)!=-1){
-				tmp2=get_ptr_from_page_xy(pages[cur_page].metadata.x,pages[cur_page].metadata.y+1);
-				pages[cur_page].metadata.north_goto=tmp2;
-				player.y=0;
-				cur_page=tmp2;
-				pages[cur_page].metadata.north_goto=tmp2;
-				return;
-			}
-			new_page(-1,"down");
-			player.y=0;
-	    	return;
-	case "left":
-			if(get_ptr_from_page_xy(pages[cur_page].metadata.x-1,pages[cur_page].metadata.y)!=-1){
-				tmp2=get_ptr_from_page_xy(pages[cur_page].metadata.x-1,pages[cur_page].metadata.y);
-				pages[cur_page].metadata.north_goto=tmp2;
-				player.x=39;
-				cur_page=tmp2;
-				pages[cur_page].metadata.west_goto=tmp2;
-				return;
-			}
-			new_page(-1,"left");
-			player.x=39
-	    	return;
-	case "right":
-			if(get_ptr_from_page_xy(pages[cur_page].metadata.x+1,pages[cur_page].metadata.y)!=-1){
-				tmp2=get_ptr_from_page_xy(pages[cur_page].metadata.x+1,pages[cur_page].metadata.y);
-				pages[cur_page].metadata.north_goto=tmp2;
-				player.x=0;
-				cur_page=tmp2;
-				pages[cur_page].metadata.east_goto=tmp2;
-				return;
-			}
-			new_page(-1,"right");
-			player.x=0;
-	    	return;
-}
-}
-cur_page=edge_action;
 player.x=next_x;
 player.y=next_y;
 }
 
 function inv_cleanup(){//resolve item slots with count of 0 or less to id 0
+	if(player.creative==1){
+		return;
+	}
     for(var i=0;i<10;i++){
         if(player.inv[i][1]<1){
             player.inv[i][0]=0;
@@ -722,6 +854,9 @@ switch(standing_on){
 	case 93://Pump
 		pick_up_tile(72);
 		break;
+	case 100://Pump
+		pick_up_tile(52);
+		break;
 	case 29://water
 		if(player.inv[player.inv[10]][0]==11){//Bowl
 			pages[cur_page].entities.push({
@@ -887,16 +1022,6 @@ function projectile_entity_collide(ptr){//find if specified entity shares same c
     return -1;
 }
 
-/*function entity_collide(ptr){//find if specified entity shares same coords as another one.
-    for(var i=0;i<pages[cur_page].entities.length;i++){
-        if(i==ptr){continue;}
-        if(pages[cur_page].entities[ptr].x==pages[cur_page].entities[i].x && pages[cur_page].entities[ptr].y==pages[cur_page].entities[i].y && pages[cur_page].entities[i].id!=3){
-            return i;
-        }
-    }
-    return -1;
-}*/
-
 function entity_collide_xy(x,y){//find if specified entity exists on x y axis
     for(var i=0;i<pages[cur_page].entities.length;i++){
         if(x==pages[cur_page].entities[i].x && y==pages[cur_page].entities[i].y){
@@ -928,6 +1053,93 @@ function is_walkable(x){
         }
     }
     return false;
+}
+
+function entity_collide_xy_npc(x,y){
+	for(var i=0;i<pages[cur_page].entities.length;i++){
+        if(x==pages[cur_page].entities[i].x && y==pages[cur_page].entities[i].y && pages[cur_page].entities[i].id==1){
+            return i;
+        }
+    }
+    return -1;
+}
+
+function hitscan(_x,_y,dir,damage,_char=19,penetration=-1){//penetration:number of entities until scanning stops.
+	var tmp_entity_ptr;
+	if(hit_bounds(_x,_y)){
+		return;
+	}
+	switch(dir){//asdf
+		case "u"://up
+			for(var y=player.y;y>-1;y--){
+				tmp_entity_ptr=entity_collide_xy_npc(_x,y);
+				//pages[cur_page].entities.push({id:3, x:_x,y:y,char:102,direction:-1,damage:0,decay:0,from_player:1});//help with debugging/coding
+				if(tmp_entity_ptr==-1){
+					continue;
+				}
+				if(pages[cur_page].entities[tmp_entity_ptr].id==1){//npcs,enemys.
+					pages[cur_page].entities[tmp_entity_ptr].health-=(damage*player.strength);//actual damage
+					if(pages[cur_page].entities[tmp_entity_ptr]<=0){
+						pages[cur_page].entities[tmp_entity_ptr].id=-1;
+					}
+					pages[cur_page].entities.push({id:3, x:_x,
+					y:y,char:_char,direction:-1,damage:0,decay:1,from_player:1});//for show
+				}
+			}
+			
+			break;
+		case "d"://down
+			for(var y=player.y;y<25;y++){
+				tmp_entity_ptr=entity_collide_xy_npc(_x,y);
+				//pages[cur_page].entities.push({id:3, x:_x,y:y,char:102,direction:-1,damage:0,decay:0,from_player:1});//help with debugging/coding
+				if(tmp_entity_ptr==-1){
+					continue;
+				}
+				if(pages[cur_page].entities[tmp_entity_ptr].id==1){//npcs,enemys.
+					pages[cur_page].entities[tmp_entity_ptr].health-=(damage*player.strength);;//actual damage
+					if(pages[cur_page].entities[tmp_entity_ptr]<=0){
+						pages[cur_page].entities[tmp_entity_ptr].id=-1;
+					}
+					pages[cur_page].entities.push({id:3, x:_x,
+					y:y,char:_char,direction:-1,damage:0,decay:1,from_player:1});//for show
+				}
+			}
+			break;
+		case "l"://left
+			for(var x=_x;x>-1;x--){
+				tmp_entity_ptr=entity_collide_xy_npc(x,_y);
+				//pages[cur_page].entities.push({id:3, x:x,y:_y,char:102,direction:-1,damage:0,decay:0,from_player:1});//help with debugging/coding
+				if(tmp_entity_ptr==-1){
+					continue;
+				}
+				if(pages[cur_page].entities[tmp_entity_ptr].id==1){//npcs,enemys.
+					pages[cur_page].entities[tmp_entity_ptr].health-=(damage*player.strength);;//actual damage
+					if(pages[cur_page].entities[tmp_entity_ptr]<=0){
+						pages[cur_page].entities[tmp_entity_ptr].id=-1;
+					}
+					pages[cur_page].entities.push({id:3, x:x,
+					y:_y,char:_char,direction:-1,damage:0,decay:1,from_player:1});//for show
+				}
+			}
+			break;
+		case "r"://right
+			for(var x=player.x;x<40;x++){
+				tmp_entity_ptr=entity_collide_xy_npc(x,_y);
+				//pages[cur_page].entities.push({id:3, x:x,y:_y,char:102,direction:-1,damage:0,decay:0,from_player:1});//help with debugging/coding
+				if(tmp_entity_ptr==-1){
+					continue;
+				}
+				if(pages[cur_page].entities[tmp_entity_ptr].id==1){//npcs,enemys.
+					pages[cur_page].entities[tmp_entity_ptr].health-=(damage*player.strength);;//actual damage
+					if(pages[cur_page].entities[tmp_entity_ptr]<=0){
+						pages[cur_page].entities[tmp_entity_ptr].id=-1;
+					}
+					pages[cur_page].entities.push({id:3, x:x,
+					y:_y,char:_char,direction:-1,damage:0,decay:1,from_player:1});//for show
+				}
+			}
+			break;
+	}
 }
 
 function can_bang(x){
@@ -966,10 +1178,55 @@ switch(pages[cur_page].entities[ptr].char){
 		}
 		break;
 	case 20://raygun ring
+		switch(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)){
+			case 64://Iron Wall, hole to "the slip"
+				if(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y-1)==40 &&
+				char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y+1)==40 &&
+				char_value(pages[cur_page].entities[ptr].x-1,pages[cur_page].entities[ptr].y)==40 &&
+				char_value(pages[cur_page].entities[ptr].x+1,pages[cur_page].entities[ptr].y)==40 &&
+				char_value(pages[cur_page].entities[ptr].x-1,pages[cur_page].entities[ptr].y-2)==58 &&
+				char_value(pages[cur_page].entities[ptr].x+1,pages[cur_page].entities[ptr].y-2)==58 &&
+				char_value(pages[cur_page].entities[ptr].x-1,pages[cur_page].entities[ptr].y+2)==58 &&
+				char_value(pages[cur_page].entities[ptr].x+1,pages[cur_page].entities[ptr].y+2)==58 &&
+				char_value(pages[cur_page].entities[ptr].x-2,pages[cur_page].entities[ptr].y+1)==58 &&
+				char_value(pages[cur_page].entities[ptr].x-2,pages[cur_page].entities[ptr].y-1)==58 &&
+				char_value(pages[cur_page].entities[ptr].x+2,pages[cur_page].entities[ptr].y+1)==58 &&
+				char_value(pages[cur_page].entities[ptr].x+2,pages[cur_page].entities[ptr].y-1)==58){
+					pages[cur_page].holes.push({
+					x:pages[cur_page].entities[ptr].x,
+					y:pages[cur_page].entities[ptr].y,
+					dest_page:[pages[cur_page].metadata.x,
+					pages[cur_page].metadata.y,0],
+					next_x:19,
+					next_y:12
+					});
+				var hole_ptr=pages[cur_page].holes.length-1;
+				switch(pages[cur_page].metadata.layer){
+					case -1:
+						pages[cur_page].holes[hole_ptr].dest_page[2]=1;
+						break;
+					case 0:
+						pages[cur_page].holes[hole_ptr].dest_page[2]=1;
+						break;
+					case 1:
+						pages[cur_page].holes[hole_ptr].dest_page[2]=0;
+						break;
+				}
+				pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=6;
+				pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x-1]=2
+				pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x+1]=2;
+				pages[cur_page].map[pages[cur_page].entities[ptr].y-1][pages[cur_page].entities[ptr].x]=2;
+				pages[cur_page].map[pages[cur_page].entities[ptr].y+1][pages[cur_page].entities[ptr].x]=2;
+				}
+				break;
+		}
 		do_bang(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y);
 		if(can_bang(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y))){
 			switch(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)){
 				case 5://Black stone?
+					pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=2;
+					break;
+				case 97://statue
 					pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=2;
 					break;
 				default:
@@ -1021,22 +1278,30 @@ if(pages[cur_page].entities[ptr]==undefined){
 		var next_page=-1;
 		var dir="";
 		if(pages[cur_page].entities[ptr].x<0){//left edge, west_goto
-			next_page=pages[cur_page].metadata.west_goto;
+			next_page=get_ptr_from_page_xy(pages[cur_page].metadata.x-1,
+			pages[cur_page].metadata.y,
+			pages[cur_page].metadata.layer);
 			dir="left";
 		}
 		if(pages[cur_page].entities[ptr].x>39){//right edge, east_goto
-			next_page=pages[cur_page].metadata.east_goto;
+			next_page=get_ptr_from_page_xy(pages[cur_page].metadata.x+1,
+			pages[cur_page].metadata.y,
+			pages[cur_page].metadata.layer);
 			dir="right";
 		}
 		if(pages[cur_page].entities[ptr].y<0){//top edge, north_goto
-			next_page=pages[cur_page].metadata.north_goto;
+			next_page=get_ptr_from_page_xy(pages[cur_page].metadata.x,
+			pages[cur_page].metadata.y-1,
+			pages[cur_page].metadata.layer);
 			dir="up";
 		}
 		if(pages[cur_page].entities[ptr].y>24){//bottom edge, south_goto
-			next_page=pages[cur_page].metadata.south_goto;
+			next_page=get_ptr_from_page_xy(pages[cur_page].metadata.x,
+			pages[cur_page].metadata.y+1,
+			pages[cur_page].metadata.layer);
 			dir="down";
 		}
-		if(next_page==-1 || next_page==-2){
+		if(next_page==-1){
 			projectile_effect(ptr);
         	pages[cur_page].entities[ptr].id=-1;
         	entity_cleanup();
@@ -1098,6 +1363,9 @@ function projectile(ptr){//Code for making projectiles move and interact with Th
 
 function item_pickup_dropoff(item_id,x,y){
 	if(player.creative==1){
+		if(holding_attack_item()){
+			return;
+		}
 		pages[cur_page].map[y][x]=0;
 		return true;
 	}
@@ -1143,6 +1411,10 @@ switch(char_value(x,y)){
 		return item_pickup_dropoff(70,x,y);
 	case 93://pump
 		return item_pickup_dropoff(72,x,y);
+	case 7://Bedding
+		return item_pickup_dropoff(51,x,y);
+	case 101://Glass
+		return item_pickup_dropoff(78,x,y);
 	case 42://closed door
 		pages[cur_page].map[y][x]=43;
 		return true;
@@ -1165,6 +1437,9 @@ switch(char_value(x,y)){
 		return true;
 	default:
 		if(player.creative==1){
+			if(holding_attack_item()){
+				return;
+			}
 			var _char=char_value(x,y);//Performance optimization.
 			for(var i=0;i<properties.creative_noremove.length;i++){
 				if(_char==properties.creative_noremove[i]){
@@ -1176,6 +1451,15 @@ switch(char_value(x,y)){
 		}
 		break;
 }
+}
+
+function holding_attack_item(){
+	for(var i=0;i<properties.attack_items.length;i++){
+		if(properties.attack_items[i]==player.inv[player.inv[10]][0]){
+			return true;
+		}
+	}
+	return false;
 }
 
 function attack(x){
@@ -1311,6 +1595,30 @@ switch(player.inv[player.inv[10]][0]){
 			player.inv[player.inv[10]][0]=0;
 		}
 		break;
+	case 79://microwave cannon
+		switch(x){
+			case "up":
+				for(var i=-7;i<8;i++){
+				hitscan(player.x+i,player.y,'u',MICROWAVE_PWM,30);
+				}
+				break;
+			case "down":
+				for(var i=-7;i<8;i++){
+				hitscan(player.x+i,player.y,'d',MICROWAVE_PWM,30);
+				}
+				break;
+			case "left":
+				for(var i=-7;i<8;i++){
+				hitscan(player.x,player.y+i,'l',MICROWAVE_PWM,30);
+				}
+				break;
+			case "right":
+				for(var i=-7;i<8;i++){
+				hitscan(player.x,player.y+i,'r',MICROWAVE_PWM,30);
+				}
+				break;
+		}
+		break;
 	default:
 		switch(x){
  		 	case "up":
@@ -1340,9 +1648,9 @@ function is_bonemealable(x){
 
 function use_item(){
 if(char_value(player.x,player.y)==0){
-for(var i=0;i<properties.breakable.length;i++){
-	if(player.inv[player.inv[10]][0]==properties.breakable[i]){
-		pages[cur_page].map[player.y][player.x]=item_char[player.inv[player.inv[10]][0]];
+for(var i=0;i<properties.placeable_breakable.length;i++){
+	if(player.inv[player.inv[10]][0]==properties.placeable_breakable[i]){
+		pages[cur_page].map[player.y][player.x]=item_char[player.inv[player.inv[10]][0]];//place_item
 		player.creative==1 ? 0 : player.inv[player.inv[10]][1]--;
 		inv_cleanup();
 		return;
@@ -1447,9 +1755,9 @@ switch(player.inv[player.inv[10]][0]){//item id
 	case 50://black wall
 		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[50] : 0;
 		break;
-	case 51://bedding 1
+	/*case 51://bedding 1
 		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[51] : 0;
-		break;
+		break;*/
 	case 52://bedding 2
 		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[52] : 0;
 		break;
@@ -1495,6 +1803,9 @@ switch(player.inv[player.inv[10]][0]){//item id
 	case 66://Walnut Leaves 6
 		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[66] : 0;
 		break;
+	case 52://statue
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[52] : 0;
+		break;
 }
 inv_cleanup();
 }
@@ -1530,6 +1841,10 @@ function cheats(){
 			player.tainted=1;
             random_tick(player.x,player.y);
             break;
+	case "noclip":
+		player.tainted=1;
+		player.noclip=1;
+		break;
         default:
             alert("No cheat for you!");
             break;
@@ -1561,7 +1876,7 @@ switch(key){
 	if(hit_bounds(player.x,player.y-1)){
 		off_edge("up");
 	}
-	if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x,player.y-1) || !is_walkable(char_value(player.x,player.y-1)))){
+	if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x,player.y-1) || !player.noclip&&!is_walkable(char_value(player.x,player.y-1)))){
         	player.y-=1;
         }
         return;
@@ -1570,7 +1885,7 @@ switch(key){
 	if(hit_bounds(player.x,player.y+1)){
 		off_edge("down");
 	}
-        if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x,player.y+1) || !is_walkable(char_value(player.x,player.y+1)))){
+        if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x,player.y+1) || !player.noclip&&!is_walkable(char_value(player.x,player.y+1)))){
         	player.y+=1;
         }
         return;
@@ -1579,7 +1894,7 @@ switch(key){
 	if(hit_bounds(player.x-1,player.y)){
 		off_edge("left");
 	}
-        if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x-1,player.y) || !is_walkable(char_value(player.x-1,player.y)))){
+        if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x-1,player.y) || !player.noclip&&!is_walkable(char_value(player.x-1,player.y)))){
         	player.x-=1;
         }
         return;
@@ -1588,7 +1903,7 @@ switch(key){
 	if(hit_bounds(player.x+1,player.y)){
 		off_edge("right");
 	}
-        if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x+1,player.y) || !is_walkable(char_value(player.x+1,player.y)))){
+        if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x+1,player.y) || !player.noclip&&!is_walkable(char_value(player.x+1,player.y)))){
         	player.x+=1;
         }
         return;
@@ -1706,7 +2021,7 @@ function death(){
     key_manager=function(){};
 }
 
-function pathfind_step(x1,y1,x2,y2,og_x,og_y){//asdf
+function pathfind_step(x1,y1,x2,y2,og_x,og_y){
 var nodes=[];
 var dir="";
 og_x==undefined ? og_x=20 : 0;
@@ -1812,19 +2127,20 @@ function entity_slip_edge(ptr,dir){
 var next_page=-1;
 switch(dir){
 	case "up":
-		next_page=pages[cur_page].metadata.north_goto;
+		next_page=get_ptr_from_page_xy(pages[cur_page].metadata.x,pages[cur_page].metadata.y-1,pages[cur_page].metadata.layer);
 		break;
 	case "down":
-		next_page=pages[cur_page].metadata.south_goto;
+		next_page=get_ptr_from_page_xy(pages[cur_page].metadata.x,pages[cur_page].metadata.y+1,pages[cur_page].metadata.layer);
 		break;
 	case "left":
-		next_page=pages[cur_page].metadata.west_goto;
+		next_page=get_ptr_from_page_xy(pages[cur_page].metadata.x-1,pages[cur_page].metadata.y,pages[cur_page].metadata.layer);
 		break;
 	case "right":
-		next_page=pages[cur_page].metadata.east_goto;
+		next_page=get_ptr_from_page_xy(pages[cur_page].metadata.x+1,pages[cur_page].metadata.y,pages[cur_page].metadata.layer);
 		break;
 }
-if(next_page==-1 || next_page==-2){
+//alert(next_page);
+if(next_page==-1){
 	return;
 }
 switch(dir){
@@ -1935,22 +2251,22 @@ function npc_edge(ptr){//(x<0 || x>39 || y<0 || y>24);
 var next_page=-1;
 var dir="";
 if(pages[cur_page].entities[ptr].dest_x<0){//left
-	next_page=pages[cur_page].metadata.west_goto;
+	next_page=get_ptr_from_page_xy(pages[cur_page].metadata.x-1,pages[cur_page].metadata.y,pages[cur_page].metadata.layer);
 	dir="left";
 }
 if(pages[cur_page].entities[ptr].dest_x>39){//right
-	next_page=pages[cur_page].metadata.east_goto;
+	next_page=get_ptr_from_page_xy(pages[cur_page].metadata.x+1,pages[cur_page].metadata.y,pages[cur_page].metadata.layer);
 	dir="right";
 }
 if(pages[cur_page].entities[ptr].dest_y<0){//up
-	next_page=pages[cur_page].metadata.north_goto;
+	next_page=get_ptr_from_page_xy(pages[cur_page].metadata.x,pages[cur_page].metadata.y-1,pages[cur_page].metadata.layer);
 	dir="up";
 }
 if(pages[cur_page].entities[ptr].dest_y>24){//down
-	next_page=pages[cur_page].metadata.south_goto;
+	next_page=get_ptr_from_page_xy(pages[cur_page].metadata.x,pages[cur_page].metadata.y+1,pages[cur_page].metadata.layer);
 	dir="down";
 }
-if(next_page==-1 || next_page==-2){
+if(next_page==-1){
 	return;
 }else{
 switch(dir){
@@ -1998,7 +2314,7 @@ function friendly_npc(ptr){
 				new_npc(pages[cur_page].entities[ptr].x,
 				pages[cur_page].entities[ptr].y,
 				pages[cur_page].entities[ptr].x,
-				pages[cur_page].entities[ptr].y);//asdf
+				pages[cur_page].entities[ptr].y);
 				return;
 			}
 		}
@@ -2242,7 +2558,7 @@ function do_fire(x,y){
 	}
 }
 
-function enemy_chance(){return Math.floor(-180+46.66666667*tick_hour()+-1.944444444*tick_hour()*tick_hour());}
+function enemy_chance(){return Math.floor(-180+46.66666667*tick_hour()+-1.944444444*tick_hour()*tick_hour())+(pages[cur_page].metadata.layer>0 ? 10 : 0);}
 
 function random_tick(random_x=Math.floor((Math.random()*65535))%40,random_y=Math.floor((Math.random()*65535))%25,bone_meal=0,action=Math.floor((Math.random()*65535))%100){
 var season=rtc().month;
@@ -2541,6 +2857,7 @@ function wire_jumper(x,y){
 }
 
 function pump(x,y){//water: 29
+	var page_ptr;
 	if(char_value(x,y-1)==29){
 		if(char_value(x,y+1)==0){
 			pages[cur_page].map[y-1][x]=0;
@@ -2548,20 +2865,22 @@ function pump(x,y){//water: 29
 			return;
 		}
 		if(hit_bounds(x,y+1)){//map edge, south
-			if(pages[cur_page].metadata.south_goto>=0){
-				if(pages[pages[cur_page].metadata.south_goto].map[0][x]==0){
+			page_ptr=get_ptr_from_page_xy(pages[cur_page].metadata.x,pages[cur_page].metadata.y+1,pages[cur_page].metadata.layer);
+			if(page_ptr!=-1){
+				if(pages[page_ptr].map[0][x]==0){
 					pages[cur_page].map[y-1][x]=0;
-					pages[pages[cur_page].metadata.south_goto].map[0][x]=29;
+					pages[page_ptr].map[0][x]=29;
 					return;
 				}
 			}
 		}
 	}else{
-	if(hit_bounds(x,y-1)){
-		if(pages[cur_page].metadata.north_goto>=0){
-			if(pages[pages[cur_page].metadata.north_goto].map[24][x]==29&&char_value(x,y+1)==0){
-				pages[pages[cur_page].metadata.north_goto].map[24][x]=0;
-				pages[cur_page].map[y+1][x]=29;
+	if(hit_bounds(x,y+1)){
+		page_ptr=get_ptr_from_page_xy(pages[cur_page].metadata.x,pages[cur_page].metadata.y+1,pages[cur_page].metadata.layer);
+		if(page_ptr!=-1){
+			if(pages[page_ptr].map[0][x]==29&&char_value(x,y-1)==0){
+				pages[page_ptr].map[0][x]=0;
+				pages[cur_page].map[y-1][x]=29;
 				return;
 			}
 		}
@@ -2574,20 +2893,22 @@ function pump(x,y){//water: 29
 		return;
 		}
 		if(hit_bounds(x,y-1)){//map edge, north
-			if(pages[cur_page].metadata.north_goto>=0){
-				if(pages[pages[cur_page].metadata.north_goto].map[24][x]==0){
+			page_ptr=get_ptr_from_page_xy(pages[cur_page].metadata.x,pages[cur_page].metadata.y-1,pages[cur_page].metadata.layer);
+			if(page_ptr!=-1){
+				if(pages[page_ptr].map[24][x]==0){
 					pages[cur_page].map[y+1][x]=0;
-					pages[pages[cur_page].metadata.north_goto].map[24][x]=29;
+					pages[page_ptr].map[24][x]=29;
 					return;
 				}
 			}
 		}
 	}else{
-	if(hit_bounds(x,y+1)){
-		if(pages[cur_page].metadata.south_goto>=0){
-			if(pages[pages[cur_page].metadata.south_goto].map[0][x]==29&&char_value(x,y-1)==0){
-				pages[pages[cur_page].metadata.south_goto].map[0][x]=0;
-				pages[cur_page].map[y-1][x]=29;
+	if(hit_bounds(x,y-1)){
+		page_ptr=get_ptr_from_page_xy(pages[cur_page].metadata.x,pages[cur_page].metadata.y-1,pages[cur_page].metadata.layer);
+		if(page_ptr!=-1){
+			if(pages[page_ptr].map[24][x]==29&&char_value(x,y+1)==0){
+				pages[page_ptr].map[24][x]=0;
+				pages[cur_page].map[y+1][x]=29;
 				return;
 			}
 		}
@@ -2600,20 +2921,22 @@ function pump(x,y){//water: 29
 		return;
 		}
 		if(hit_bounds(x+1,y)){//map edge, east
-			if(pages[cur_page].metadata.east_goto>=0){
-				if(pages[pages[cur_page].metadata.east_goto].map[y][0]==0){
+			page_ptr=get_ptr_from_page_xy(pages[cur_page].metadata.x+1,pages[cur_page].metadata.y,pages[cur_page].metadata.layer);
+			if(page_ptr!=-1){
+				if(pages[page_ptr].map[y][0]==0){
 					pages[cur_page].map[y][x-1]=0;
-					pages[pages[cur_page].metadata.east_goto].map[y][0]=29;
+					pages[page_ptr].map[y][0]=29;
 					return;
 				}
 			}
 		}
 	}else{
-	if(hit_bounds(x-1,y)){
-		if(pages[cur_page].metadata.west_goto>=0){
-			if(pages[pages[cur_page].metadata.west_goto].map[y][39]==29&&char_value(x+1,y)==0){
-				pages[pages[cur_page].metadata.west_goto].map[y][39]=0;
-				pages[cur_page].map[y][x+1]=29;
+	if(hit_bounds(x+1,y)){
+		page_ptr=get_ptr_from_page_xy(pages[cur_page].metadata.x+1,pages[cur_page].metadata.y,pages[cur_page].metadata.layer);
+		if(page_ptr!=-1){
+			if(pages[page_ptr].map[y][0]==29&&char_value(x-1,y)==0){
+				pages[page_ptr].map[y][0]=0;
+				pages[cur_page].map[y][x-1]=29;
 				return;
 			}
 		}
@@ -2626,20 +2949,22 @@ function pump(x,y){//water: 29
 		return;
 		}
 		if(hit_bounds(x-1,y)){//map edge, west
-			if(pages[cur_page].metadata.west_goto>=0){
-				if(pages[pages[cur_page].metadata.west_goto].map[y][39]==0){
+			page_ptr=get_ptr_from_page_xy(pages[cur_page].metadata.x-1,pages[cur_page].metadata.y,pages[cur_page].metadata.layer);
+			if(page_ptr!=-1){
+				if(pages[page_ptr].map[y][39]==0){
 					pages[cur_page].map[y][x+1]=0;
-					pages[pages[cur_page].metadata.west_goto].map[y][39]=29;
+					pages[page_ptr].map[y][39]=29;
 					return;
 				}
 			}
 		}
 	}else{
-	if(hit_bounds(x+1,y)){
-		if(pages[cur_page].metadata.east_goto>=0){
-			if(pages[pages[cur_page].metadata.east_goto].map[y][0]==29&&char_value(x-1,y)==0){
-				pages[pages[cur_page].metadata.east_goto].map[y][0]=0;
-				pages[cur_page].map[y][x-1]=29;
+	if(hit_bounds(x-1,y)){
+		page_ptr=get_ptr_from_page_xy(pages[cur_page].metadata.x-1,pages[cur_page].metadata.y,pages[cur_page].metadata.layer);
+		if(page_ptr!=-1){
+			if(pages[page_ptr].map[y][39]==29&&char_value(x+1,y)==0){
+				pages[page_ptr].map[y][39]=0;
+				pages[cur_page].map[y][x+1]=29;
 				return;
 			}
 		}
@@ -2975,6 +3300,9 @@ function _save(){
 		}
 	}
 	var compressed_save=LZUTF8.compress(JSON.stringify([cur_page,player,pages,tick1]),{outputEncoding:"Base64"});
+	if(compressed_save.length>=5000000){//is the 5mb limit 5mb or 5mib?
+		alert("Your savefile is too big, please use the \"import\" and \"export\" buttons instead.");
+	}
 	saves.setItem("_save",compressed_save);
 	dem_ann.textContent="Saved. Size:"+compressed_save.length+" bytes";
 }
@@ -3000,6 +3328,12 @@ function _export(){
 	if(confirm("This will end your session.")){
 		document.write(LZUTF8.compress(JSON.stringify([cur_page,player,pages,tick1]),{outputEncoding:"Base64"}));
 	}
+}
+function _new(){
+	if(!confirm("Destroy current unsaved progress?")){
+		return;
+	}
+	new_save();
 }
 </script>
 </html>
