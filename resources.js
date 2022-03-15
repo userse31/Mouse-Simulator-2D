@@ -1,7 +1,10 @@
+/*
+Utilizes GNU GENERAL PUBLIC LICENSE 3. See "LICENSE" file for details 
+This program is free software! This means you may redistribute and/or modify this program under the terms of the GNU General Public License. Why you would want to redistribute/modify my horrible coding, who knows! But you can!!!
+The GNU General Public License is published by the "Free Software Foundation, Inc" at 675 Mass Ave, Cambridge MA 02139, USA
+*/
+
 //preinitialized data
-const MAX_MAP_SIZE_NEG=-64;
-const MAX_MAP_SIZE_POS=63;
-const MICROWAVE_PWM=2;
 var cur_page=0;
 var paused=0;
 var last_dir="";
@@ -317,16 +320,16 @@ const font=[
 0,0,0,0,0,1,1,0,
 0,0,0,0,0,0,0,0,0,0,0,255,255,255
 ],
-//23, Bow
+//23, Clock Radio
 [
 0,0,0,0,0,0,0,0,
+0,0,1,1,1,1,0,0,
+0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,0,
 0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,255,255,255
+0,1,1,0,0,1,1,0,
+0,1,1,0,0,1,1,0,
+0,0,0,0,0,0,0,0,100,100,100,200,137,102
 ],
 //24, Sapling.
 [
@@ -460,16 +463,16 @@ const font=[
 0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,200,0,0,255,255,255
 ],
-//36, Fire Bow
+//36, Random tick
 [
-0,0,0,0,0,0,0,0,
-0,0,0,1,1,1,0,0,
-0,0,1,0,1,0,0,0,
-0,1,0,1,0,0,0,0,
-0,1,1,0,0,1,1,0,
-0,1,0,0,1,1,1,0,
-0,0,0,0,1,1,0,0,
-0,0,0,0,0,0,0,0,0,0,0,255,255,255
+0,0,1,1,1,1,0,0,
+0,1,0,0,0,0,1,0,
+1,0,0,1,0,0,0,1,
+1,0,0,1,0,0,0,1,
+1,0,0,1,1,1,0,1,
+1,0,0,0,0,0,0,1,
+0,1,0,0,0,0,1,0,
+0,0,1,1,1,1,0,0,0,0,0,255,255,255
 ],
 //37, spear
 [
@@ -493,16 +496,16 @@ const font=[
 0,0,1,1,1,1,0,0,
 0,0,0,0,0,0,0,0,255,0,0,255,255,255
 ],
-//39, Poisonous Spear
+//39, Arrow
 [
 0,0,0,0,0,0,0,0,
-0,0,0,0,1,1,1,0,
-0,0,0,0,0,1,1,0,
-0,0,0,0,1,0,1,0,
-0,0,0,1,0,0,0,0,
-0,0,1,0,0,0,0,0,
-0,1,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,255,0,0,255,255,255
+0,1,1,1,0,0,0,0,
+0,1,1,0,0,0,0,0,
+0,1,0,1,0,0,0,0,
+0,0,0,0,1,0,0,0,
+0,0,0,0,0,1,0,0,
+0,0,0,0,0,0,1,1,
+0,0,0,0,0,0,1,0,255,0,0,255,255,255
 ],
 //40, Cyan Thing
 [
@@ -834,16 +837,16 @@ const font=[
 0,0,1,0,1,0,1,0,
 0,0,0,1,0,1,0,0,185,122,87,255,255,255
 ],
-//70, Bowl of Glue
+//70, Composter
 [
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
+0,0,0,1,1,0,0,0,
+0,0,1,1,1,1,0,0,
+0,0,0,1,1,0,0,0,
+0,0,0,1,1,0,0,0,
 0,1,1,1,1,1,1,0,
 0,1,1,1,1,1,1,0,
 0,0,1,1,1,1,0,0,
-0,0,0,1,1,0,0,0,200,200,0,255,255,255
+0,0,0,1,1,0,0,0,160,160,160,255,255,255
 ],
 //71, mdf puddy
 [
@@ -866,7 +869,7 @@ const font=[
 0,0,0,0,0,0,0,0,
 1,1,1,0,1,1,1,1,
 0,0,0,0,0,0,0,0,185,122,87,200,137,102
-],
+],//asdf
 //73, Grind Stone
 [
 0,0,0,0,0,0,0,0,
@@ -1197,32 +1200,76 @@ const font=[
 0,1,0,1,1,0,1,0,
 0,0,1,1,1,1,0,0,0,0,0,255,255,255
 ],
+//103, T gate (off)
+[
+0,0,0,1,1,0,0,0,
+0,0,1,1,1,1,0,0,
+0,1,0,0,0,0,1,0,
+1,1,0,0,0,0,1,1,
+1,1,0,0,0,0,1,1,
+0,1,0,0,0,0,1,0,
+0,0,1,1,1,1,0,0,
+0,0,0,1,1,0,0,0,184,115,51,0,255,255
+],
+//104, T gate (on)
+[
+0,0,0,1,1,0,0,0,
+0,0,1,1,1,1,0,0,
+0,1,0,0,0,0,1,0,
+1,1,0,0,0,0,1,1,
+1,1,0,0,0,0,1,1,
+0,1,0,0,0,0,1,0,
+0,0,1,1,1,1,0,0,
+0,0,0,1,1,0,0,0,184,115,255,0,255,255
+],
+//105, Hitscan
+[
+0,0,0,0,0,0,0,0,
+0,0,1,0,0,1,0,0,
+0,0,1,0,0,1,0,0,
+0,0,1,1,1,1,0,0,
+0,0,1,1,1,1,0,0,
+0,0,1,0,0,1,0,0,
+0,0,1,0,0,1,0,0,
+0,0,0,0,0,0,0,0,0,0,0,255,255,255
+],
+//106, plasma
+[
+0,0,0,1,1,0,0,0,
+0,1,0,1,1,0,1,0,
+0,0,1,1,1,1,0,0,
+1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,
+0,0,1,1,1,1,0,0,
+0,1,0,1,1,0,1,0,
+0,0,0,1,1,0,0,0,247,181,0,255,255,255
+],
 ];
 
 const properties={
-walkable:[0,2,6,7,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40,43,44,45,46,47,48,49,50,51,52,54,68,73,77,78,79,80,81,82,83,84,86,87,88,89,92,95,96,100],
-not_spawnable:[2,28,29,30,31,32,43,68,73,88,89,86,87,77,78,79,80,81,82,83,84,8],
-burnable:[12,13,14,15,18,24,28,42,43,45,46,47,48,49,50,51,72,74,75,76,100],
+walkable:[0,2,6,7,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40,43,44,45,46,47,48,49,50,51,52,54,68,73,77,78,79,80,81,82,83,84,86,87,88,89,92,95,96,100,23,T_T_GATE_ON,T_T_GATE_OFF,T_COMPOSTER],
+not_spawnable:[2,28,29,30,31,32,43,68,73,88,89,86,87,77,78,79,80,81,82,83,84,8,23,T_GATE_OFF,T_GATE_ON,T_COMPOSTER],
+burnable:[12,13,14,15,18,24,28,42,43,45,46,47,48,49,50,51,72,74,75,76,100,23,T_BEDDING],
 bangable:[18,42,43,12,5,93,94,97,72,74,75,76,101],
-placeable_breakable:[3,4,5,6,9,13,21,22,24,25,27,31,37,38,41,45,46,47,48,49,68,69,70,71,72,73,74,51,52,78],
+placeable_breakable:[3,4,5,6,9,13,21,22,24,25,27,31,37,38,41,45,46,47,48,49,68,69,70,71,72,73,74,51,52,78,I_CLOCK_RADIO,I_T_GATE,I_COMPOSTER],
 bonemealable:[52,51,50,49,48,47,46,24,17,16,15,13],
 creative_noremove:[1,6,10,11,8],
-elec_on:[87,81,82,83,84,89,91,96],
-elec_off:[86,77,78,79,80,88,90,95],
+elec_on:[87,81,82,83,84,89,91,96,T_T_GATE_ON],
+elec_off:[86,77,78,79,80,88,90,95,T_T_GATE_OFF],
 wires:[77,78,79,80,81,82,83,84],
 attack_items:[17,18,19,20,79],
 };
 const item_drops={
 enemy:[
-{chance:0.1,item_id:34,item_min:1,item_max:1},//Meat
-{chance:0.05,item_id:33,item_min:1,item_max:1},//iron
-{chance:0.05,item_id:35,item_min:1,item_max:1},//copper
-{chance:0.01,item_id:21,item_min:1,item_max:1},//cyan thing, 115
+{chance:0.1,item_id:I_MEAT,item_min:1,item_max:1},//Meat
+{chance:0.05,item_id:I_IRON,item_min:1,item_max:1},//iron
+{chance:0.05,item_id:I_COPPER,item_min:1,item_max:1},//copper
+{chance:0.01,item_id:I_CYAN_THING,item_min:1,item_max:1},//cyan thing, 115
 ],
 enemy_slip:[
-{chance:0.1,item_id:75,item_min:1,item_max:1},//Napkin
-{chance:0.1,item_id:77,item_min:1,item_max:1},//Thread
-{chance:0.05,item_id:78,item_min:1,item_max:10},//Glass
+{chance:0.1,item_id:I_NAPKIN,item_min:1,item_max:1},//Napkin
+{chance:0.1,item_id:I_THREAD,item_min:1,item_max:1},//Thread
+{chance:0.05,item_id:I_GLASS,item_min:1,item_max:10},//Glass
 ]};
 //items
 const item_char=[
@@ -1243,10 +1290,10 @@ const item_char=[
 33,//Bow,14
 34,//Bow and spindle,15
 35,//Amber,16
-36,//Fire bow, 17
+36,//AIR0, 17
 37,//Spear,18
 38,//Raygun,19
-39,//Poisonous Spear, 20
+39,//Arrow, 20
 40,//cyan thing, 21
 42,//Door, 22
 41,//Stone, 23
@@ -1269,7 +1316,7 @@ const item_char=[
 67,//Suspicious Stew,40
 68,//Camp Fire,41
 69,//Saw Dust,42
-70,//Bowl of Glue,43
+70,//Composter,43
 71,//mdf puddy,44
 72,//mdf,45
 73,//Grind Stone,46
@@ -1282,9 +1329,9 @@ const item_char=[
 14,//Tree leaves,53
 15,//Tree Trunk,54
 29,//Water,55
-30,//Fire 0,56
-31,//Fire 1,57
-32,//Fire 2,58
+30,//Fire,56
+23,//Clock Radio,57
+0,//Air 1,58
 44,//NPC Hole,59
 45,//Walnut Trunk,60
 46,//Walnut Leaves 1,61
@@ -1306,6 +1353,7 @@ const item_char=[
 99,//Thread,77
 101,//Glass,78
 102,//Microwave Cannon,79
+104,//T Gate,80
 ];
 
 const item_names=[
@@ -1326,10 +1374,10 @@ const item_names=[
 "Bow",
 "Bow and Spindle",
 "Amber",
-"Fire Bow",
+"REMOVED0",
 "Spear",
 "Raygun",
-"Poisonous Spear",
+"Arrow",
 "Cyan Thing",
 "Door",
 "Stone",
@@ -1352,7 +1400,7 @@ const item_names=[
 "Suspicious Stew",
 "Camp Fire",
 "Saw Dust",
-"Bowl of Glue",
+"Composter",
 "MDF Puddy",
 "MDF",
 "Grind Stone",
@@ -1365,9 +1413,9 @@ const item_names=[
 "Tree Leaves",
 "Tree Trunk",
 "Water",
-"Fire 0",
-"Fire 1",
-"Fire 2",
+"Fire",
+"Clock Radio",
+"Air",
 "NPC Hole",
 "Walnut Trunk",
 "Walnut Leaves 1",
@@ -1388,433 +1436,298 @@ const item_names=[
 "Vacuum Tube",
 "Thread",
 "Glass",
-"Microwave Cannon"
+"Microwave Cannon",
+"T Gate"
 ];
 //crafting
 const recipies=[
 {//sapling to stick+leaves
-input_id:[9,0,0,0,0,0],
-output:[[7,1],[10,1]]
-},
-{//sapling to stick+leaves
-input_id:[0,9,0,0,0,0],
-output:[[7,1],[10,1]]
-},
-{//sapling to stick+leaves
-input_id:[0,0,9,0,0,0],
-output:[[7,1],[10,1]]
-},
-{//sapling to stick+leaves
-input_id:[0,0,0,9,0,0],
-output:[[7,1],[10,1]]
-},
-{//sapling to stick+leaves
-input_id:[0,0,0,0,9,0],
-output:[[7,1],[10,1]]
-},
-{//sapling to stick+leaves
-input_id:[0,0,0,0,0,9],
-output:[[7,1],[10,1]]
+input_id:[I_SAPLING],
+output:[[I_STICK,3],[I_LEAVES,3]]
 },
 {//branch to stick+leaves
-input_id:[1,0,0,0,0,0],
-output:[[7,1],[10,1]]
-},
-{//branch to stick+leaves
-input_id:[0,1,0,0,0,0],
-output:[[7,1],[10,1]]
-},
-{//branch to stick+leaves
-input_id:[0,0,1,0,0,0],
-output:[[7,1],[10,1]]
-},
-{//branch to stick+leaves
-input_id:[0,0,0,1,0,0],
-output:[[7,1],[10,1]]
-},
-{//branch to stick+leaves
-input_id:[0,0,0,0,1,0],
-output:[[7,1],[10,1]]
-},
-{//branch to stick+leaves
-input_id:[0,0,0,0,0,1],
-output:[[7,1],[10,1]]
+input_id:[I_BRANCH],
+output:[[I_STICK,3],[I_LEAVES,3]]
 },
 {//hay to string
-input_id:[2,0,0,0,0,0],
-output:[[8,3]]
-},
-{//hay to string
-input_id:[0,2,0,0,0,0],
-output:[[8,3]]
-},
-{//hay to string
-input_id:[0,0,2,0,0,0],
-output:[[8,3]]
-},
-{//hay to string
-input_id:[0,0,0,2,0,0],
-output:[[8,3]]
-},
-{//hay to string
-input_id:[0,0,0,0,2,0],
-output:[[8,3]]
-},
-{//hay to string
-input_id:[0,0,0,0,0,2],
-output:[[8,3]]
+input_id:[I_HAY],
+output:[[I_STRING,3]]
 },
 {//2 sticks + 1 string to fence
-input_id:[7,0,8,0,7,0],
-output:[[6,3]]
+input_id:[I_STICK,0,I_STRING,0,I_STICK,0],
+output:[[I_FENCE,3]]
 },
 {//2 sticks + 1 string to fence
-input_id:[0,7,0,8,0,7],
-output:[[6,3]]
+input_id:[0,I_STICK,0,I_STRING,0,I_STICK],
+output:[[I_FENCE,3]]
 },
 {//2 string + 1 leaves to bowl
-input_id:[8,0,10,0,8,0],
-output:[[11,1]]
+input_id:[I_STRING,0,I_LEAVES,0,I_STRING,0],
+output:[[I_BOWL,1]]
 },
 {//2 string + 1 leaves to bowl
-input_id:[0,8,0,10,0,8],
-output:[[11,1]]
+input_id:[0,I_STRING,0,I_LEAVES,0,I_STRING],
+output:[[I_BOWL,1]]
 },
 {//bowl + brown mushroom to mushroom stew
-input_id:[0,0,4,0,11,0],
-output:[[11,1]]
+input_id:[0,0,I_BROWN_MUSHROOM,0,I_BOWL,0],
+output:[[I_BOWL,1]]
 },
 {//bowl + brown mushroom to mushroom stew
-input_id:[4,0,11,0,0,0],
-output:[[12,1]]
+input_id:[I_BROWN_MUSHROOM,0,I_BOWL,0,0,0],
+output:[[I_MUSHROOM_STEW,1]]
 },
 {//4 grass to hay
-input_id:[3,3,3,3,0,0],
-output:[[2,1]]
+input_id:[I_GRASS,I_GRASS,I_GRASS,I_GRASS,0,0],
+output:[[I_HAY,1]]
 },
 {//4 grass to hay
-input_id:[0,0,3,3,3,3],
-output:[[2,1]]
+input_id:[0,0,I_GRASS,I_GRASS,I_GRASS,I_GRASS],
+output:[[I_HAY,1]]
 },
 {//4 string + 2 hay to carpet
-input_id:[8,8,2,2,8,8],
-output:[[13,1]]
+input_id:[I_STRING,I_STRING,I_HAY,I_HAY,I_STRING,I_STRING],
+output:[[I_CARPET,1]]
 },
 {//bow
-input_id:[7,0,8,7,7,0],
-output:[[14,1]]
+input_id:[I_STICK,0,I_STRING,I_STICK,I_STICK,0],
+output:[[I_BOW,1]]
 },
 {//bow
-input_id:[0,7,7,8,0,7],
-output:[[14,1]]
+input_id:[0,I_STICK,I_STICK,I_STRING,0,I_STICK],
+output:[[I_BOW,1]]
 },
 {//bow+stick to bow and spindle
-input_id:[14,7,0,0,0,0],
-output:[[15,1]]
+input_id:[I_BOW,I_STICK,0,0,0,0],
+output:[[I_BOW_AND_SPINDLE,1]]
 },
-{//bow and spindle+hay+stick to amber and bow and spindle
-input_id:[15,2,1,0,0,0],
-output:[[15,1],[16,5]]
-},
-{//bow + amber to fire bow
-input_id:[14,16,16,16,16,16],
-output:[[17,5]]
+{//bow and spindle+hay to amber and bow and spindle
+input_id:[I_BOW_AND_SPINDLE,I_HAY,0,0,0,0],
+output:[[I_BOW_AND_SPINDLE,1],[I_AMBER,5]]
 },
 {//2 sticks+iron to spear.
-input_id:[33,0,7,0,7,0],
-output:[[18,1]]
+input_id:[I_IRON,0,I_STICK,0,I_STICK,0],
+output:[[I_SPEAR,1]]
 },
 {//2 sticks+iron to spear.
-input_id:[0,33,0,7,0,7],
-output:[[18,1]]
+input_id:[0,I_IRON,0,I_STICK,0,I_STICK],
+output:[[I_SPEAR,1]]
 },
-{//Spear+Red Mushroom to Poisonous Spear.
-input_id:[18,5,0,0,0,0],
-output:[[20,1]]
+/*{//Spear+Red Mushroom to Poisonous Spear.
+input_id:[I_SPEAR,I_RED_MUSHROOM,0,0,0,0],
+output:[[I_POISONOUS_SPEAR,1]]
+},*/
+{//Iron+Red mushroom+stick+paper to arrow
+input_id:[I_IRON,I_RED_MUSHROOM,I_STICK,I_PAPER,0,0],
+output:[[I_ARROW,16]]
 },
 {//6 sticks to door.
-input_id:[7,7,7,7,7,7],
-output:[[22,1]]
+input_id:[I_STICK,I_STICK,I_STICK,I_STICK,I_STICK,I_STICK],
+output:[[I_DOOR,1]]
 },
 {//6 hay to hay bail.
-input_id:[2,2,2,2,2,2],
-output:[[24,1]]
+input_id:[I_HAY,I_HAY,I_HAY,I_HAY,I_HAY,I_HAY],
+output:[[I_HAY_BAIL,1]]
 },
 {//hay bail to 6 hay.
-input_id:[24,0,0,0,0,0],
-output:[[2,6]]
-},
-{//hay bail to 6 hay.
-input_id:[0,24,0,0,0,0],
-output:[[2,6]]
-},
-{//hay bail to 6 hay.
-input_id:[0,0,24,0,0,0],
-output:[[2,6]]
-},
-{//hay bail to 6 hay.
-input_id:[0,0,0,24,0,0],
-output:[[2,6]]
-},
-{//hay bail to 6 hay.
-input_id:[0,0,0,0,24,0],
-output:[[2,6]]
-},
-{//hay bail to 6 hay.
-input_id:[0,0,0,0,0,24],
-output:[[2,6]]
+input_id:[I_HAY_BAIL],
+output:[[I_HAY,6]]
 },
 {//Walnut fruit to walnut stone and peels
-input_id:[25,0,0,0,0,0],
-output:[[26,1],[27,1]]
-},
-{//Walnut fruit to walnut stone and peels
-input_id:[0,25,0,0,0,0],
-output:[[26,1],[27,1]]
-},
-{//Walnut fruit to walnut stone and peels
-input_id:[0,0,25,0,0,0],
-output:[[26,1],[27,1]]
-},
-{//Walnut fruit to walnut stone and peels
-input_id:[0,0,0,25,0,0],
-output:[[26,1],[27,1]]
-},
-{//Walnut fruit to walnut stone and peels
-input_id:[0,0,0,0,25,0],
-output:[[26,1],[27,1]]
-},
-{//Walnut fruit to walnut stone and peels
-input_id:[0,0,0,0,0,25],
-output:[[26,1],[27,1]]
+input_id:[I_W_FRUIT],
+output:[[I_W_STONE,1],[I_W_PEELS,1]]
 },
 {//Brown mushroom+red mushroom to Bone meal
-input_id:[4,0,10,0,5,0],
-output:[[28,3]]
+input_id:[I_BROWN_MUSHROOM,0,I_LEAVES,0,I_RED_MUSHROOM,0],
+output:[[I_BONE_MEAL,3]]
 },
 {//Brown mushroom+red mushroom to Bone meal
-input_id:[0,4,0,10,0,5],
-output:[[28,3]]
+input_id:[0,I_BROWN_MUSHROOM,0,I_LEAVES,0,I_RED_MUSHROOM],
+output:[[I_BONE_MEAL,3]]
 },
 {//Brown mushroom+red mushroom to Bone meal
-input_id:[5,0,10,0,4,0],
-output:[[28,3]]
+input_id:[I_RED_MUSHROOM,0,I_LEAVES,0,I_BROWN_MUSHROOM,0],
+output:[[I_BONE_MEAL,3]]
 },
 {//Brown mushroom+red mushroom to Bone meal
-input_id:[0,5,0,10,0,4],
-output:[[28,3]]
+input_id:[0,I_RED_MUSHROOM,0,I_LEAVES,0,I_BROWN_MUSHROOM],
+output:[[I_BONE_MEAL,3]]
 },
 {//stone+5 leaves to 3 Fibers+stone
-input_id:[23,10,10,10,10,10],
-output:[[23,1],[29,3]]
+input_id:[I_STONE,I_LEAVES,I_LEAVES,I_LEAVES,I_LEAVES,I_LEAVES],
+output:[[I_STONE,1],[I_FIBERS,3]]
 },
 {//6 fibers to paper
-input_id:[29,29,29,29,29,29],
-output:[[32,1]]
+input_id:[I_FIBERS,I_FIBERS,I_FIBERS,I_FIBERS,I_FIBERS,I_FIBERS],
+output:[[I_PAPER,1]]
 },
 {//3 Paper+String to book
-input_id:[8,32,32,32,0,0],
-output:[[30,1]]
+input_id:[I_STRING,I_PAPER,I_PAPER,I_PAPER,0,0],
+output:[[I_BOOK,1]]
 },
 {//4 MDF+2 Books to Bookshelf
-input_id:[45,45,30,30,45,45],
-output:[[31,1]],
+input_id:[I_MDF,I_MDF,I_BOOK,I_BOOK,I_MDF,I_MDF],
+output:[[I_BOOKSHELF,1]],
 },
 {//1 meat+amber to cooked meat.
-input_id:[34,16,0,0,0,0],
-output:[[36,1]],
+input_id:[I_MEAT,I_AMBER,0,0,0,0],
+output:[[I_COOKED_MEAT,1]],
 },
 {//6 iron to iron wall
-input_id:[33,33,33,33,33,33],
-output:[[37,1]],
+input_id:[I_IRON,I_IRON,I_IRON,I_IRON,I_IRON,I_IRON],
+output:[[I_IRON_WALL,1]],
 },
 {//iron wall to 6 iron
-input_id:[37,0,0,0,0,0],
-output:[[33,6]],
-},
-{//iron wall to 6 iron
-input_id:[0,37,0,0,0,0],
-output:[[33,6]],
-},
-{//iron wall to 6 iron
-input_id:[0,0,37,0,0,0],
-output:[[33,6]],
-},
-{//iron wall to 6 iron
-input_id:[0,0,0,37,0,0],
-output:[[33,6]],
-},
-{//iron wall to 6 iron
-input_id:[0,0,0,0,37,0],
-output:[[33,6]],
-},
-{//iron wall to 6 iron
-input_id:[0,0,0,0,0,37],
-output:[[33,6]],
+input_id:[I_IRON_WALL],
+output:[[I_IRON,6]],
 },
 {//6 copper to copper wall
-input_id:[35,35,35,35,35,35],
-output:[[38,1]],
+input_id:[I_COPPER,I_COPPER,I_COPPER,I_COPPER,I_COPPER,I_COPPER],
+output:[[I_COPPER_WALL,1]],
 },
 {//copper wall to 6 copper
-input_id:[38,0,0,0,0,0],
-output:[[35,6]],
-},
-{//copper wall to 6 copper
-input_id:[0,38,0,0,0,0],
-output:[[35,6]],
-},
-{//copper wall to 6 copper
-input_id:[0,0,38,0,0,0],
-output:[[35,6]],
-},
-{//copper wall to 6 copper
-input_id:[0,0,0,38,0,0],
-output:[[35,6]],
-},
-{//copper wall to 6 copper
-input_id:[0,0,0,0,38,0],
-output:[[35,6]],
-},
-{//copper wall to 6 copper
-input_id:[0,0,0,0,0,38],
-output:[[35,6]],
+input_id:[I_COPPER_WALL],
+output:[[I_COPPER,6]],
 },
 {//Amber+Bowl of Water+Brown Mushroom+Red Mushroom to Suspicious Stew
-input_id:[4,5,39,21,16,0],
-output:[[40,1]],
+input_id:[I_BROWN_MUSHROOM,I_RED_MUSHROOM,I_BOWL_OF_WATER,I_CYAN_THING,I_AMBER,0],
+output:[[I_SUS_STEW,1]],
 },
 {//Amber+Bowl of Water+Brown Mushroom+Red Mushroom to Suspicious Stew
-input_id:[5,4,39,21,16,0],
-output:[[40,1]],
+input_id:[I_RED_MUSHROOM,I_BROWN_MUSHROOM,I_BOWL_OF_WATER,I_CYAN_THING,I_AMBER,0],
+output:[[I_SUS_STEW,1]],
 },
 {//Amber+2 Sticks to Camp Fire
-input_id:[16,7,7,0,0,0],
-output:[[41,1]],
+input_id:[I_AMBER,I_STICK,I_STICK,0,0,0],
+output:[[I_CAMP_FIRE,1]],
 },
 {//stone+stick to sawdust+stone
-input_id:[23,7,0,0,0,0],
-output:[[42,3],[23,1]]
+input_id:[I_STONE,I_STICK,0,0,0,0],
+output:[[I_SAW_DUST,3],[I_STONE,1]]
 },
 {//stone+fence to sawdust+stone
-input_id:[23,6,0,0,0,0],
-output:[[42,3],[23,1]]
+input_id:[I_STONE,I_FENCE,0,0,0,0],
+output:[[I_SAW_DUST,3],[I_STONE,1]]
 },
 {//stone+bowl to sawdust+stone
-input_id:[23,11,0,0,0,0],
-output:[[42,3],[23,1]]
+input_id:[I_STONE,I_BOWL,0,0,0,0],
+output:[[I_SAW_DUST,3],[I_STONE,1]]
 },
 {//stone+door to sawdust+stone
-input_id:[23,22,0,0,0,0],
-output:[[42,3],[23,1]]
+input_id:[I_STONE,I_DOOR,0,0,0,0],
+output:[[I_SAW_DUST,3],[I_STONE,1]]
 },
-{//Bowl of Water+fibers to bowl of glue
-input_id:[39,29,0,0,0,0],
-output:[[43,1]]
+{//Bowl of Water+fibers+sawdust to bowl+mdf puddy
+input_id:[I_BOWL_OF_WATER,I_FIBERS,I_SAW_DUST,0,0,0],
+output:[[I_BOWL,1],[I_MDF_PUDDY,1]]
 },
-{//bowl of glue+sawdust to mdf puddy+bowl
-input_id:[43,42,0,0,0,0],
-output:[[44,1],[11,1]]
+{//Bowl of Water+fibers+sawdust to bowl+mdf puddy
+input_id:[I_BOWL_OF_WATER,I_SAW_DUST,I_FIBERS,0,0,0],
+output:[[I_BOWL,1],[I_MDF_PUDDY,1]]
 },
 {//Stone+iron to Grind Stone
-input_id:[23,0,33,0,0,0],
-output:[[46,1]]
+input_id:[I_STONE,0,I_IRON,0,0,0],
+output:[[I_GRIND_STONE,1]]
 },
 {//MDF+walnut peels to Green Stained MDF
-input_id:[45,27,0,0,0,0],
-output:[[47,1]]
+input_id:[I_MDF,I_W_PEELS,0,0,0,0],
+output:[[I_GREEN_MDF,1]]
 },
 {//MDF+walnut peels to Red Stained MDF
-input_id:[45,5,0,0,0,0],
-output:[[48,1]]
+input_id:[I_MDF,I_RED_MUSHROOM,0,0,0,0],
+output:[[I_RED_MDF,1]]
 },
 {//MDF+Cyan thing to Cyan Stained MDF
-input_id:[45,21,0,0,0,0],
-output:[[49,1]]
+input_id:[I_MDF,I_CYAN_THING,0,0,0,0],
+output:[[I_CYAN_MDF,1]]
 },
 {//2 copper to 5 wire
-input_id:[35,35,0,0,0,0],
-output:[[67,5]]
+input_id:[I_COPPER,I_COPPER,0,0,0,0],
+output:[[I_COPPER_WIRE,5]]
 },
 {//wire+stick to 1 switch
-input_id:[67,7,0,0,0,0],
-output:[[68,1]]
+input_id:[I_COPPER_WIRE,I_STICK,0,0,0,0],
+output:[[I_SWITCH,1]]
 },
 {//wire+stick to 1 switch
-input_id:[7,67,0,0,0,0],
-output:[[68,1]]
+input_id:[I_STICK,I_COPPER_WIRE,0,0,0,0],
+output:[[I_SWITCH,1]]
 },
 {//wire+cyan thing to 1 not gate
-input_id:[67,21,0,0,0,0],
-output:[[69,1]]
+input_id:[I_COPPER_WIRE,I_CYAN_THING,0,0,0,0],
+output:[[I_NOT_GATE,1]]
 },
 {//wire+cyan thing to 1 not gate
-input_id:[21,67,0,0,0,0],
-output:[[69,1]]
+input_id:[I_CYAN_THING,I_COPPER_WIRE,0,0,0,0],
+output:[[I_NOT_GATE,1]]
 },
 {//wire+copper wall to 1 gate
-input_id:[67,38,0,0,0,0],
-output:[[70,1]]
+input_id:[I_COPPER_WIRE,I_COPPER_WALL,0,0,0,0],
+output:[[I_GATE,1]]
 },
 {//wire+copper wall to 1 gate
-input_id:[38,67,0,0,0,0],
-output:[[70,1]]
+input_id:[I_COPPER_WALL,I_COPPER_WIRE,0,0,0,0],
+output:[[I_GATE,1]]
 },
 {//4wire to 1 wire jumper
-input_id:[67,67,67,67,0,0],
-output:[[71,1]]
+input_id:[I_COPPER_WIRE,I_COPPER_WIRE,I_COPPER_WIRE,I_COPPER_WIRE,0,0],
+output:[[I_WIRE_JUMPER,1]]
 },
 {//4 iron+1 stick+1 paper to pump
-input_id:[33,33,7,32,33,33],
-output:[[72,1]]
+input_id:[I_IRON,I_IRON,I_STICK,I_PAPER,I_IRON,I_IRON],
+output:[[I_PUMP,1]]
 },
 {//4 iron+1 stick+1 paper to pump
-input_id:[33,33,32,7,33,33],
-output:[[72,1]]
+input_id:[I_IRON,I_IRON,I_PAPER,I_STICK,I_IRON,I_IRON],
+output:[[I_PUMP,1]]
 },
 {//2 iron+1 stick to fan
-input_id:[33,0,7,0,33,0],
-output:[[73,1]]
+input_id:[I_IRON,0,I_STICK,0,I_IRON,0],
+output:[[I_FAN,1]]
 },
 {//2 iron+1 stick to fan
-input_id:[0,33,0,7,0,33],
-output:[[73,1]]
+input_id:[0,I_IRON,0,I_STICK,0,I_IRON],
+output:[[I_FAN,1]]
 },
 {//thread to 32 string
-input_id:[77,0,0,0,0,0],
-output:[[8,32]]
-},
-{//thread to 32 string
-input_id:[0,77,0,0,0,0],
-output:[[8,32]]
-},
-{//thread to 32 string
-input_id:[0,0,77,0,0,0],
-output:[[8,32]]
-},
-{//thread to 32 string
-input_id:[0,0,0,77,0,0],
-output:[[8,32]]
-},
-{//thread to 32 string
-input_id:[0,0,0,0,77,0],
-output:[[8,32]]
-},
-{//thread to 32 string
-input_id:[0,0,0,0,0,77],
-output:[[8,32]]
+input_id:[I_THREAD],
+output:[[I_STRING,32]]
 },
 {//Napkin+Hay to bedding 51
-input_id:[75,2,0,0,0,0],
-output:[[51,1]]
+input_id:[I_NAPKIN,I_HAY,0,0,0,0],
+output:[[I_BEDDING,1]]
 },
 {//wire+glass+iron to Vacuum Tube
-input_id:[67,78,33,0,0,0],
-output:[[76,1]]
+input_id:[I_COPPER_WIRE,I_GLASS,I_IRON,0,0,0],
+output:[[I_VACUUM_TUBE,1]]
 },
-{//Vacuum Tube+Wire+Iron Wall+Cyan thing to Microwave Cannon
-input_id:[76,67,37,21,0,0],
-output:[[79,1]]
+{//Vacuum Tube+Wire+Iron Wall+Cyan thing+Fan to Microwave Cannon
+input_id:[I_VACUUM_TUBE,I_COPPER_WIRE,I_IRON_WALL,I_CYAN_THING,I_FAN,0],
+output:[[I_MICROWAVE_CANNON,1]]
+},
+{//3 Vacuum Tubes+Iron+Copper Wire+MDF to Clock Radio
+input_id:[I_VACUUM_TUBE,I_VACUUM_TUBE,I_VACUUM_TUBE,I_IRON,I_COPPER_WIRE,I_MDF],
+output:[[I_CLOCK_RADIO,1]]
+},
+{//wire+not gate to 1 T gate
+input_id:[I_COPPER_WIRE,I_NOT_GATE,0,0,0,0],
+output:[[I_T_GATE,1]]
+},
+{//wire+not gate to 1 T gate
+input_id:[I_NOT_GATE,I_COPPER_WIRE,0,0,0,0],
+output:[[I_T_GATE,1]]
+},
+{//Cyan thing+red mdf+copper wall+iron wall to raygun
+input_id:[I_CYAN_THING,I_RED_MDF,I_COPPER_WALL,I_IRON_WALL,0,0],
+output:[[I_RAYGUN,1]]
+},
+{//red mushroom+brown mushroom+bonemeal+bowl to composter
+input_id:[I_RED_MUSHROOM,I_BROWN_MUSHROOM,I_BONE_MEAL,I_BOWL,0,0],
+output:[[I_COMPOSTER,1]]
+},
+{//red mushroom+brown mushroom+bonemeal+bowl to composter
+input_id:[I_BROWN_MUSHROOM,I_RED_MUSHROOM,I_BONE_MEAL,I_BOWL,0,0],
+output:[[I_COMPOSTER,1]]
 },
 ];
 
@@ -1957,4 +1870,13 @@ function new_save(){
 ];
 	cur_page=0;
 	paused=false;
+}
+
+//square inverse law: intensity ∝ 1/(distance^2)
+function square_inverse(x1,y1,x2,y2){
+	var distance=Math.sqrt(
+	Math.pow((x2-x1),2)+
+	Math.pow((y2-y1),2)
+	);
+	return (distance<=0)?65535:Math.floor((1/(Math.pow(distance,2)))*65535);
 }
