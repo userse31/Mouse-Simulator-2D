@@ -10,6 +10,7 @@ const HOUR_DIV=(65535/16);
 const HOUR_MOD=16;//16 hours a day
 const MINUTE_DIV=65535/(16*256);
 const MINUTE_MOD=256;//256 minutes an hour
+//16 ticks a minute
 //Day: 0:00 to 3:255 and 12:00 to 15:255
 //Night: 4:00 to 11:255
 //Enemy chance percentage polynomial (a+bx+cx^2)
@@ -31,9 +32,13 @@ const WEEK_MOD=4;//4 day weeks.
 const MONTH_NAMES=["Nulliuary","Uniuary","Duary","Triuary","Quadruary","Quinquary","Sexauary","Septuary","Octuary","Novemuary","Decemuary","Undecuary"];
 
 //Enemys
-const MAX_SPAWNS_ONCE=5;//Max enemy spawn group size.
+const MAX_SPAWNS_ONCE=3;//Max enemy spawn group size.
 const ENEMY_HEALTH=20;
 const ENEMY_STRENGTH=1;
+const CAT_HEALTH=40;
+const CAT_STRENGTH=5;
+const CAT_TICK=(16*256)*4;//every 4 hours in the slip.
+const CAT_CHANCE=0.5;
 
 //Map size
 const MAX_MAP_SIZE_NEG=-64;
@@ -56,7 +61,8 @@ const PLASMA_ID=4;
 
 //quotas
 const PROJ_QUOTA=1000;//Max projectiles to process.
-const PLASMA_QUOTA=50;
+const PLASMA_QUOTA=50;//Max Plasmas to process.
+const NPC_QUOTA=200;//Max NPC's to process.
 
 //radio stuff
 const RADIO_INTERFERENCE_DISTANCE=3;
@@ -69,8 +75,8 @@ const P_LEFT=2;
 const P_RIGHT=3;
 
 //amber projectile
-const AMBER_PROJ_DECAY=8;
-const AMBER_PROJ_STRENGTH=4;
+const AMBER_PROJ_DECAY=16;
+const AMBER_PROJ_STRENGTH=15;
 
 //Spear projectile
 const SPEAR_DECAY=2;
@@ -93,6 +99,8 @@ const DEBUG_RANDOM_TICK=false;
 const SHOW_KEYCODE=false;
 const SHOW_HITSCAN=false;
 const SHOW_HITSCAN_EFFECT=false;
+const SHOW_NODES=false;
+const TILE_MAP=false;
 
 //plasma
 const PLASMA_DECAY=4;
@@ -158,7 +166,6 @@ const I_TREE_TRUNK=54;
 const I_WATER=55;
 const I_FIRE=56;
 const I_CLOCK_RADIO=57;
-const I_T_GATE=80;
 const I_NPC_HOLE=59;
 const I_W_TRUNK=60;//Walnut stuff
 const I_W_L1=61;//Walnut leaves
@@ -180,6 +187,13 @@ const I_VACUUM_TUBE=76;
 const I_THREAD=77;
 const I_GLASS=78;
 const I_MICROWAVE_CANNON=79;
+const I_T_GATE=80;
+const I_RING=81;
+const I_MOUSE_EGG=82;
+const I_ENEMY_EGG=83;
+const I_CAT_EGG=84;
+const I_CAPACITOR=85;
+const I_BUTTON=86;
 
 //tile id's
 const T_WHITE=0;
@@ -290,6 +304,15 @@ const T_T_GATE_OFF=103;
 const T_T_GATE_ON=104;
 const T_HITSCAN_DEBUG=105;
 const T_PLASMA=106;
-const T_UNDEF3=107;
-const T_UNDEF4=108;
-const T_UNDEF5=109;
+const T_RING=107;
+const T_CAT=108;
+const T_MOUSE_EGG=109;
+const T_ENEMY_EGG=110;
+const T_CAT_EGG=111;
+const T_CAP4=112;
+const T_CAP3=113;
+const T_CAP2=114;
+const T_CAP1=115;
+const T_CAP0=116;
+const T_BUTTON_OFF=117;
+const T_BUTTON_ON=118;

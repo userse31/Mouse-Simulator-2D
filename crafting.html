@@ -1,0 +1,120 @@
+<html>
+<head>
+<title>Mouse Simulator 2D Crafting Recipies</title>
+</head>
+<body>
+<center>
+<canvas id="craft" width="32" height="24" style="border:2px solid #777777;width:256;height:192;image-rendering:pixelated;image-rendering:crisp-edges;"></canvas>
+<br/>
+<button onclick="dec_ptr()"><--</button>
+<button onclick="inc_ptr()">--></button>
+</center>
+</body>
+<script src="./defines.js"></script>
+<script src="./resources.js"></script>
+<script>
+var craft=document.getElementById("craft").getContext("2d");
+var char=craft.getImageData(0,0,8,8);
+var recipe_ptr=0;
+function write_1bit(pos,val,id){
+	char.data[4*pos+3]=255;
+	switch(val){
+		case "0":
+			char.data[4*pos]=font[id].c[0];
+			char.data[4*pos+1]=font[id].c[1];
+			char.data[4*pos+2]=font[id].c[2];
+			break;
+		case "1":
+			char.data[4*pos]=font[id].c[3];
+			char.data[4*pos+1]=font[id].c[4];
+			char.data[4*pos+2]=font[id].c[5];
+			break;
+		case "2":
+			char.data[4*pos]=font[id].c[6];
+			char.data[4*pos+1]=font[id].c[7];
+			char.data[4*pos+2]=font[id].c[8];
+			break;
+		case "3":
+			char.data[4*pos]=font[id].c[9];
+			char.data[4*pos+1]=font[id].c[10];
+			char.data[4*pos+2]=font[id].c[11];
+			break;
+		case "4":
+			char.data[4*pos]=font[id].c[12];
+			char.data[4*pos+1]=font[id].c[13];
+			char.data[4*pos+2]=font[id].c[14];
+			break;
+		case "5":
+			char.data[4*pos]=font[id].c[15];
+			char.data[4*pos+1]=font[id].c[16];
+			char.data[4*pos+2]=font[id].c[17];
+			break;
+		case "6":
+			char.data[4*pos]=font[id].c[18];
+			char.data[4*pos+1]=font[id].c[19];
+			char.data[4*pos+2]=font[id].c[20];
+			break;
+		case "7":
+			char.data[4*pos]=font[id].c[21];
+			char.data[4*pos+1]=font[id].c[22];
+			char.data[4*pos+2]=font[id].c[23];
+			break;
+	}
+}
+function get_font(val){
+	for(var i=0;i<64;i++){
+		//alert(font[val].b[i]);
+		write_1bit(i,font[val].b[i],val);
+	}
+	return val;
+}
+
+//craft.fillRect(0,0,10,10);
+function draw_craft_area(){
+	get_font(T_CRAFT_SPACE);
+	for(var x=0;x<4;x++){
+		for(var y=0;y<3;y++){
+			(x!=2)?craft.putImageData(char,x*8,y*8):0;
+		}
+	}
+	get_font(T_CRAFT_ARROW);
+	craft.putImageData(char,2*8,1*8);
+}
+function draw_recipe(){
+	draw_craft_area();
+	var tmp=0;
+	if(recipies[recipe_ptr].input_id.length==1){
+		get_font(item_char[recipies[recipe_ptr].input_id[0]]);
+		craft.putImageData(char,0,0);
+	}else{
+		get_font(item_char[recipies[recipe_ptr].input_id[0]]);
+		recipies[recipe_ptr].input_id[0]!=0?craft.putImageData(char,0,0):0;
+		get_font(item_char[recipies[recipe_ptr].input_id[1]]);
+		recipies[recipe_ptr].input_id[1]!=0?craft.putImageData(char,8,0):0;
+		get_font(item_char[recipies[recipe_ptr].input_id[2]]);
+		recipies[recipe_ptr].input_id[2]!=0?craft.putImageData(char,0,8):0;
+		get_font(item_char[recipies[recipe_ptr].input_id[3]]);
+		recipies[recipe_ptr].input_id[3]!=0?craft.putImageData(char,8,8):0;
+		get_font(item_char[recipies[recipe_ptr].input_id[4]]);
+		recipies[recipe_ptr].input_id[4]!=0?craft.putImageData(char,0,16):0;
+		get_font(item_char[recipies[recipe_ptr].input_id[5]]);
+		recipies[recipe_ptr].input_id[5]!=0?craft.putImageData(char,8,16):0;
+	}
+		get_font(item_char[recipies[recipe_ptr].output[0][0]]);
+		recipies[recipe_ptr].output[0][0]!=0?craft.putImageData(char,8*3,0):0;
+		get_font(item_char[recipies[recipe_ptr].output[1][0]]);
+		recipies[recipe_ptr].output[1][0]!=0?craft.putImageData(char,8*3,8):0;
+		get_font(item_char[recipies[recipe_ptr].output[2][0]]);
+		recipies[recipe_ptr].output[2][0]!=0?craft.putImageData(char,8*3,16):0;
+}
+draw_recipe();
+function inc_ptr(){
+	recipe_ptr=(recipe_ptr>=recipies.length)?0:recipe_ptr+1;
+	draw_recipe();
+}
+function dec_ptr(){
+	recipe_ptr=(recipe_ptr<=0)?(recipies.length-1):recipe_ptr-1;
+	draw_recipe();
+}
+</script>
+</html>

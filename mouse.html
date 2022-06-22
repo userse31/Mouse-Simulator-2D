@@ -26,36 +26,18 @@ The GNU General Public License is published by the "Free Software Foundation, In
 <script src="./hashmap.js"></script>
 <script src="./resources.js"></script>
 <script>
-//Mouse Simulator 2D v0.49
+//Mouse Simulator 2D v0.50
 /*
-Bug fix with projectiles hitting player.
-Bug fix for npc cramming.
-Microwave Cannon PWM tweak.
-Microwave filament warmup time.
-Code cleanup.
-Functionality added for position agnositic crafting recipies.
-Changed day hours and minutes. 1 day=16 hours. 1 hour=256 minutes. 1 minute=16 ticks.
-"defines.js" for defining things (#define analog).
-Clock Radio.
-Microwave Cannon damage affected by inverse square law.
-Microwave Cannon power tweak.
-Changed microwave cannon crafting recipe.
-Noises added to microwave cannon.
-Enemies now spawn in groups.
-Date and Time now in hex.
-Tweaked electricity mechanics.
-Saplings and branches give more leaves and sticks now.
-Grass can now be grinded into fibers.
-Tweaks to fire.
-Tweaks to copper wire and gates.
-T Gate.
-Removed Bowl of glue and changed mdf puddy recipe.
-Fire bow removed. Replaced with bow. Amber as ammo is seperated.
-entitys and the player can now catch on fire.
-Crafting recipe for raygun.
-Composter.
-Fire and hitscan check for obstructions.
-Plasma!
+Fixed bug with microwaves not stopping at non walkable tiles.
+Rings.
+Bug fix with amber projectiles hanging the game when encountering flamable tiles.
+Enemy color and spawn group amount change.
+interactive crafting recipe browser.
+Added cats.
+Fixed projectile collision bug.
+Spawn Eggs.
+Colors!
+Buttons and capacitors!
 */
 //autoconfig
 var saves=window.localStorage;
@@ -144,21 +126,52 @@ var char=ctx.getImageData(0,0,8,8);
 function write_1bit(pos,val,id){
 	char.data[4*pos+3]=255;
 	switch(val){
-		case 0:
-			char.data[4*pos]=font[id][67];
-			char.data[4*pos+1]=font[id][68];
-			char.data[4*pos+2]=font[id][69];
+		case "0":
+			char.data[4*pos]=font[id].c[0];
+			char.data[4*pos+1]=font[id].c[1];
+			char.data[4*pos+2]=font[id].c[2];
 			break;
-		case 1:
-			char.data[4*pos]=font[id][64];
-			char.data[4*pos+1]=font[id][65];
-			char.data[4*pos+2]=font[id][66];
+		case "1":
+			char.data[4*pos]=font[id].c[3];
+			char.data[4*pos+1]=font[id].c[4];
+			char.data[4*pos+2]=font[id].c[5];
+			break;
+		case "2":
+			char.data[4*pos]=font[id].c[6];
+			char.data[4*pos+1]=font[id].c[7];
+			char.data[4*pos+2]=font[id].c[8];
+			break;
+		case "3":
+			char.data[4*pos]=font[id].c[9];
+			char.data[4*pos+1]=font[id].c[10];
+			char.data[4*pos+2]=font[id].c[11];
+			break;
+		case "4":
+			char.data[4*pos]=font[id].c[12];
+			char.data[4*pos+1]=font[id].c[13];
+			char.data[4*pos+2]=font[id].c[14];
+			break;
+		case "5":
+			char.data[4*pos]=font[id].c[15];
+			char.data[4*pos+1]=font[id].c[16];
+			char.data[4*pos+2]=font[id].c[17];
+			break;
+		case "6":
+			char.data[4*pos]=font[id].c[18];
+			char.data[4*pos+1]=font[id].c[19];
+			char.data[4*pos+2]=font[id].c[20];
+			break;
+		case "7":
+			char.data[4*pos]=font[id].c[21];
+			char.data[4*pos+1]=font[id].c[22];
+			char.data[4*pos+2]=font[id].c[23];
 			break;
 	}
 }
 function get_font(val){
 	for(var i=0;i<64;i++){
-		write_1bit(i,font[val][i],val);
+		//alert(font[val].b[i]);
+		write_1bit(i,font[val].b[i],val);
 	}
 	return val;
 }
@@ -381,6 +394,7 @@ function pagexy_to_ptr(page_x,page_y,page_layer){
 
 function item_roulette(drop_list,_x,_y){
 for(var i=0;i<drop_list.length;i++){
+	//alert(drop_list.length);
 	if(Math.random()<=drop_list[i].chance){
 		pages[cur_page].entities.push({id:2,
 		x:_x,
@@ -404,6 +418,9 @@ switch(set){
 	case "enemy_slip":
 		item_roulette(item_drops.enemy_slip,x,y);
 		break;
+	case "cat":
+		item_roulette(item_drops.cat,x,y);
+		break;
 }
 }
 
@@ -417,7 +434,11 @@ switch(pages[cur_page].entities[ptr].char){
 				break;
 			case 1://Slip
 				drop_set_selection("enemy_slip",pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y);
-		}
+				break;
+			}
+		break;
+	case T_CAT://cat
+		drop_set_selection("cat",pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y);
 		break;
 	default:
 		break;
@@ -442,7 +463,7 @@ function combine_items(_x,_y,item_id){//Reduce memory usage and improve the user
 }
 
 function new_npc(_x,_y,_home_x,_home_y){
-	var new_boi={id:1,char:3,x:_x,y:_y,brain:{no_ai:0,hostile:0,identity:{gender:0,dysphoria:0,love_mode:0},home_x:_home_x,home_y:_home_y},health:20,strength:1,attack_cooldown:0,dest_x:_x, dest_y:_y};
+	var new_boi={id:1,char:3,x:_x,y:_y,brain:{no_ai:0,hostile:0,identity:{gender:0,dysphoria:0},home_x:_home_x,home_y:_home_y},health:20,strength:1,attack_cooldown:0,dest_x:_x, dest_y:_y};
 new_boi.brain.identity.gender=Math.floor(Math.random()*100)%2;
 new_boi.brain.identity.dysphoria=(Math.floor(Math.random()*100)%100)<10;
 pages[cur_page].entities.push(new_boi);
@@ -978,6 +999,13 @@ switch(standing_on){
 	case 100://Pump
 		pick_up_tile(52);
 		break;
+	case T_CAP4://capacitor
+	case T_CAP3:
+	case T_CAP2:
+	case T_CAP1:
+	case T_CAP0:
+		pick_up_tile(I_CAPACITOR);
+		break;
 	case T_CLOCK_RADIO://Clock Radio
 		pick_up_tile(I_CLOCK_RADIO);
 		break;
@@ -1252,7 +1280,6 @@ function microwave_cannon_effect(x,y){
 		case T_COPPER_WALL:
 			hitscan_effect_debug(x,y);
 			//plasma!
-			//asdf
 			pages[cur_page].entities.push({
 			id:PLASMA_ID,
 			x:x,
@@ -1260,12 +1287,12 @@ function microwave_cannon_effect(x,y){
 			char:T_PLASMA,
 			damage:PLASMA_DAMAGE,
 			direction:P_NONE,
-			decay:PLASMA_DECAY,
+			decay:1,
 			from_player:0
 			});
 			return true;//plasma stops hitscan.
 		default:
-			break;
+			return !is_walkable(char_value(x,y));
 	}
 }
 
@@ -1431,11 +1458,18 @@ if(pages[cur_page].entities[ptr]==undefined){
 }
 switch(pages[cur_page].entities[ptr].char){
 	case 35://Amber, bow
-	case T_FIRE0://microwave cannon
 		if(collided!=-1){
 			pages[cur_page].entities[collided].fire_tick=ON_FIRE_COUNT;
 		}
 		if(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)==0 || is_burnable(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y))){
+			pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=30;
+		}
+		break;
+	case T_FIRE0://microwave cannon
+		if(collided!=-1){
+			pages[cur_page].entities[collided].fire_tick=ON_FIRE_COUNT;
+		}
+		if(is_burnable(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y))){
 			pages[cur_page].map[pages[cur_page].entities[ptr].y][pages[cur_page].entities[ptr].x]=30;
 		}
 		break;
@@ -1546,6 +1580,26 @@ if(pages[cur_page].entities[ptr]==undefined){
 }
 
 function projectile_check(ptr){
+	var cur_x=pages[cur_page].entities[ptr].x;
+	var cur_y=pages[cur_page].entities[ptr].y;
+	var next_x=cur_x;
+	var next_y=cur_y;
+	switch(pages[cur_page].entities[ptr].direction){
+        case -1:
+            break;
+        case 0://up
+            next_y--;
+            break;
+        case 1://down
+			next_y++;
+            break;
+        case 2://left
+			next_x--;
+            break;
+        case 3://right
+			next_x++;
+            break;
+    }
 	if(pages[cur_page].entities[ptr]==undefined){
 		return;
 	}
@@ -1554,7 +1608,7 @@ function projectile_check(ptr){
 		pages[cur_page].entities[ptr].id=-1;
         return;
     }
-	if(hit_bounds(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)){//move entity to next page when hit edges if possible
+	if(hit_bounds(cur_x,cur_y)){//move entity to next page when hit edges if possible
 		var next_page=-1;
 		var dir="";
 		if(pages[cur_page].entities[ptr].x<0){//left edge, west_goto
@@ -1605,7 +1659,10 @@ function projectile_check(ptr){
 		return;
 		}
 	}
-    var collided=projectile_entity_collide(ptr);
+    //var collided=projectile_entity_collide(ptr);
+	var collided=entity_collide_xy_id(cur_x,cur_y,NPC_ID);
+	collided=(collided==-1)?entity_collide_xy_id(next_x,next_y,NPC_ID):collided;
+	//entity_collide_xy_id(x,y,id)
     if(collided!=-1){//hits entity
         if(pages[cur_page].entities[collided].health!=undefined){
 			projectile_effect(ptr,collided);
@@ -1630,7 +1687,7 @@ function projectile_check(ptr){
         return;
     }
 	if(is_burnable(char_value(pages[cur_page].entities[ptr].x,pages[cur_page].entities[ptr].y)) && pages[cur_page].entities[ptr].char==35){//amber encounters burnable block
-		projectile_effect(ptr,"burn");
+		projectile_effect(ptr);
         pages[cur_page].entities[ptr].id=-1;
         return;
     }
@@ -1638,7 +1695,7 @@ function projectile_check(ptr){
 function projectile(ptr){//Code for making projectiles move and interact with ThInGs
 	projectile_check(ptr);
 	projectile_step(ptr);
-	projectile_check(ptr);
+	//projectile_check(ptr);
 }
 
 function item_pickup_dropoff(item_id,x,y){
@@ -1695,6 +1752,12 @@ switch(char_value(x,y)){
 		return item_pickup_dropoff(51,x,y);
 	case 101://Glass
 		return item_pickup_dropoff(78,x,y);
+	case T_CAP4://capacitor
+	case T_CAP3:
+	case T_CAP2:
+	case T_CAP1:
+	case T_CAP0:
+		return item_pickup_dropoff(I_CAPACITOR,x,y);
 	case T_COMPOSTER:
 		return item_pickup_dropoff(I_COMPOSTER,x,y);
 	case 42://closed door
@@ -1721,6 +1784,10 @@ switch(char_value(x,y)){
 		return true;
 	case T_CLOCK_RADIO://Clock Radio
 		clock_radio_interact();
+		return true;
+	case T_BUTTON_OFF:
+	case T_BUTTON_ON:
+		pages[cur_page].map[y][x]=T_BUTTON_ON;
 		return true;
 	default:
 		if(player.creative==1){
@@ -1837,7 +1904,7 @@ switch(player.inv[player.inv[10]][0]){
 			}
 			break;
 		}
-		if(proj_ptr!=-1){
+		if(proj_ptr!=-1&&player.creative!=1){
 			player.inv[proj_ptr][1]--;
 			if(player.inv[proj_ptr][1]<=0){
 				player.inv[proj_ptr][0]=0;
@@ -1952,6 +2019,34 @@ switch(player.inv[player.inv[10]][0]){
 				hitscan(player.x,player.y+i,'r',MICROWAVE_PWM,30,-1,"sq_inv");
 				}
 				break;
+		}
+		break;
+	case I_RING:
+		var mate=-1;
+		switch(x){
+			case "up":
+				mate=entity_collide_xy_id(player.x,player.y-1,NPC_ID);
+				break;
+			case "down":
+				mate=entity_collide_xy_id(player.x,player.y+1,NPC_ID);
+				break;
+			case "left":
+				mate=entity_collide_xy_id(player.x-1,player.y,NPC_ID);
+				break;
+			case "right":
+				mate=entity_collide_xy_id(player.x+1,player.y,NPC_ID);
+				break;
+		}
+		if(mate==-1){
+			return;
+		}
+		if(pages[cur_page].entities[mate].brain.hostile==0){
+			new_npc(player.x,player.y,player.x,player.y);
+			player.inv[player.inv[10]][1]--;
+			if(player.inv[player.inv[10]][1]<=0){
+				player.inv[player.inv[10]][0]=0;
+				player.inv[player.inv[10]][1]=0;
+			}
 		}
 		break;
 	default:
@@ -2093,9 +2188,9 @@ switch(player.inv[player.inv[10]][0]){//item id
 	/*case 51://bedding 1
 		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[51] : 0;
 		break;*/
-	case 52://bedding 2
+	/*case 52://bedding 2
 		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[52] : 0;
-		break;
+		break;*/
 	case 53://tree leaves
 		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[53] : 0;
 		break;
@@ -2138,9 +2233,38 @@ switch(player.inv[player.inv[10]][0]){//item id
 	case 66://Walnut Leaves 6
 		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[66] : 0;
 		break;
-	case 52://statue
-		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[52] : 0;
+	case I_MOUSE_EGG://Mouse Spawn Egg
+		if(player.creative==1){
+			new_npc(player.x,player.y,player.x,player.y);
+		}
 		break;
+	case I_ENEMY_EGG://Enemy Spawn Egg
+		if(player.creative==1){
+			pages[cur_page].entities.push({
+					id:NPC_ID,
+					char:4,
+					x:player.x,
+					y:player.y,
+					brain:{
+						no_ai:0,
+						hostile:1,
+					},
+					health:ENEMY_HEALTH,
+					strength:ENEMY_STRENGTH,
+					attack_cooldown:0,
+					random_x:0,
+					random_y:0
+				});
+		}
+		break;
+	case I_CAT_EGG://Cat Spawn Egg
+		if(player.creative==1){
+			new_cat(player.x,player.y,cur_page);
+		}
+		break;
+	/*case 52://statue
+		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[52] : 0;
+		break;*/
 }
 inv_cleanup();
 }
@@ -2176,6 +2300,33 @@ function cheats(){
 			player.tainted=1;
             random_tick(player.x,player.y);
             break;
+		case "🏳‍⚧?":
+			player.tainted=1;
+			if(player.brain.dysphoria==1){
+				player.brain.gender=player.brain.gender^1;
+				dem_ann.textContent="You have been blessed by the god of Gender Euphoria."
+			}else{
+				dem_ann.textContent="You are not one of Alex's subjects."
+			}
+			break;
+		case "🏳‍⚧!":
+			player.tainted=1;
+			if(player.brain.dysphoria==1){
+				dem_ann.textContent="The god of Gender Euphoria has answered your prayers."
+				for(var i=0;i<pages[cur_page].entities.length;i++){
+					if(pages[cur_page].entities[i].id==NPC_ID){
+						if(pages[cur_page].entities[i].brain.hostile==0){
+							pages[cur_page].entities[i].brain.identity.gender=pages[cur_page].entities.brain.identity.gender^1;
+						}
+						if(pages[cur_page].entities[i].brain.hostile==1){
+						
+						}
+					}
+				}
+			}else{
+				dem_ann.textContent="You are not one of Alex's subjects."
+			}
+			break;
 	case "noclip":
 		player.tainted=1;
 		player.noclip=1;
@@ -2204,6 +2355,10 @@ if(key==80){//pause, p
 			dem_ann.textContent="Unpaused";
 			break;
 	}
+}
+
+if(is_dead){
+	return;
 }
 
 if(paused==1){
@@ -2382,13 +2537,17 @@ switch(key){
 //document.getElementById("cga").addEventListener("click", mouse_manager, false)
 
 function death(){
+	if(is_dead){
+		return;
+	}
     if(player.creative==1){
-        console.log("You live to see another day.");
+        //console.log("You live to see another day.");
         return;
     }
     alert("BOOM! You are DEAD!");
-    clearInterval(interval);
-    key_manager=function(){};
+	is_dead=true;
+    //clearInterval(interval);
+    //key_manager=function(){};
 }
 
 function pathfind_step(x1,y1,x2,y2,og_x,og_y){
@@ -2427,6 +2586,9 @@ if(is_walkable(char_value(x1+1,y1+1)) && (is_walkable(char_value(x1+1,y1)) || is
 }
 var collided;
 var new_nodes=[];
+if(SHOW_NODES){
+	dem_ann.textContent=JSON.stringify(nodes);
+}
 new_nodes.push(JSON.parse(JSON.stringify(nodes[0])));
 for(var i=1;i<nodes.length;i++){
 	collided=entity_collide_xy_id(nodes[i].x,nodes[i].y,NPC_ID);
@@ -2671,7 +2833,7 @@ function entity_edge(ptr){//move entity between pages through edges.
 	}
 }
 
-function friendly_npc(ptr){
+/*function friendly_npc(ptr){
 	//love
 	for(var i=0;i<pages[cur_page].entities.length;i++){
 		if(i==ptr){
@@ -2691,7 +2853,7 @@ function friendly_npc(ptr){
 			}
 		}
 	}
-}
+}*/
 
 function entity_onfire(ptr){
 	//dem_ann.textContent=2;
@@ -2716,7 +2878,7 @@ function npc(ptr){//make entity move and interact with environment.
             pages[cur_page].entities[ptr].dest_y,
 			pages[cur_page].entities[ptr].og_x,
 			pages[cur_page].entities[ptr].og_y);
-			pages[cur_page].entities[ptr].brain.identity.love_mode==1 ? friendly_npc(ptr) : 0;
+			//pages[cur_page].entities[ptr].brain.identity.love_mode==1 ? friendly_npc(ptr) : 0;
             break;
         case 1://hostile
             next_xy=pathfind_step(pages[cur_page].entities[ptr].x,
@@ -2809,7 +2971,7 @@ function plasma_step(ptr){//logic for plasma spreading
 	if(hit_bounds(x,y)){
 		pages[cur_page].entities[ptr].id=-1;
 	}
-	switch(pages[cur_page].entities[ptr].direction){//asdf
+	switch(pages[cur_page].entities[ptr].direction){
 		case P_NONE://initial plasma. Spread in 4 directions
 			pages[cur_page].entities.push({
 			id:PLASMA_ID,
@@ -2920,21 +3082,26 @@ function tick(){
     if(player.health<=0){//Player Death
         death();
     }
-	var proj_processed=0;
+	var proj_proc=0;
+	var npc_proc=0;
     for(var i=0;i<pages[cur_page].entities.length;i++){
         switch(pages[cur_page].entities[i].id){
             case 3:
-				if(proj_processed>=PROJ_QUOTA){
+				if(proj_proc>=PROJ_QUOTA){
 					break;
 				}
                 projectile(i);
-				proj_processed++;
+				proj_proc++;
                 break;
 			case PLASMA_ID://plasma
 				do_plasma(i);
 				break;
             case 1:
+				if(npc_proc>=NPC_QUOTA){
+					break;
+				}
                 npc(i);
+				npc_proc++;
                 break;
         }
     }
@@ -3144,6 +3311,59 @@ function enemy_chance(){
 		)+(pages[cur_page].metadata.layer>0 ? 10 : 0);
 }
 
+function new_cat(x,y,page){
+	pages[page].entities.push({
+		id:NPC_ID,
+		char:T_CAT,
+		x:x,
+		y:y,
+		brain:{
+			no_ai:0,
+			hostile:1,
+		},
+		health:CAT_HEALTH,
+		strength:CAT_STRENGTH,
+		attack_cooldown:0,
+		random_x:0,
+		random_y:0
+	});
+}
+
+function spawn_cat(random_x=Math.floor((Math.random()*65535))%40,
+				   random_y=Math.floor((Math.random()*65535))%25){
+	if(pages[cur_page].metadata.layer!=1){//Cats only spawn in the slip!
+		return;
+	}
+	var tmp_page=-1;
+	switch(Math.floor(Math.random()*65535)%4){
+		case 0:
+			tmp_page=get_ptr_from_page_xy(pages[cur_page].metadata.x,pages[cur_page].metadata.y-1,1);//page above
+			break;
+		case 1:
+			tmp_page=get_ptr_from_page_xy(pages[cur_page].metadata.x,pages[cur_page].metadata.y+1,1);//page below
+			break;
+		case 2:
+			tmp_page=get_ptr_from_page_xy(pages[cur_page].metadata.x-1,pages[cur_page].metadata.y,1);//page left
+			break;
+		case 3:
+			tmp_page=get_ptr_from_page_xy(pages[cur_page].metadata.x+1,pages[cur_page].metadata.y,1);//page right
+			break;
+			
+	}
+	if(tmp_page!=-1){
+		if(can_spawn(pages[tmp_page].map[random_y][random_x])&&Math.random()>CAT_CHANCE){
+			for(var i=0;i<pages[tmp_page].entities.length;i++){//only 1 cat per ajacent page.
+				if(pages[tmp_page].entities[i].id==NPC_ID){
+					if(pages[tmp_page].entities[i].char==T_CAT){
+						return;
+					}
+				}
+			}
+			new_cat(random_x,random_y,tmp_page);
+		}
+	}
+}
+
 function random_tick(random_x=Math.floor((Math.random()*65535))%40,random_y=Math.floor((Math.random()*65535))%25,bone_meal=0,action=Math.floor((Math.random()*65535))%100){
 if(DEBUG_RANDOM_TICK){
 pages[cur_page].entities.push({
@@ -3297,7 +3517,7 @@ for(var i=0;i<pages[cur_page].entities.length;i++){
         if(pages[cur_page].entities[i].brain.hostile==0 && Math.random()>0.7){
             pages[cur_page].entities[i].dest_x=(Math.floor(Math.random()*65535)%42)-1;
             pages[cur_page].entities[i].dest_y=(Math.floor(Math.random()*65535)%27)-1;
-			pages[cur_page].entities[i].brain.identity.love_mode=1;
+			//pages[cur_page].entities[i].brain.identity.love_mode=1;
         }
     }
 }
@@ -3328,15 +3548,6 @@ if(tick_hour()>=NIGHT_START_HOUR && tick_hour()<=NIGHT_END_HOUR){
 				});
 			}
 		}
-		/*if(action<enemy_chance()){
-            var cv=char_value(random_x,random_y);
-            if(!is_walkable(cv)){
-                return;
-            }
-            if(can_spawn(cv)){
-			 pages[cur_page].entities.push({id:1, char:4, x:random_x,y:random_y, brain: {no_ai:0, hostile: 1}, health:20, strength:1, attack_cooldown:0, og_x:random_x, og_y:random_y});
-            }
-		}*/
 	}
 }
 }
@@ -3770,6 +3981,33 @@ function fan(x,y){//water: 29
 	}
 }
 
+function capacitor(x,y){
+	var _above=char_value(x,y-1);
+	var _below=char_value(x,y+1);
+	var _left=char_value(x-1,y);
+	var _right=char_value(x+1,y);
+	if(_above==T_C_W_DOWN_ON || _below==T_C_W_UP_ON || _left==T_C_W_RIGHT_ON || _right==T_C_W_LEFT_ON){
+		pages[cur_page].map[y][x]=T_CAP4;
+		return;
+	}
+	switch(char_value(x,y)){
+		case T_CAP4:
+			pages[cur_page].map[y][x]=T_CAP3;
+			break;
+		case T_CAP3:
+			pages[cur_page].map[y][x]=T_CAP2;
+			break;
+		case T_CAP2:
+			pages[cur_page].map[y][x]=T_CAP1;
+			break;
+		case T_CAP1:
+			pages[cur_page].map[y][x]=T_CAP0;
+			break;
+		case T_CAP0:
+			break;
+	}
+}
+
 function elec_misc(tile,x,y,value){
 	switch(tile){
 		case 88://not gate (off)
@@ -3796,6 +4034,14 @@ function elec_misc(tile,x,y,value){
 		case T_T_GATE_OFF:
 		case T_T_GATE_ON:
 			t_gate(x,y);
+			break;
+		case T_CAP4:
+		case T_CAP3:
+		case T_CAP2:
+		case T_CAP1:
+		case T_CAP0:
+			capacitor(x,y);
+			break;
 		default:
 			break;
 	}
@@ -3856,6 +4102,10 @@ for(var i=0;i<item_ptrs.length;i++){
 			break;
 	}
 }
+}
+
+function _button(x,y){
+	pages[cur_page].map[y][x]=T_BUTTON_OFF;
 }
 
 function active_tiles(){
@@ -3970,7 +4220,7 @@ function active_tiles(){
 			elec_misc(char_value(j,wires[i].y),j,wires[i].y,0);
 		}
 	}
-	var gates=[map_search(90),map_search(91),map_search(88),map_search(89),map_search(92),map_search(95),map_search(96),map_search(T_T_GATE_OFF),map_search(T_T_GATE_ON)];//gate off,gate on,not gate off, not gate on, wire jumper,electrode off,electrode on
+	var gates=[map_search(90),map_search(91),map_search(88),map_search(89),map_search(92),map_search(95),map_search(96),map_search(T_T_GATE_OFF),map_search(T_T_GATE_ON),map_search(T_CAP4),map_search(T_CAP3),map_search(T_CAP2),map_search(T_CAP1),map_search(T_CAP0),map_search(T_BUTTON_ON)];//gate off,gate on,not gate off, not gate on, wire jumper,electrode off,electrode on
 	var longest=gates[0].length;
 	for(var i=0;i<gates.length;i++){
 		longest=longest<gates[i].length ? gates[i].length : longest;
@@ -3985,6 +4235,12 @@ function active_tiles(){
 		i<gates[6].length ? electrodes(gates[6][i].x,gates[6][i].y) : 0;
 		//i<gates[7].length ? t_gate(gates[7][i].x,gates[7][i].y) : 0;
 		//i<gates[8].length ? t_gate(gates[8][i].x,gates[8][i].y) : 0;
+		i<gates[9].length ? capacitor(gates[9][i].x,gates[9][i].y) : 0;
+		i<gates[10].length ? capacitor(gates[10][i].x,gates[10][i].y) : 0;
+		i<gates[11].length ? capacitor(gates[11][i].x,gates[11][i].y) : 0;
+		i<gates[12].length ? capacitor(gates[12][i].x,gates[12][i].y) : 0;
+		i<gates[13].length ? capacitor(gates[13][i].x,gates[13][i].y) : 0;
+		i<gates[14].length ? _button(gates[14][i].x,gates[14][i].y) : 0;
 	}
 }
 
@@ -4072,6 +4328,23 @@ function refresh(){//Dang it, no multiple setintervals...
 if(paused==1){
 	return;
 }
+if(TILE_MAP){
+	var i=0;
+	for(var x=0;x<40;x++){
+		for(var y=0;y<25;y++){
+			if(i<font.length){
+				//asdf
+				get_font(i);
+				ctx.putImageData(char,8*x,8*y);
+			}
+			i++;
+		}
+	}
+	return;
+}
+if(is_dead){
+	return;
+}
 /*switch(game_state){
 	case GAMING:
 		break;
@@ -4149,7 +4422,10 @@ if(tick1%7==0){//fire, Grind Stone
 fireing();
 active_tiles();
 }
-if(tick1%7==0){//player on fire.
+if(tick1%CAT_TICK==0){
+	spawn_cat();
+}
+	if(tick1%7==0){//player on fire.
 		if(typeof player.fire_tick === "undefined"){
 			//dem_ann.textContent=1;
 		}else{
@@ -4176,6 +4452,7 @@ function _load(){
 	tick1=save_file[3];
 	player.days=(player.days===undefined)? 0 : player.days;
 	player.filament=(player.filament===undefined)? 0 : player.filament;
+	is_dead=false;
 	dem_ann.textContent="Loaded. Size:"+compressed_save.length+" bytes.";
 }
 function _save(){
@@ -4208,6 +4485,7 @@ function _import(){
 	tick1=save_file[3];
 	player.days=(player.days===undefined)? 0 : player.days;
 	player.filament=(player.filament===undefined)? 0 : player.filament;
+	is_dead=false;
 	dem_ann.textContent="Loaded. Size:"+compressed_save.length+" bytes.";
 }
 function _export(){
@@ -4219,6 +4497,7 @@ function _new(){
 	if(!confirm("Destroy current unsaved progress?")){
 		return;
 	}
+	is_dead=false;
 	new_save();
 }
 </script>
