@@ -18,7 +18,7 @@ The GNU General Public License is published by the "Free Software Foundation, In
     </br>
 	<a href="./help.html">Help</a>
 	</br>
-    <button onclick="alert(JSON.stringify(eval(prompt('Code?'))))">eval()</button>
+    <!--<button onclick="alert(JSON.stringify(eval(prompt('Code?'))))">eval()</button>-->
     </center>
 </body>
 <script id="lzutf8" src="./lzutf8.min.js"></script>
@@ -26,18 +26,12 @@ The GNU General Public License is published by the "Free Software Foundation, In
 <script src="./hashmap.js"></script>
 <script src="./resources.js"></script>
 <script>
-//Mouse Simulator 2D v0.50
+//Mouse Simulator 2D v0.51
 /*
-Fixed bug with microwaves not stopping at non walkable tiles.
-Rings.
-Bug fix with amber projectiles hanging the game when encountering flamable tiles.
-Enemy color and spawn group amount change.
-interactive crafting recipe browser.
-Added cats.
-Fixed projectile collision bug.
-Spawn Eggs.
-Colors!
-Buttons and capacitors!
+Rain!
+Removed "eval" buttton.
+fixed seasons changing bug.
+Lighting!
 */
 //autoconfig
 var saves=window.localStorage;
@@ -123,63 +117,177 @@ if(_sfx.paused==false){
 
 var ctx=cga.getContext("2d");
 var char=ctx.getImageData(0,0,8,8);
-function write_1bit(pos,val,id){
+function write_1bit(pos,val,id,mix_r,mix_g,mix_b){
 	char.data[4*pos+3]=255;
 	switch(val){
 		case "0":
-			char.data[4*pos]=font[id].c[0];
-			char.data[4*pos+1]=font[id].c[1];
-			char.data[4*pos+2]=font[id].c[2];
+			char.data[4*pos]=Math.floor(font[id].c[0]*mix_r);
+			char.data[4*pos+1]=Math.floor(font[id].c[1]*mix_g);
+			char.data[4*pos+2]=Math.floor(font[id].c[2]*mix_b);
 			break;
 		case "1":
-			char.data[4*pos]=font[id].c[3];
-			char.data[4*pos+1]=font[id].c[4];
-			char.data[4*pos+2]=font[id].c[5];
+			char.data[4*pos]=Math.floor(font[id].c[3]*mix_r);
+			char.data[4*pos+1]=Math.floor(font[id].c[4]*mix_g);
+			char.data[4*pos+2]=Math.floor(font[id].c[5]*mix_b);
 			break;
 		case "2":
-			char.data[4*pos]=font[id].c[6];
-			char.data[4*pos+1]=font[id].c[7];
-			char.data[4*pos+2]=font[id].c[8];
+			char.data[4*pos]=Math.floor(font[id].c[6]*mix_r);
+			char.data[4*pos+1]=Math.floor(font[id].c[7]*mix_g);
+			char.data[4*pos+2]=Math.floor(font[id].c[8]*mix_b);
 			break;
 		case "3":
-			char.data[4*pos]=font[id].c[9];
-			char.data[4*pos+1]=font[id].c[10];
-			char.data[4*pos+2]=font[id].c[11];
+			char.data[4*pos]=Math.floor(font[id].c[9]*mix_r);
+			char.data[4*pos+1]=Math.floor(font[id].c[10]*mix_g);
+			char.data[4*pos+2]=Math.floor(font[id].c[11]*mix_b);
 			break;
 		case "4":
-			char.data[4*pos]=font[id].c[12];
-			char.data[4*pos+1]=font[id].c[13];
-			char.data[4*pos+2]=font[id].c[14];
+			char.data[4*pos]=Math.floor(font[id].c[12]*mix_r);
+			char.data[4*pos+1]=Math.floor(font[id].c[13]*mix_g);
+			char.data[4*pos+2]=Math.floor(font[id].c[14]*mix_b);
 			break;
 		case "5":
-			char.data[4*pos]=font[id].c[15];
-			char.data[4*pos+1]=font[id].c[16];
-			char.data[4*pos+2]=font[id].c[17];
+			char.data[4*pos]=Math.floor(font[id].c[15]*mix_r);
+			char.data[4*pos+1]=Math.floor(font[id].c[16]*mix_g);
+			char.data[4*pos+2]=Math.floor(font[id].c[17]*mix_b);
 			break;
 		case "6":
-			char.data[4*pos]=font[id].c[18];
-			char.data[4*pos+1]=font[id].c[19];
-			char.data[4*pos+2]=font[id].c[20];
+			char.data[4*pos]=Math.floor(font[id].c[18]*mix_r);
+			char.data[4*pos+1]=Math.floor(font[id].c[19]*mix_g);
+			char.data[4*pos+2]=Math.floor(font[id].c[20]*mix_b);
 			break;
 		case "7":
-			char.data[4*pos]=font[id].c[21];
-			char.data[4*pos+1]=font[id].c[22];
-			char.data[4*pos+2]=font[id].c[23];
+			char.data[4*pos]=Math.floor(font[id].c[21]*mix_r);
+			char.data[4*pos+1]=Math.floor(font[id].c[22]*mix_g);
+			char.data[4*pos+2]=Math.floor(font[id].c[23]*mix_b);
 			break;
 	}
 }
-function get_font(val){
-	for(var i=0;i<64;i++){
-		//alert(font[val].b[i]);
-		write_1bit(i,font[val].b[i],val);
+
+var rain_ctr=0;
+
+function get_font(val,x,y){
+	if(!(FORCE_RAIN&&val==0)){
+		for(var i=0;i<64;i++){
+			//alert(font[val].b[i]);
+			write_1bit(i,font[val].b[i],val,light_map[y][x][0],light_map[y][x][1],light_map[y][x][2]);
+		}
+	}else{
+		for(var i=0;i<64;i++){
+			write_1bit(i,font[T_RAIN0+rain_ctr].b[i],T_RAIN0+rain_ctr,light_map[y][x][0],light_map[y][x][1],light_map[y][x][2]);
+		}	
 	}
 	return val;
 }
+
+function light_levels(){
+	//blank light map
+	var def_r,def_g,def_b;
+	switch(pages[cur_page].metadata.layer){
+		case -1:
+			def_r=NEST_RGB[0];
+			def_g=NEST_RGB[1];
+			def_b=NEST_RGB[2];
+			break;
+		case 0:
+			if(!(tick_hour()>=NIGHT_START_HOUR && tick_hour()<=NIGHT_END_HOUR)){//is night time
+				def_r=NIGHT_RGB[0];
+				def_g=NIGHT_RGB[1];
+				def_b=NIGHT_RGB[2];
+			}else{
+				def_r=DAY_RGB[0];
+				def_g=DAY_RGB[1];
+				def_b=DAY_RGB[2];
+			}
+			break;
+		case 1:
+			def_r=SLIP_RGB[0];
+			def_g=SLIP_RGB[1];
+			def_b=SLIP_RGB[2];
+	}
+	for(var i=0;i<25;i++){
+		for(var j=0;j<40;j++){
+			light_map[i][j][0]=def_r;
+			light_map[i][j][1]=def_g;
+			light_map[i][j][2]=def_b;
+		}
+	}
+	//light source spreading
+	for(var i=0;i<25;i++){
+		for(var j=0;j<40;j++){
+			switch(pages[cur_page].map[i][j]){
+				case T_CLOCK_RADIO:
+					light_spread(L_CLOCK_RADIO_STR,L_CLOCK_RADIO_RGB,i,j);
+					break;
+				case T_BORDER:
+					light_spread(L_BORDER_STR,L_BORDER_RGB,i,j);
+					break;
+				case T_CAMP_FIRE:
+					light_spread(L_CAMP_FIRE_STR,L_CAMP_FIRE_RGB,i,j);
+					break;
+				case T_FIRE0:
+					light_spread(L_FIRE0_STR,L_FIRE0_RGB,i,j);
+					break;
+				case T_FIRE1:
+					light_spread(L_FIRE1_STR,L_FIRE1_RGB,i,j);
+					break;
+				case T_FIRE2:
+					light_spread(L_FIRE2_STR,L_FIRE2_RGB,i,j);
+					break;
+				case T_BROWN_MUSHROOM:
+					light_spread(L_BMUSH_STR,L_BMUSH_RGB,i,j);
+					break;
+
+
+			}
+		}
+	}
+}
+
+function light_spread(strength,_rgb,_x,_y){
+	for(var i=_x-strength;i<1+_x+strength;i++){
+		for(var j=_y-strength;j<1+_y+strength;j++){
+			if(i<0 || i>25){
+				continue;
+			}
+			if(j<0 || j>40){
+				continue;
+			}
+			mix_rgb(i,j,_rgb);
+			
+		}
+	}
+}
+
+function max_min_lighting(x){
+	if(x>=LARGEST_LIGHT_LEVEL){
+		return LARGEST_LIGHT_LEVEL;
+	}
+	if(x<=LOWEST_LIGHT_LEVEL){
+		return LOWEST_LIGHT_LEVEL;
+	}
+	return x;
+}
+
+function saturation_rgb(_rgb,sat){
+	for(var i=0;i<3;i++){
+		_rgb[i]*=sat;
+	}
+	return _rgb;
+}
+
+function mix_rgb(i,j,_rgb){i
+	light_map[i][j][0]=max_min_lighting((light_map[i][j][0]+_rgb[0])/2);
+	light_map[i][j][1]=max_min_lighting((light_map[i][j][1]+_rgb[1])/2);
+	light_map[i][j][2]=max_min_lighting((light_map[i][j][2]+_rgb[2])/2);
+}
+
 function draw_map(){
+	//light levels
+	light_levels();
 	//block map
 	for(var x=0;x<40;x++){
 		for(var y=0;y<25;y++){
-			get_font(pages[cur_page].map[y][x]);
+			get_font(pages[cur_page].map[y][x],x,y);
 			ctx.putImageData(char,x*8,y*8);
 		}
 	}
@@ -207,9 +315,9 @@ function draw_map(){
 	}
 	var e_ordered=e_item.concat(e_npc,e_proj,e_plasma);
 	for(var i=0;i<e_ordered.length;i++){
-		get_font(pages[cur_page].entities[e_ordered[i]].char);
+		get_font(pages[cur_page].entities[e_ordered[i]].char,pages[cur_page].entities[e_ordered[i]].x,pages[cur_page].entities[e_ordered[i]].y);
 		if(pages[cur_page].entities[e_ordered[i]].fire_tick!==undefined){
-			get_font(T_FIRE0);
+			get_font(T_FIRE0,pages[cur_page].entities[e_ordered[i]].x,pages[cur_page].entities[e_ordered[i]].y);
 		}
 		ctx.putImageData(char,
 		pages[cur_page].entities[e_ordered[i]].x*8,
@@ -217,9 +325,9 @@ function draw_map(){
 	}
 	//player
 	if(player.fire_tick===undefined){
-	get_font(3);
+	get_font(3,player.x,player.y);
 	}else{
-	get_font(T_FIRE0);
+	get_font(T_FIRE0,player.x,player.y);
 	}
 	ctx.putImageData(char,player.x*8,player.y*8);
 }
@@ -275,25 +383,25 @@ function rtc(days=player.days){
 	return {year:Math.floor(days/YEAR_LEN),month:Math.floor(days/MONTH_LEN)%MONTH_MOD,monthlets:days%MONTHLET_MOD,weekday:days%WEEK_MOD};
 }
 
-function seasons(){
-	switch(rtc().month){
+function seasons(m=rtc().month){
+	switch(m){
 		case 0:
 		case 1:
 		case 2:
 		case 3://summer
 			//grass
-			font[13][64]=0;
-			font[13][65]=255;
-			font[13][66]=0;
+			font[13].c[3]=0;
+			font[13].c[4]=255;
+			font[13].c[5]=0;
 			//tree leaves
-			font[14][64]=0;
-			font[14][65]=255;
-			font[14][66]=0;
+			font[14].c[3]=0;
+			font[14].c[4]=255;
+			font[14].c[5]=0;
 			//walnut leaves
 			for(var i=0;i<6;i++){
-				font[46+i][64]=0;
-				font[46+i][65]=215;
-				font[46+i][66]=0;
+				font[46+i].c[3]=0;
+				font[46+i].c[4]=215;
+				font[46+i].c[5]=0;
 			}
 			break;
 		case 4:
@@ -301,18 +409,18 @@ function seasons(){
 		case 6:
 		case 7://fall
 			//grass
-			font[13][64]=224;
-			font[13][65]=204;
-			font[13][66]=119;
+			font[13].c[3]=224;
+			font[13].c[4]=204;
+			font[13].c[5]=119;
 			//tree leaves
-			font[14][64]=224;
-			font[14][65]=204;
-			font[14][66]=119;
+			font[14].c[3]=224;
+			font[14].c[4]=204;
+			font[14].c[5]=119;
 			//walnut leaves
 			for(var i=0;i<6;i++){
-				font[46+i][64]=0x224;
-				font[46+i][65]=0x204;
-				font[46+i][66]=119;
+				font[46+i].c[3]=0x224;
+				font[46+i].c[4]=0x204;
+				font[46+i].c[5]=119;
 			}
 			break;
 		case 8:
@@ -320,18 +428,18 @@ function seasons(){
 		case 10:
 		case 11://winter
 			//grass
-			font[13][64]=160;
-			font[13][65]=140;
-			font[13][66]=55;
+			font[13].c[3]=160;
+			font[13].c[4]=140;
+			font[13].c[5]=55;
 			//tree leaves
-			font[14][64]=255;
-			font[14][65]=255;
-			font[14][66]=255;
+			font[14].c[3]=255;
+			font[14].c[4]=255;
+			font[14].c[5]=255;
 			//walnut leaves
 			for(var i=0;i<6;i++){
-				font[46+i][64]=255;
-				font[46+i][65]=255;
-				font[46+i][66]=255;
+				font[46+i].c[3]=255;
+				font[46+i].c[4]=255;
+				font[46+i].c[5]=255;
 			}
 			break;
 		case 12:
@@ -339,18 +447,18 @@ function seasons(){
 		case 14:
 		case 15://spring
 			//grass
-			font[13][64]=160;
-			font[13][65]=255;
-			font[13][66]=160;
+			font[13].c[3]=160;
+			font[13].c[4]=255;
+			font[13].c[5]=160;
 			//tree leaves
-			font[14][64]=160;
-			font[14][65]=255;
-			font[14][66]=160;
+			font[14].c[3]=160;
+			font[14].c[4]=255;
+			font[14].c[5]=160;
 			//walnut leaves
 			for(var i=0;i<6;i++){
-				font[46+i][64]=0;
-				font[46+i][65]=255;
-				font[46+i][66]=0;
+				font[46+i].c[3]=0;
+				font[46+i].c[4]=255;
+				font[46+i].c[5]=0;
 			}
 			break
 	}
@@ -1781,7 +1889,6 @@ switch(char_value(x,y)){
 		return true;
 	case 94://Fan
 		return item_pickup_dropoff(73,x,y);
-		return true;
 	case T_CLOCK_RADIO://Clock Radio
 		clock_radio_interact();
 		return true;
@@ -4334,7 +4441,7 @@ if(TILE_MAP){
 		for(var y=0;y<25;y++){
 			if(i<font.length){
 				//asdf
-				get_font(i);
+				get_font(i,0,0);
 				ctx.putImageData(char,8*x,8*y);
 			}
 			i++;
@@ -4422,6 +4529,7 @@ if(tick1%7==0){//fire, Grind Stone
 fireing();
 active_tiles();
 }
+tick1%RAIN_TICK==0 ? rain_ctr=(rain_ctr+1)%2 : 0;
 if(tick1%CAT_TICK==0){
 	spawn_cat();
 }

@@ -74,6 +74,9 @@ const P_DOWN=1;
 const P_LEFT=2;
 const P_RIGHT=3;
 
+//rain
+const RAIN_TICK=4;
+
 //amber projectile
 const AMBER_PROJ_DECAY=16;
 const AMBER_PROJ_STRENGTH=15;
@@ -101,10 +104,40 @@ const SHOW_HITSCAN=false;
 const SHOW_HITSCAN_EFFECT=false;
 const SHOW_NODES=false;
 const TILE_MAP=false;
+const FORCE_RAIN=false;
 
 //plasma
 const PLASMA_DECAY=4;
 const PLASMA_DAMAGE=2;
+
+//default lighting level rgbs
+const DAY_RGB=[1,1,1];
+const NIGHT_RGB=[0.75,0.75,0.75];
+const NEST_RGB=[0.5,0.5,0.5];
+const SLIP_RGB=[0.75,0.717,0.711];
+const LARGEST_LIGHT_LEVEL=2;
+const LOWEST_LIGHT_LEVEL=0;
+
+//tile light levels
+const L_CLOCK_RADIO_STR=1;
+const L_CLOCK_RADIO_RGB=[1*0.75,0.772*0.75,0.56*0.75];
+const L_BORDER_STR=1;
+const L_BORDER_RGB=[0.847,0.968,1];
+const L_CAMP_FIRE_STR=4;
+const L_CAMP_FIRE_RGB=[1,0.576,0.16];
+
+const L_FIRE0_STR=2;
+const L_FIRE0_RGB=[1,0.576,0.16];
+
+const L_FIRE1_STR=1;
+const L_FIRE1_RGB=[1,0.576,0.16];
+
+const L_FIRE2_STR=0;
+const L_FIRE2_RGB=[1,0.576,0.16];
+
+const L_BMUSH_STR=0;
+const L_BMUSH_RGB=[1,1,1];
+
 
 //item id's
 const I_NOTHING=0;
@@ -212,23 +245,23 @@ const T_HAY=12;
 const T_GRASS=13;
 const T_TREE_LEAVES=14;
 const T_TREE_TRUNK=15;
-const T_BROWN_MUSHROOM=16;
+const T_BROWN_MUSHROOM=16;//
 const T_RED_MUSHROOM=17;
 const T_FENCE=18;
 const T_ATTACK=19;
 const T_RAYGUN_RING=20;
 const T_STICK=21;
 const T_STRING=22;
-const T_CLOCK_RADIO=23;
+const T_CLOCK_RADIO=23;//
 const T_SAPLING=24;
 const T_LEAVES=25;
 const T_BOWL=26;
 const T_MUSHROOM_STEW=27;
 const T_CARPET=28;
 const T_WATER=29;
-const T_FIRE0=30;
-const T_FIRE1=31;
-const T_FIRE2=32;
+const T_FIRE0=30;//
+const T_FIRE1=31;//
+const T_FIRE2=32;//
 const T_BOW=33;
 const T_BOW_AND_SPINDLE=34;
 const T_AMBER=35;
@@ -237,7 +270,7 @@ const T_SPEAR=37;
 const T_RAYGUN=38;
 //const T_POISONOUS_SPEAR=39;
 const T_ARROW=39;
-const T_CYAN_THING=40;
+const T_CYAN_THING=40;//
 const T_STONE=41;
 const T_DOOR_CLOSED=42;
 const T_DOOR_OPEN=43;
@@ -265,7 +298,7 @@ const T_IRON_WALL=64;
 const T_COPPER_WALL=65;
 const T_BOWL_OF_WATER=66;
 const T_SUSPICIOUS_STEW=67;
-const T_CAMP_FIRE=68;
+const T_CAMP_FIRE=68;//
 const T_SAW_DUST=69;
 const T_COMPOSTER=70;
 const T_MDF_PUDDY=71;
@@ -316,3 +349,5 @@ const T_CAP1=115;
 const T_CAP0=116;
 const T_BUTTON_OFF=117;
 const T_BUTTON_ON=118;
+const T_RAIN0=119;
+const T_RAIN1=120;
