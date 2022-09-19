@@ -1553,6 +1553,46 @@ b:
 "00000000",
 c:[255,255,255, 0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 },
+
+//121, fishing line
+{
+b:
+"00000200"+
+"00002010"+
+"00020010"+
+"00200010"+
+"02000010"+
+"20000300"+
+"00000000"+
+"00000000",
+c:[255,255,255, 0,0,0, 185,122,87, 255,0,0, 0,0,0,0,0,0,0,0,0,0,0,0]
+},
+//122, fishing bobber
+{
+b:
+"00000030"+
+"00110030"+
+"01111030"+
+"00110020"+
+"00110020"+
+"00020020"+
+"00020020"+
+"00002200",
+c:[255,255,255, 255,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+},
+//123, fish
+{
+b:
+"00000000"+
+"00111100"+
+"01112110"+
+"01111110"+
+"01111110"+
+"00111100"+
+"00011000"+
+"00111100",
+c:[255,255,255, 0x3f,0x77,0x66, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+},
 ];
 
 const properties={
@@ -1583,6 +1623,17 @@ enemy_slip:[
 cat:[
 {chance:0.5,item_id:I_CYAN_THING,item_min:5,item_max:20},//Napkin
 ]};
+
+const fishing_loot={
+junk:[I_BRANCH,I_STRING,I_LEAVES,I_BOWL,I_STONE,I_GRASS,I_SAPLING],
+treasure:[I_BOW,I_ARROW,I_CYAN_THING,I_IRON,I_COPPER,],
+fish:[I_FISH],
+};
+const fishing_chances=[
+JUNK_WEIGHT,
+TREASURE_WEIGHT,
+FISH_WEIGHT
+];
 //items
 const item_char=[
 0,//Nothing,0
@@ -1672,6 +1723,8 @@ const item_char=[
 111,//Cat Spawn Egg,84
 116,//Capacitor,85
 117,//Button,86
+121,//Fishing rod,87
+123,//fish,88
 ];
 
 const item_names=[
@@ -1761,7 +1814,9 @@ const item_names=[
 "Enemy Spawn Egg",
 "Cat Spawn Egg",
 "Capacitor",
-"Button"
+"Button",
+"Fishing Rod",
+"Fish",
 ];
 //crafting
 const recipies=[
@@ -2056,6 +2111,10 @@ output:[[I_COMPOSTER,1]]
 {//Copper wire to ring
 input_id:[I_COPPER_WIRE],
 output:[[I_RING,1]]
+},
+{//stick+string+red mushroom to fishing rod
+input_id:[I_STICK,0,I_STRING,0,I_RED_MUSHROOM,0],
+output:[[I_FISH_ROD,1]]
 },
 ];
 

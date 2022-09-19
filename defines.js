@@ -58,6 +58,7 @@ const NPC_ID=1;
 const DROPPED_ITEM_ID=2;
 const PROJ_ID=3;
 const PLASMA_ID=4;
+const BOBBER_ID=5;
 
 //quotas
 const PROJ_QUOTA=1000;//Max projectiles to process.
@@ -93,6 +94,16 @@ const SPEAR_STRENGTH=20;
 //Arrow projectile
 const ARROW_DECAY=32;
 const ARROW_STRENGTH=20;
+
+//bobber
+const MIN_CATCH_TIME=5;
+const CATCH_TIME_ADD_MAX=25;
+
+//fishing
+const FISH_WEIGHT=0.85;
+const JUNK_WEIGHT=0.10;
+const TREASURE_WEIGHT=0.05;
+const WEIGHT_SUM=1;
 
 //Players and entities when on fire
 const ON_FIRE_COUNT=8;//for fire_tick
@@ -244,6 +255,8 @@ const I_ENEMY_EGG=83;
 const I_CAT_EGG=84;
 const I_CAPACITOR=85;
 const I_BUTTON=86;
+const I_FISH_ROD=87;
+const I_FISH=88;
 
 //tile id's
 const T_WHITE=0;
@@ -368,3 +381,6 @@ const T_BUTTON_OFF=117;
 const T_BUTTON_ON=118;
 const T_RAIN0=119;
 const T_RAIN1=120;
+const T_FISH_ROD=121;
+const T_FISH_BOBBER=122;
+const T_FISH=123;

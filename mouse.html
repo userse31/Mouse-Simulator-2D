@@ -26,13 +26,9 @@ The GNU General Public License is published by the "Free Software Foundation, In
 <script src="./hashmap.js"></script>
 <script src="./resources.js"></script>
 <script>
-//Mouse Simulator 2D v0.52
+//Mouse Simulator 2D v0.53
 /*
-Weather!
-Lightning!
-""""Fixed"""" a bug where "light_map" would resolve as "undefined" a couple arrays deep when lots of light spreading is being processed.
-Massive emphasis on the quotes.
-Enemies now don't spawn in artifical light.
+Fishing!
 */
 //autoconfig
 var saves=window.localStorage;
@@ -299,6 +295,7 @@ function draw_map(){
 	var e_npc=[];
 	var e_proj=[];
 	var e_plasma=[];
+	var e_bobber=[];
 	for(var i=0;i<pages[cur_page].entities.length;i++){
 		switch(pages[cur_page].entities[i].id){
 			case 1://npc
@@ -313,9 +310,12 @@ function draw_map(){
 			case 4://plasma
 				e_plasma.push(i);
 				break;
+			case 5://bobber
+				e_bobber.push(i);
+				break;
 		}
 	}
-	var e_ordered=e_item.concat(e_npc,e_proj,e_plasma);
+	var e_ordered=e_item.concat(e_npc,e_proj,e_plasma,e_bobber);
 	for(var i=0;i<e_ordered.length;i++){
 		get_font(pages[cur_page].entities[e_ordered[i]].char,pages[cur_page].entities[e_ordered[i]].x,pages[cur_page].entities[e_ordered[i]].y);
 		if(pages[cur_page].entities[e_ordered[i]].fire_tick!==undefined){
@@ -1958,6 +1958,49 @@ switch(x){
 }
 }
 switch(player.inv[player.inv[10]][0]){
+	case I_FISH_ROD:
+		var reeled=false;
+		for(var i=0;i<pages[cur_page].entities.length;i++){
+			if(pages[cur_page].entities[i].id==BOBBER_ID){//is there already a bobber?
+				pages[cur_page].entities[i].id=-1;//reel it in (delete)
+				reeled=true;
+			}
+		}
+		if(reeled){
+			break;
+		}
+		var bobber_time=MIN_CATCH_TIME+(Math.floor(Math.random()*65535)%CATCH_TIME_ADD_MAX);
+		switch(x){//direction to cast
+			case "up":
+				if(!hit_bounds(player.x,player.y-1)){
+					if(pages[cur_page].map[player.y-1][player.x]==T_WATER){
+						pages[cur_page].entities.push({id:BOBBER_ID,x:player.x,y:player.y-1,char:T_FISH_BOBBER,delay:bobber_time});
+					}
+				}
+				break;
+			case "down":
+				if(!hit_bounds(player.x,player.y+1)){
+					if(pages[cur_page].map[player.y+1][player.x]==T_WATER){
+						pages[cur_page].entities.push({id:BOBBER_ID,x:player.x,y:player.y+1,char:T_FISH_BOBBER,delay:bobber_time});
+					}
+				}
+				break;
+			case "left":
+				if(!hit_bounds(player.x-1,player.y)){
+					if(pages[cur_page].map[player.y][player.x-1]==T_WATER){
+						pages[cur_page].entities.push({id:BOBBER_ID,x:player.x-1,y:player.y,char:T_FISH_BOBBER,delay:bobber_time});
+					}
+				}
+				break;
+			case "right":
+				if(!hit_bounds(player.x+1,player.y)){
+					if(pages[cur_page].map[player.y][player.x+1]==T_WATER){
+						pages[cur_page].entities.push({id:BOBBER_ID,x:player.x+1,y:player.y,char:T_FISH_BOBBER,delay:bobber_time});
+					}
+				}
+				break;
+		}
+		break;
 	case I_BOW:
 		//check for ambers in inventory.
 		var proj_ptr=-1;
@@ -2370,6 +2413,16 @@ switch(player.inv[player.inv[10]][0]){//item id
 		if(player.creative==1){
 			new_cat(player.x,player.y,cur_page);
 		}
+		break;
+	case I_FISH://walnut stone
+        	if(player.health>=20){
+            		break;
+        	}
+			player.health+=5;
+		if(player.health>20 && player.creative==0){
+            		player.health=20;
+        	}
+		player.creative==1 ? 0 : player.inv[player.inv[10]][1]--;
 		break;
 	/*case 52://statue
 		player.creative==1 ? pages[cur_page].map[player.y][player.x]=item_char[52] : 0;
@@ -4467,6 +4520,58 @@ function filament_cooldown(){
 	player.filament=(player.filament-FILAMENT_THERMAL_COOLDOWN>0)?player.filament-FILAMENT_THERMAL_COOLDOWN:0;
 }
 
+function give_player(item_id,item_amount){
+	for(var i=0;i<player.inv.length;i++){
+		if(player.inv[i][0]==0 || player.inv[i][0]==item_id){
+			player.inv[i][0]=item_id;
+			player.inv[i][1]+=item_amount;
+			return;
+		}
+	}
+	pages[cur_page].entities.push({id:DROPPED_ITEM_ID,x:player.x,y:player.y,char:item_char[item_id],item:[item_id,item_amount]});
+}
+
+function catch_fish(rand=Math.random()){
+	var sum=WEIGHT_SUM;
+	var selection=-1;
+	for(var i=0;i<fishing_chances.length;i++){
+		rand-=fishing_chances[i];
+		if(rand<fishing_chances[i]){
+			selection=i;
+			break;
+		}
+	}
+	switch(selection){
+		case 0://junk
+			give_player(fishing_loot.junk[(Math.floor(Math.random()%65535)%fishing_loot.junk.length)],1);
+			break;
+		case 1://treasure
+			give_player(fishing_loot.treasure[(Math.floor(Math.random()%65535)%fishing_loot.treasure.length)],1);
+			break;
+		case 2://fish
+			give_player(fishing_loot.fish[(Math.floor(Math.random()%65535)%fishing_loot.fish.length)],1);
+			break;
+	}
+}
+
+function do_bobber(){
+	var bobber=-1;
+	for(var i=0;i<pages[cur_page].entities.length;i++){
+		if(pages[cur_page].entities[i].id==BOBBER_ID){
+			bobber=i;
+			break;
+		}
+	}
+	if(bobber==-1){
+		return;
+	}
+	pages[cur_page].entities[i].delay--;
+	if(pages[cur_page].entities[i].delay<=0){
+		pages[cur_page].entities[i].id=-1;
+		catch_fish();
+	}
+}
+
 var title_done=false;
 function title_screen(x=Math.floor(Math.random()*65535)%splashes.length){
 	if(title_done){
@@ -4584,6 +4689,7 @@ seasons();
 }
 tick1%2==0 ? tick():0;
 tick1%40==0 ? random_tick():0;
+tick1%2==0 ? do_bobber():0;
 if(player.weather_type==W_THUNDER && pages[cur_page].metadata.layer==0){
 	tick1%THUN_TICK_MOD==0 ? thunder_tick() : 0;
 	tick1%RAIN_TICK_MOD==0 ? rain_tick() : 0;
