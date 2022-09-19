@@ -75,7 +75,12 @@ const P_LEFT=2;
 const P_RIGHT=3;
 
 //rain
-const RAIN_TICK=4;
+const RAIN_TICK=16;
+
+//thunder
+const THUN_DAMAGE=10;
+const THUN_DECAY=1;
+const THUN_CHAR=106;//T_PLASMA
 
 //amber projectile
 const AMBER_PROJ_DECAY=16;
@@ -96,6 +101,7 @@ const ON_FIRE_DAMAGE=1;
 //game states
 const GAMING="game";
 const CRAFTING="craft";
+const TITLE="title";
 
 //debugging
 const DEBUG_RANDOM_TICK=false;
@@ -105,6 +111,13 @@ const SHOW_HITSCAN_EFFECT=false;
 const SHOW_NODES=false;
 const TILE_MAP=false;
 const FORCE_RAIN=false;
+
+//weather
+const W_CLEAR=0;
+const W_RAIN=1;
+const W_THUNDER=2;
+const THUN_TICK_MOD=120;
+const RAIN_TICK_MOD=10;
 
 //plasma
 const PLASMA_DECAY=4;
@@ -117,6 +130,10 @@ const NEST_RGB=[0.5,0.5,0.5];
 const SLIP_RGB=[0.75,0.717,0.711];
 const LARGEST_LIGHT_LEVEL=2;
 const LOWEST_LIGHT_LEVEL=0;
+const ENEMY_SPAWN_MAX_LUM=1;
+const LUM_R_CONST=0.2126;
+const LUM_G_CONST=0.7152;
+const LUM_B_CONST=0.0722;
 
 //tile light levels
 const L_CLOCK_RADIO_STR=1;

@@ -26,12 +26,13 @@ The GNU General Public License is published by the "Free Software Foundation, In
 <script src="./hashmap.js"></script>
 <script src="./resources.js"></script>
 <script>
-//Mouse Simulator 2D v0.51
+//Mouse Simulator 2D v0.52
 /*
-Rain!
-Removed "eval" buttton.
-fixed seasons changing bug.
-Lighting!
+Weather!
+Lightning!
+""""Fixed"""" a bug where "light_map" would resolve as "undefined" a couple arrays deep when lots of light spreading is being processed.
+Massive emphasis on the quotes.
+Enemies now don't spawn in artifical light.
 */
 //autoconfig
 var saves=window.localStorage;
@@ -166,13 +167,19 @@ function write_1bit(pos,val,id,mix_r,mix_g,mix_b){
 var rain_ctr=0;
 
 function get_font(val,x,y){
-	if(!(FORCE_RAIN&&val==0)){
+	if(!((FORCE_RAIN||player.weather_type!=W_CLEAR)&&pages[cur_page].metadata.layer==0&&val==0)){
 		for(var i=0;i<64;i++){
 			//alert(font[val].b[i]);
+			if(hit_bounds(x,y)){
+				return;
+			}
 			write_1bit(i,font[val].b[i],val,light_map[y][x][0],light_map[y][x][1],light_map[y][x][2]);
 		}
 	}else{
 		for(var i=0;i<64;i++){
+			if(hit_bounds(x,y)){
+				return;
+			}
 			write_1bit(i,font[T_RAIN0+rain_ctr].b[i],T_RAIN0+rain_ctr,light_map[y][x][0],light_map[y][x][1],light_map[y][x][2]);
 		}	
 	}
@@ -181,34 +188,25 @@ function get_font(val,x,y){
 
 function light_levels(){
 	//blank light map
-	var def_r,def_g,def_b;
+	var def_rgb;
 	switch(pages[cur_page].metadata.layer){
 		case -1:
-			def_r=NEST_RGB[0];
-			def_g=NEST_RGB[1];
-			def_b=NEST_RGB[2];
+			def_rgb=NEST_RGB;
 			break;
 		case 0:
 			if(!(tick_hour()>=NIGHT_START_HOUR && tick_hour()<=NIGHT_END_HOUR)){//is night time
-				def_r=NIGHT_RGB[0];
-				def_g=NIGHT_RGB[1];
-				def_b=NIGHT_RGB[2];
+				def_rgb=NIGHT_RGB;
 			}else{
-				def_r=DAY_RGB[0];
-				def_g=DAY_RGB[1];
-				def_b=DAY_RGB[2];
+				def_rgb=DAY_RGB;
 			}
 			break;
 		case 1:
-			def_r=SLIP_RGB[0];
-			def_g=SLIP_RGB[1];
-			def_b=SLIP_RGB[2];
+			def_rgb=SLIP_RGB;
+			break;
 	}
 	for(var i=0;i<25;i++){
 		for(var j=0;j<40;j++){
-			light_map[i][j][0]=def_r;
-			light_map[i][j][1]=def_g;
-			light_map[i][j][2]=def_b;
+			light_map[i][j]=def_rgb;
 		}
 	}
 	//light source spreading
@@ -275,10 +273,14 @@ function saturation_rgb(_rgb,sat){
 	return _rgb;
 }
 
-function mix_rgb(i,j,_rgb){i
-	light_map[i][j][0]=max_min_lighting((light_map[i][j][0]+_rgb[0])/2);
-	light_map[i][j][1]=max_min_lighting((light_map[i][j][1]+_rgb[1])/2);
-	light_map[i][j][2]=max_min_lighting((light_map[i][j][2]+_rgb[2])/2);
+function mix_rgb(i,j,_rgb){
+	//dem_ann.textContent=JSON.stringify(light_map[i]);
+	//Eat shit JavaScript.
+	try{
+		light_map[i][j]=[max_min_lighting((light_map[i][j][0]+_rgb[0])/2),max_min_lighting((light_map[i][j][1]+_rgb[1])/2),max_min_lighting((light_map[i][j][2]+_rgb[2])/2)];
+	}catch(FUCK){
+		0;
+	}
 }
 
 function draw_map(){
@@ -3471,6 +3473,11 @@ function spawn_cat(random_x=Math.floor((Math.random()*65535))%40,
 	}
 }
 
+function rgb_light_luminance(x,y){
+	var rgb=light_map[y][x];
+	return (rgb[0]*LUM_R_CONST)+(rgb[1]*LUM_G_CONST)+(rgb[2]*LUM_B_CONST);
+}
+
 function random_tick(random_x=Math.floor((Math.random()*65535))%40,random_y=Math.floor((Math.random()*65535))%25,bone_meal=0,action=Math.floor((Math.random()*65535))%100){
 if(DEBUG_RANDOM_TICK){
 pages[cur_page].entities.push({
@@ -3637,7 +3644,10 @@ if(tick_hour()>=NIGHT_START_HOUR && tick_hour()<=NIGHT_END_HOUR){
 			_x=Math.floor(Math.random()*65535)%40;
 			_y=Math.floor(Math.random()*65535)%25;
 			cv=char_value(_x,_y);
-			if(is_walkable(cv) && can_spawn(cv)){//Is the tile walkable _and_ spawnable?
+			if(is_walkable(cv) && can_spawn(cv) && 
+			light_map[_y][_x][0]==DAY_RGB[0]&&
+			light_map[_y][_x][1]==DAY_RGB[1]&&
+			light_map[_y][_x][2]==DAY_RGB[2]){//Is the tile walkable _and_ spawnable? Is there any artificial light?
 				pages[cur_page].entities.push({
 					id:NPC_ID,
 					char:4,
@@ -4423,14 +4433,62 @@ function magnatron_sounds(){
 	}
 }
 
+function thunder_tick(random_x=Math.floor((Math.random()*65535))%40,random_y=Math.floor((Math.random()*65535))%25){
+	//console.log("Thunder!");
+	//add a little electricity
+	pages[cur_page].entities.push({id:PROJ_ID,x:random_x,y:random_y,char:THUN_CHAR,direction:4,damage:THUN_DAMAGE,decay:THUN_DECAY,from_player:0});
+	//if striking flamable tile or air, create fire.
+	var strucken_tile=pages[cur_page].map[random_y][random_x];
+	if(strucken_tile==0){
+		pages[cur_page].map[random_y][random_x]=T_FIRE0;
+	}else{
+		for(var i=0;i<properties.burnable.length;i++){
+			if(properties.burnable[i]==strucken_tile){
+				pages[cur_page].map[random_y][random_x]=T_FIRE0;
+			}
+		}
+	}
+}
+
+function rain_tick(r_x=Math.floor((Math.random()*65535))%40,r_y=Math.floor((Math.random()*65535))%25){
+	//water spreading
+	//console.log("Rain!");
+	if(!hit_bounds(r_x+1,r_y)&&!hit_bounds(r_x-1,r_y)&&!hit_bounds(r_x,r_y+1)&&!hit_bounds(r_x,r_y-1)){
+		if(pages[cur_page].map[r_y][r_x+1]==T_WATER&&pages[cur_page].map[r_y][r_x-1]==T_WATER&&pages[cur_page].map[r_y+1][r_x]==T_WATER&&pages[cur_page].map[r_y-1][r_x]==T_WATER&&pages[cur_page].map[r_y][r_x]==0){
+			pages[cur_page].map[r_y][r_x]=T_WATER;
+		}
+	}
+	
+	
+}
+
 function filament_cooldown(){
 	//last_filament=player.filament;
 	player.filament=(player.filament-FILAMENT_THERMAL_COOLDOWN>0)?player.filament-FILAMENT_THERMAL_COOLDOWN:0;
 }
 
+var title_done=false;
+function title_screen(x=Math.floor(Math.random()*65535)%splashes.length){
+	if(title_done){
+		return;
+	}
+	ctx.clearRect(0,0,320,200);
+	ctx.textAlign="center";
+	//ctx.font="10px sans-serif";
+	ctx.font="bold 28px sans-serif";
+	ctx.fillText("Mouse Simulator 2D",160,25);
+	ctx.font="15px sans-serif";
+	ctx.fillText("Create or load a save to begin.",160,100);
+	ctx.font="10px sans-serif";
+	ctx.textAlign="center";
+	ctx.fillText(splashes[x],160,198,316);
+	title_done=true;
+	ctx.textAlign="start";
+}
+
 var tick1=0;//0 to 65535
 var last_filament=0;
-//var game_state="game";
+var game_state=TITLE;
 function refresh(){//Dang it, no multiple setintervals...
 if(paused==1){
 	return;
@@ -4452,16 +4510,19 @@ if(TILE_MAP){
 if(is_dead){
 	return;
 }
-/*switch(game_state){
+switch(game_state){
 	case GAMING:
 		break;
-	case CRAFTING:
+	case TITLE:
+		title_screen();
+		return;
+	/*case CRAFTING:
 		craft_cur_x=0;
 		craft_cur_y=0;
 		clear_canvas();
 		draw_crafting();
-		return;
-}*/
+		return;*/
+}
 //Entity and npc cleanup
 for(var i=0;i<pages[cur_page].entities.length;i++){
 	switch(pages[cur_page].entities[i].id){
@@ -4523,6 +4584,13 @@ seasons();
 }
 tick1%2==0 ? tick():0;
 tick1%40==0 ? random_tick():0;
+if(player.weather_type==W_THUNDER && pages[cur_page].metadata.layer==0){
+	tick1%THUN_TICK_MOD==0 ? thunder_tick() : 0;
+	tick1%RAIN_TICK_MOD==0 ? rain_tick() : 0;
+}
+if(player.weather_type==W_RAIN && pages[cur_page].metadata.layer==0){
+	tick1%RAIN_TICK_MOD==0 ? rain_tick() : 0;
+}
 tick1%FILAMENT_THERMAL_COOLDOWN_TICK==0 ? filament_cooldown():0;
 tick1%FILAMENT_THERMAL_COOLDOWN_TICK==0 ? magnatron_sounds():0;
 if(tick1%7==0){//fire, Grind Stone
@@ -4541,6 +4609,21 @@ if(tick1%CAT_TICK==0){
 			player_onfire();
 		}
 	}
+player.weather_count--;
+if(player.weather_count<=0){
+	switch(player.weather_type){
+		case 0:
+			player.weather_type=1+Math.floor(Math.random()*16)%2;
+			player.weather_count=8192+Math.floor(Math.random()*16384);
+			break;
+		case 1:
+		case 2:
+			player.weather_type=0;
+			player.weather_count=16384+Math.floor(Math.random()*65536);
+			break;
+	}
+}
+
 }
 const interval = setInterval(function (){refresh();},67);
 window.onload=function(){
@@ -4560,10 +4643,17 @@ function _load(){
 	tick1=save_file[3];
 	player.days=(player.days===undefined)? 0 : player.days;
 	player.filament=(player.filament===undefined)? 0 : player.filament;
+	player.weather_type=(player.weather_type===undefined)? 0 : player.weather_type;
+	player.weather_count=(player.weather_count===undefined)? 65535 : player.weather_count;
 	is_dead=false;
+	game_state=GAMING;
 	dem_ann.textContent="Loaded. Size:"+compressed_save.length+" bytes.";
 }
 function _save(){
+	if(game_state==TITLE){
+		dem_ann.textContent="Nothing to save.";
+		return;
+	}
 	if(saves.getItem("_save")!="empty"){
 		if(!confirm("Save already exists, overwrite?")){
 			return;
@@ -4593,10 +4683,17 @@ function _import(){
 	tick1=save_file[3];
 	player.days=(player.days===undefined)? 0 : player.days;
 	player.filament=(player.filament===undefined)? 0 : player.filament;
+	player.weather_type=(player.weather_type===undefined)? 0 : player.weather_type;
+	player.weather_count=(player.weather_count===undefined)? 65535 : player.weather_count;
 	is_dead=false;
+	game_state=GAMING;
 	dem_ann.textContent="Loaded. Size:"+compressed_save.length+" bytes.";
 }
 function _export(){
+	if(game_state==TITLE){
+		dem_ann.textContent="Please load a save.";
+		return;
+	}
 	if(confirm("This will end your session.")){
 		document.write(LZUTF8.compress(JSON.stringify([cur_page,player,pages,tick1]),{outputEncoding:"Base64"}));
 	}
@@ -4607,6 +4704,7 @@ function _new(){
 	}
 	is_dead=false;
 	new_save();
+	game_state=GAMING;
 }
 </script>
 </html>

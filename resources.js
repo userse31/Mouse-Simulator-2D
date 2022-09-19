@@ -8,7 +8,7 @@ The GNU General Public License is published by the "Free Software Foundation, In
 var cur_page=0;
 var paused=0;
 var last_dir="";
-var player={brain:{gender:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0, days:0, noclip:0,seed:0,};
+var player={brain:{gender:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0, days:0, noclip:0,seed:0,weather_type:0,weather_count:65535};
 var is_dead=false;
 //inventory: [(item id),(item amount)]; player.inv[10]=selected pointer
 //maps
@@ -154,7 +154,7 @@ b:"01111110"+
 "11000011"+
 "11111111"+
 "01111110",
-c:[255,255,255,105,131,98,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+c:[255,255,255,185,122,87,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 },
 //5, solid black, not invul
 {
@@ -1417,7 +1417,7 @@ b:"00000000"+
 "00111100",
 c:[255,255,255, 185,122,87, 190,190,190, 0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0]
 },
-//110, Enemy (zombie?) spawn egg.
+//110, Enemy spawn egg.
 {
 b:"00000000"+
 "00011000"+
@@ -1427,7 +1427,7 @@ b:"00000000"+
 "01211110"+
 "01111210"+
 "00111100",
-c:[255,255,255, 105,131,98, 140,140,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+c:[255,255,255, 185,122,87, 190,190,190, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 },
 //111, Cat spawn egg.
 {
@@ -2145,8 +2145,8 @@ const structures_slip=[
 ];
 
 function new_save(){
-	paused=true;
-	player={brain:{gender:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0, days:0, noclip:0,seed:(Math.floor(Math.random()*0xffffffff)),};
+	paused=1;
+	player={brain:{gender:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0, days:0, noclip:0,seed:(Math.floor(Math.random()*0xffffffff)),weather_type:0,weather_count:65536};
 	player.name=prompt("Name?","Alex");
 	player.name=(player.name=="")?"Alex":player.name;
 	player.creative=(confirm("Enable Creative?"))?1:0;
@@ -2206,7 +2206,7 @@ function new_save(){
 },
 ];
 	cur_page=0;
-	paused=false;
+	paused=0;
 }
 
 //square inverse law: intensity ∝ 1/(distance^2)
@@ -2217,3 +2217,94 @@ function square_inverse(x1,y1,x2,y2){
 	);
 	return (distance<=0)?65535:Math.floor((1/(Math.pow(distance,2)))*65535);
 }
+
+const splashes=[
+"Includes gun based gameplay!",
+"Hail to the Queen baby.",
+"Also try Avelog's Mouse Simulator!",
+"Also try Minetest!",
+"Hates transphobes!",
+"~~~WELCOME TO PILLOW WORLD BRI~~~",
+"Dr Maxis and his undead army!",
+"Welcome to the world of friendly computing!",
+"Breaks the trust barrier!",
+"Look mom, no computer!",
+"Includes communist aggression!",
+"Tastes like communist aggression!",
+"Now available on Intellivision!",
+"This coronavirus and its games; Its a sign of bad parenting...",//About the limit
+
+"For those bored in study hall!",
+"School Chromebook Ready™!",
+"Totally doesn't annoy your teachers!",
+"Bypasses Securly!",
+"Bypasses GoGuardian!",
+"If you can run local HTML files, you can run this!",
+"Contact your local middle school autist to obtain Mouse Simulator 2D!",
+
+"Chef Excellence Approved!",
+"DRM Lacking!",
+"Runs on a Pentium M!",
+"Now includes pink, blue, and white socks!",
+"Rev up those fryers!",
+"Takes off the shackles of its capitalist oppressors!",
+"This is the lock picking lawyer, ...",
+
+"Protagonist not guarrentied to be cis!",
+"Protagonist not guarrentied to be trans!",
+"Protagonist guaranteed to be bi!",
+"Now with blessings from the God of Gender Euphoria!",
+
+"♫It tastes just like rasons!♫",
+"♫Welcome to Mystery♫",
+"♫You load 16 tons, what do you get?♫",
+"♫Another day older and deeper in debt!♫",
+"♫I owe my soul to the company store.♫",
+"♫It seems today, that all you see♫",
+"♫Is violence and movies and sex on tv!♫",
+"♫But where are those good old fashioned values?♫",
+"♫On which we used to rely!♫",
+"♫Lucky there's a Family Guy!♫",
+"♫\"This man's just gotta go!\" declared his enemies♫",
+"♫But the ladies begged: \"Don't you try to do it please!\"♫",
+"♫One fist of iron, the other of steel!♫",
+"♫Clap for the wolf man!♫",
+
+"~~~FM STEREO!~~~",
+"~~~AM STEREO!~~~",
+"Also try Mouse Simulator 7D!",
+"I love my ankle nibbler. Do YOU love your ankle nibbler?",
+"Sounds of Pittsburg Jazz!",
+"As Shango066 would say: \"BAKED\"",
+"The numbers mason, what do they mean?",
+"\"Click here to begin!\"",
+"You only live once in this game!",
+"Without the Communist Party, their would be no new China!",
+"Welcome back to \"Lets make a mess with uxwbill\".",
+"Sponsered by: Kirbys: Home of the broken blue light special!",
+"VCR based engine performance!",
+"Smaller then earth!",
+"Doesn't report your chat!",
+"Autist Approved™!",
+"Includes organic autism™!",
+"Be an autist! Be socially awkward!",
+"Popular with the neurodivergent and queer!",
+"Real computers have floppy drives!",
+"Autist to transfem pipeline confirmed by Moscow!",
+"Includes glowing brown mushrooms!",
+"No, I'M dirty Dan!",
+"Just steal some good dril tweets, it's what this site does!",
+"Contains 0% Cheese!",
+"Over a century without a slogan!",
+"Banned in Ukraine!",
+"JK will experience feminism!",
+"Doesn't contain Hondas with loud mufflers!",
+"Kablammo!",
+"Hand made by mice!",
+"IMW: Industrial Mice of the World!",
+"Consider that bill vetoed!",
+"Mud brick desert worlds!",
+"Sinkhole Tech: Where the bots party hard, and the researchers harder!",
+"Stereo Dust Particles!",
+"Fetch me their souls!",
+];
