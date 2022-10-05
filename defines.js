@@ -40,6 +40,14 @@ const CAT_STRENGTH=5;
 const CAT_TICK=(16*256)*4;//every 4 hours in the slip.
 const CAT_CHANCE=0.5;
 
+//Navigators
+const key_words=[
+	"Android",
+	"iPhone",
+	"iPad",
+	"iPod",
+];
+
 //Map size
 const MAX_MAP_SIZE_NEG=-64;
 const MAX_MAP_SIZE_POS=63;

@@ -1625,13 +1625,13 @@ cat:[
 ]};
 
 const fishing_loot={
-junk:[I_BRANCH,I_STRING,I_LEAVES,I_BOWL,I_STONE,I_GRASS,I_SAPLING],
 treasure:[I_BOW,I_ARROW,I_CYAN_THING,I_IRON,I_COPPER,],
+junk:[I_BRANCH,I_STRING,I_LEAVES,I_BOWL,I_STONE,I_GRASS,I_SAPLING],
 fish:[I_FISH],
 };
 const fishing_chances=[
-JUNK_WEIGHT,
 TREASURE_WEIGHT,
+JUNK_WEIGHT,
 FISH_WEIGHT
 ];
 //items
