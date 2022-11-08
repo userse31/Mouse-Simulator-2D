@@ -174,6 +174,8 @@ const L_FIRE2_RGB=[1,0.576,0.16];
 const L_BMUSH_STR=0;
 const L_BMUSH_RGB=[1,1,1];
 
+const L_LAMP_STR=3;
+const L_LAMP_RGB=[1,1,1];
 
 //item id's
 const I_NOTHING=0;
@@ -265,6 +267,8 @@ const I_CAPACITOR=85;
 const I_BUTTON=86;
 const I_FISH_ROD=87;
 const I_FISH=88;
+const I_OIL=89;
+const I_LAMP=90;
 
 //tile id's
 const T_WHITE=0;
@@ -392,3 +396,5 @@ const T_RAIN1=120;
 const T_FISH_ROD=121;
 const T_FISH_BOBBER=122;
 const T_FISH=123;
+const T_OIL=124;
+const T_LAMP=125;

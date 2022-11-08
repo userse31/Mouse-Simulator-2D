@@ -26,11 +26,9 @@ The GNU General Public License is published by the "Free Software Foundation, In
 <script src="./hashmap.js"></script>
 <script src="./resources.js"></script>
 <script>
-//Mouse Simulator 2D v0.54
+//Mouse Simulator 2D v0.55
 /*
-Fixed bug with fishing loot being the same.
-Space bar presses no longer scroll the page.
-Added a notice message when a mobile phone browser is detected.
+Lanterns!
 */
 //autoconfig
 var saves=window.localStorage;
@@ -232,7 +230,9 @@ function light_levels(){
 				case T_BROWN_MUSHROOM:
 					light_spread(L_BMUSH_STR,L_BMUSH_RGB,i,j);
 					break;
-
+				case T_LAMP:
+					light_spread(L_LAMP_STR,L_LAMP_RGB,i,j);
+					break;
 
 			}
 		}

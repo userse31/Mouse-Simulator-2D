@@ -1593,14 +1593,45 @@ b:
 "00111100",
 c:[255,255,255, 0x3f,0x77,0x66, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 },
+//124, Oil
+{
+b:
+"00000000"+
+"00011000"+
+"00011000"+
+"00111100"+
+"00111100"+
+"00111100"+
+"00011000"+
+"00000000",
+c:[255,255,255,0xdb,0xcf,0x5c,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+},
+//125, lamp
+{
+b:
+"00000000"+
+"00111100"+
+"00100100"+
+"00111100"+
+"01222210"+
+"01222210"+
+"00111100"+
+"00000000",
+c:[255,255,255, 0,0,0, 0xe0,0x9d,0x37,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+},
+
+
+
+
+
 ];
 
 const properties={
-walkable:[0,2,6,7,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40,43,44,45,46,47,48,49,50,51,52,54,68,73,77,78,79,80,81,82,83,84,86,87,88,89,92,95,96,100,23,T_T_GATE_ON,T_T_GATE_OFF,T_COMPOSTER,T_CAP4,T_CAP3,T_CAP2,T_CAP1,T_CAP0,T_BUTTON_OFF,T_BUTTON_ON],
-not_spawnable:[2,28,29,30,31,32,43,68,73,88,89,86,87,77,78,79,80,81,82,83,84,8,23,T_GATE_OFF,T_GATE_ON,T_COMPOSTER,T_CAP4,T_CAP3,T_CAP2,T_CAP1,T_CAP0,T_BUTTON_OFF,T_BUTTON_ON],
+walkable:[0,2,6,7,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40,43,44,45,46,47,48,49,50,51,52,54,68,73,77,78,79,80,81,82,83,84,86,87,88,89,92,95,96,100,23,T_T_GATE_ON,T_T_GATE_OFF,T_COMPOSTER,T_CAP4,T_CAP3,T_CAP2,T_CAP1,T_CAP0,T_BUTTON_OFF,T_BUTTON_ON,T_LAMP],
+not_spawnable:[2,28,29,30,31,32,43,68,73,88,89,86,87,77,78,79,80,81,82,83,84,8,23,T_GATE_OFF,T_GATE_ON,T_COMPOSTER,T_CAP4,T_CAP3,T_CAP2,T_CAP1,T_CAP0,T_BUTTON_OFF,T_BUTTON_ON,T_LAMP],
 burnable:[12,13,14,15,18,24,28,42,43,45,46,47,48,49,50,51,72,74,75,76,100,23,T_BEDDING],
 bangable:[18,42,43,12,5,93,94,97,72,74,75,76,101],
-placeable_breakable:[3,4,5,6,9,13,21,22,24,25,27,31,37,38,41,45,46,47,48,49,68,69,70,71,72,73,74,51,52,78,I_CLOCK_RADIO,I_T_GATE,I_COMPOSTER,I_CAPACITOR,I_BUTTON],
+placeable_breakable:[3,4,5,6,9,13,21,22,24,25,27,31,37,38,41,45,46,47,48,49,68,69,70,71,72,73,74,51,52,78,I_CLOCK_RADIO,I_T_GATE,I_COMPOSTER,I_CAPACITOR,I_BUTTON,I_LAMP],
 bonemealable:[52,51,50,49,48,47,46,24,17,16,15,13],
 creative_noremove:[1,6,10,11,8],
 elec_on:[87,81,82,83,84,89,91,96,T_T_GATE_ON,T_CAP4,T_CAP3,T_CAP2,T_CAP1,T_BUTTON_ON],
@@ -1725,6 +1756,8 @@ const item_char=[
 117,//Button,86
 121,//Fishing rod,87
 123,//fish,88
+124,//Oil,89
+125,//Lamp,90
 ];
 
 const item_names=[
@@ -1817,6 +1850,8 @@ const item_names=[
 "Button",
 "Fishing Rod",
 "Fish",
+"Oil",
+"Lamp",
 ];
 //crafting
 const recipies=[
@@ -2116,6 +2151,14 @@ output:[[I_RING,1]]
 input_id:[I_STICK,0,I_STRING,0,I_RED_MUSHROOM,0],
 output:[[I_FISH_ROD,1]]
 },
+{//Cooked meat to oil
+input_id:[I_COOKED_MEAT],
+output:[[I_OIL,1]]
+},
+{//glass+iron+string+oil to lamp
+input_id:[I_IRON,I_GLASS,I_STRING,I_OIL,0,0],
+output:[[I_LAMP,1]]
+},
 ];
 
 const struct=[
@@ -2366,4 +2409,6 @@ const splashes=[
 "Sinkhole Tech: Where the bots party hard, and the researchers harder!",
 "Stereo Dust Particles!",
 "Fetch me their souls!",
+"Runs on trashpicked computers!",
+"NetBurst Ready!",
 ];
