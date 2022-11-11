@@ -1,0 +1,99 @@
+<html>
+<head>
+<title>Mouse Simulator 2D Achievements</title>
+<style>
+table {
+	width:100%;
+	max-width:200px;
+}
+td,th {
+	border:1px solid;
+	text-align:center;
+	padding:2px;
+}
+</style>
+</head>
+<body>
+<center>
+<h1>Statistics</h1>
+<table>
+	<tr>
+		<th>Distance Traveled</th>
+		<th id="distance">-km</th>
+	</tr>
+	<tr>
+		<th>Days passed</th>
+		<th id="days">-</th>
+	</tr>
+	<tr>
+		<th>Sights Seen</th>
+		<th id="total_pages">-</th>
+	</tr>
+	<tr>
+		<th>Damage Received</th>
+		<th id="total_pain">-</th>
+	</tr>
+	<tr>
+		<th>Health Healed</th>
+		<th id="total_heal">-</th>
+	</tr>
+	<tr>
+		<th>Tiles Placed</th>
+		<th id="total_placed">-</th>
+	</tr>
+	<tr>
+		<th>Tiles Removed</th>
+		<th id="total_removed">-</th>
+	</tr>
+	<tr>
+		<th>Items dropped</th>
+		<th id="total_dropped">-</th>
+	</tr>
+	<tr>
+		<th>Items Picked Up</th>
+		<th id="total_picked">-</th>
+	</tr>
+	<tr>
+		<th>Items Used</th>
+		<th id="total_used">-</th>
+	</tr>
+	<tr>
+		<th>Weapons Wielded</th>
+		<th id="total_wielded">-</th>
+	</tr>
+	<tr>
+		<th>Things Crafted</th>
+		<th id="total_crafted">-</th>
+	</tr>
+	<tr>
+		<th>Found Love</th>
+		<th id="times_laid">-</th>
+	</tr>
+	<tr>
+		<th>Entities Killed or Died</th>
+		<th id="total_death">-</th>
+	</tr>
+
+</table>
+</center>
+</body>
+<script>
+var switches=window.location.toString().split("?")[1].split("&");
+document.getElementById("distance").textContent=(Number.parseInt(switches[0])*(1e-4)).toFixed(4)+"km";
+document.getElementById("days").textContent=switches[1];
+document.getElementById("total_pages").textContent=switches[2];
+document.getElementById("total_pain").textContent=switches[3];
+document.getElementById("total_heal").textContent=switches[4];
+document.getElementById("total_placed").textContent=switches[5];
+document.getElementById("total_removed").textContent=switches[6];
+document.getElementById("total_dropped").textContent=switches[7];
+document.getElementById("total_picked").textContent=switches[8];
+document.getElementById("total_used").textContent=switches[9];
+document.getElementById("total_wielded").textContent=switches[10];
+document.getElementById("total_crafted").textContent=switches[11];
+document.getElementById("times_laid").textContent=switches[12];
+document.getElementById("total_death").textContent=switches[13];
+
+
+</script>
+</html>

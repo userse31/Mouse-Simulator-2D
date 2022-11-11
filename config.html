@@ -1,0 +1,21 @@
+<html>
+<head>
+<title>Mouse Simulator 2D Config Options</title>
+</head>
+<body>
+	<center>
+		<p>Canvas Size:<select name="Canvas Size" id="canvas_size">
+			<option value="0">2x</option>
+			<option value="1">3x</option>
+		</select></p>
+		<button onclick="_save()">Save</buttton>
+	</center>
+</body>
+<script>
+function _save(){
+	var cmd="./mouse.html?--bigger-screen-size&";
+	cmd+=document.getElementById("canvas_size").value;
+	window.location=cmd;
+}
+</script>
+</html>
