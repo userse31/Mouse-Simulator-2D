@@ -11,10 +11,86 @@ td,th {
 	text-align:center;
 	padding:2px;
 }
+.achieve {
+	border-style:solid;
+	max-width:200px;
+}
+.tile{
+	width:64px;
+	height:64px;
+	image-rendering:pixelated;
+	border:1px;
+	border-style:solid;
+}
 </style>
 </head>
 <body>
 <center>
+<button onclick="show_tab('stats')">Statistics</button>
+<button onclick="show_tab('mouse_2d')">Mouse Simulator 2D</button>
+<button onclick="show_tab('forest')">The Forest</button>
+<button onclick="show_tab('slip')">The Slip</button>
+<button onclick="show_tab('adventure')">Adventure</button>
+<button onclick="show_tab('husbandry')">Husbandry</button>
+<button onclick="show_tab('community')" disabled>Community</button>
+<button onclick="show_tab('attraction_gender')">Romance and Family</button>
+<!--button onclick="show_tab('')"></button-->
+
+<div id="mouse_2d" hidden>
+<h1>Mouse Simulator 2D</h1>
+<div id="mouse_2d.surface" class="achieve" hidden>
+	<table>
+		<tr>
+			<th><img src="./images/hole.png" class="tile"></img></th>
+			<th><p>Explore the world</p><p>Exit the nest and explore the world!</p></th>
+		</tr>
+	</table>
+</div>
+</div>
+<div id="forest" hidden>
+<h1>The Forest</h1>
+</div>
+<div id="slip" hidden>
+<h1>The Slip</h1>
+<div id="slip.enter" class="achieve" hidden>
+	<table>
+		<tr>
+			<th><img src="./images/bookshelf.png" class="tile"></img></th>
+			<th><p>The Beginning?</p><p>Enter the slip.</p></th>
+		</tr>
+	</table>
+</div>
+</div>
+<div id="adventure" hidden>
+<h1>Adventure</h1>
+<div id="adventure.raygun" class="achieve" hidden>
+	<table>
+		<tr>
+			<th><img src="./images/raygun.png" class="tile"></img></th>
+			<th><p>Find the raygun!</p><p>Find a raygun.</p></th>
+		</tr>
+	</table>
+</div>
+</div>
+<div id="husbandry" hidden>
+<h1>Husbandry</h1>
+</div>
+<div id="community" hidden>
+<h1>Community</h1>
+</div>
+<div id="attraction_gender" hidden>
+<h1>Romance and Family</h1>
+<div id="attraction_gender.first_child" class="achieve" hidden>
+	<table>
+		<tr>
+			<th><img src="./images/ring.png" class="tile"></img></th>
+			<th><p>Have a child</p><p>Use a ring to <i>excite</i> a fellow mouse.</p></th>
+		</tr>
+	</table>
+</div>
+</div>
+
+<div id="stats">
 <h1>Statistics</h1>
 <table>
 	<tr>
@@ -73,10 +149,16 @@ td,th {
 		<th>Entities Killed or Died</th>
 		<th id="total_death">-</th>
 	</tr>
-
+	<tr>
+		<th>Is Blessed</th>
+		<th id="is_trans">-</th>
+	<tr>
 </table>
+</div>
 </center>
 </body>
+<script src="./defines.js"></script>
+<script src="./resources.js"></script>
 <script>
 var switches=window.location.toString().split("?")[1].split("&");
 document.getElementById("distance").textContent=(Number.parseInt(switches[0])*(1e-4)).toFixed(4)+"km";
@@ -93,7 +175,23 @@ document.getElementById("total_wielded").textContent=switches[10];
 document.getElementById("total_crafted").textContent=switches[11];
 document.getElementById("times_laid").textContent=switches[12];
 document.getElementById("total_death").textContent=switches[13];
+document.getElementById("is_trans").textContent=(switches[14]=="1")?"Yes":"No";
+var achieves=JSON.parse(unescape(switches[15]));
 
+for(var i=0;i<achieves.length;i++){
+	document.getElementById(achieves[i]).hidden=false;
+}
 
+function show_tab(tab_name){
+	document.getElementById("mouse_2d").hidden=true;
+	document.getElementById("stats").hidden=true;
+	document.getElementById("forest").hidden=true;
+	document.getElementById("slip").hidden=true;
+	document.getElementById("adventure").hidden=true;
+	document.getElementById("husbandry").hidden=true;
+	document.getElementById("community").hidden=true;
+	document.getElementById("attraction_gender").hidden=true;
+	document.getElementById(tab_name).hidden=false;
+}
 </script>
 </html>

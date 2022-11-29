@@ -14,7 +14,7 @@ The GNU General Public License is published by the "Free Software Foundation, In
     <p id="player"></p>
     <p id="status"></p>
     <p id="demonic_announcer">Welcome!</p>
-    <button onclick="_new()">New</button>
+    <button onclick="__new()">New</button>
     <button onclick="_load()">Load</button>
     <button onclick="_save()">Save</button>
     <button onclick="_delete()">Delete</button>
@@ -33,11 +33,12 @@ The GNU General Public License is published by the "Free Software Foundation, In
 <script src="./hashmap.js"></script>
 <script src="./resources.js"></script>
 <script>
-//Mouse Simulator 2D v0.56
+//Mouse Simulator 2D v0.57
 /*
-Achievements! Well... more a statistics thing... but still!
-Url "?" thing used for passing agruments and data between the game and sub pages!
-"Proper" gui for config options.
+Bug fixes.
+More switches!
+Proper page for creating a new save.
+New achievements!
 */
 //autoconfig
 var saves=window.localStorage;
@@ -93,6 +94,36 @@ function args(argc,argv){
 					i++;
 				}
 				break;
+			case "--show-random-tick":
+				DEBUG_RANDOM_TICK=true;
+				break;
+			case "--show-keycode":
+				SHOW_KEYCODE=true;
+				break;
+			case "--show-hitscan":
+				SHOW_HITSCAN=true;
+				break;
+			case "--show-hitscan-effect":
+				SHOW_HITSCAN_EFFECT=true;
+				break;
+			case "--show-nodes":
+				SHOW_NODES=true;
+				break;
+			case "--tile-map":
+				TILE_MAP=true;
+				break;
+			case "--force-rain":
+				FORCE_RAIN=true;
+				break;
+			case "--new-save":
+				if(argc>=i+3){
+					var player_name=unescape(argv[i+1]);
+					var is_creative=Number.parseInt(argv[i+2]);
+					var new_seed=Number.parseInt(argv[i+3]);
+					_new(player_name,is_creative,new_seed);
+					game_state=GAMING;
+				}
+				break;
 			default:
 				//alert("Invalid switch.");
 		}
@@ -100,8 +131,11 @@ function args(argc,argv){
 }
 
 function achieve(){
+	if(player.times_laid>=1){
+		get_achieve("attraction_gender.first_child");
+	}
 	var cmd="./achieve.html?";
-	cmd+=player.steps+"&"+player.days+"&"+pages.length+"&"+player.total_pain+"&"+player.total_heal +"&"+player.total_placed +"&"+player.total_removed +"&"+player.total_dropped +"&"+player.total_picked +"&"+player.total_used +"&"+player.total_wielded +"&"+player.total_crafted +"&"+player.times_laid +"&"+player.total_death;
+	cmd+=player.steps+"&"+player.days+"&"+pages.length+"&"+player.total_pain+"&"+player.total_heal +"&"+player.total_placed +"&"+player.total_removed +"&"+player.total_dropped +"&"+player.total_picked +"&"+player.total_used +"&"+player.total_wielded +"&"+player.total_crafted +"&"+player.times_laid +"&"+player.total_death+"&"+player.brain.dysphoria+"&"+escape(JSON.stringify(player.achieve));
 	window.open(cmd);
 }
 
@@ -567,7 +601,7 @@ function damage_player(amount){
 	player.total_pain+=amount;
 }
 function heal_player(amount){
-	player.creative==1?0:player.health-=amount;
+	player.creative==1?0:player.health+=amount;
 	player.total_heal+=amount;
 }
 
@@ -904,6 +938,12 @@ function new_page(context="",direction="none",hole_ptr){
 		}
 }
 
+function get_achieve(achieve_name){
+	if(player.achieve.indexOf(achieve_name)==-1){
+		player.achieve.push(achieve_name);
+	}
+}
+
 function teleport(){
 	
 for(var i=0;i<pages[cur_page].holes.length;i++){
@@ -913,10 +953,12 @@ for(var i=0;i<pages[cur_page].holes.length;i++){
 			player.y=pages[cur_page].holes[i].next_y;
 			switch(pages[cur_page].holes[i].dest_page[2]){
 				case 0://Surface
-		    		new_page("surface_hole","",i);
+		    			new_page("surface_hole","",i);
+					get_achieve("mouse_2d.surface");
 					break;
 				case 1://The Slip
 					new_page("slip_enter","",i);
+					get_achieve("slip.enter");
 					break;
 			}
 			return;
@@ -1116,6 +1158,7 @@ switch(standing_on){
 		break;
 	case 38://raygun
 		pick_up_tile(19);
+		get_achieve("adventure.raygun");
 		break;
 	case 40://Cyan Thing
 		pick_up_tile(21);
@@ -2294,6 +2337,7 @@ switch(player.inv[player.inv[10]][0]){
 				player.inv[player.inv[10]][1]=0;
 			}
 			player.times_laid++;
+			
 		}
 		break;
 	default:
@@ -4724,7 +4768,8 @@ function title_screen(x=Math.floor(Math.random()*65535)%splashes.length){
 
 var tick1=0;//0 to 65535
 var last_filament=0;
-var game_state=TITLE;
+//var game_state=TITLE;
+var game_state;
 function refresh(){//Dang it, no multiple setintervals...
 if(paused==1){
 	return;
@@ -4750,6 +4795,7 @@ switch(game_state){
 	case GAMING:
 		break;
 	case TITLE:
+	default:
 		title_screen();
 		return;
 	/*case CRAFTING:
@@ -4873,7 +4919,7 @@ window.onload=function(){
 	}
 };
 function _load(){
-	if(SHOW_DOTS_ON==666){
+	if(SHOW_DOTS_ON==1){
     		if(!confirm("Do you really want to run the program infected by the virus?")){
 			return;
     		}
@@ -4903,6 +4949,7 @@ function _load(){
 	player.total_crafted=(player.total_crafted===undefined)? 0 : player.total_crafted;
 	player.times_laid=(player.times_laid===undefined)? 0 : player.times_laid;
 	player.total_death=(player.total_death===undefined)? 0 : player.total_death;
+	player.achieve=(player.achieve===undefined)? [] : player.achieve;
     	is_dead=false;
 	game_state=GAMING;
 	dem_ann.textContent="Loaded. Size:"+compressed_save.length+" bytes.";
@@ -4955,7 +5002,8 @@ function _import(){
 	player.total_crafted=(player.total_crafted===undefined)? 0 : player.total_crafted;
 	player.times_laid=(player.times_laid===undefined)? 0 : player.times_laid;
 	player.total_death=(player.total_death===undefined)? 0 : player.total_death;
-	is_dead=falsie;
+	player.achieve=(player.achieve===undefined)? [] : player.achieve;
+	is_dead=false;
 	game_state=GAMING;
 	dem_ann.textContent="Loaded. Size:"+compressed_save.length+" bytes.";
 }
@@ -4968,13 +5016,21 @@ function _export(){
 		document.write(LZUTF8.compress(JSON.stringify([cur_page,player,pages,tick1]),{outputEncoding:"Base64"}));
 	}
 }
-function _new(){
+function __new(){
 	if(!confirm("Destroy current unsaved progress?")){
 		return;
 	}
+	window.location="./new.html"
+}
+function _new(_name,is_creative,seed){
+	/*if(!confirm("Destroy current unsaved progress?")){
+		return;
+	}*/
 	is_dead=false;
-	new_save();
-	game_state=GAMING;
+	new_save(_name,is_creative,seed);
+	return;
+	//game_state=GAMING;
+	//game_state="game";
 }
 </script>
 </html>

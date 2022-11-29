@@ -8,7 +8,7 @@ The GNU General Public License is published by the "Free Software Foundation, In
 var cur_page=0;
 var paused=0;
 var last_dir="";
-var player={brain:{gender:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0, days:0, noclip:0,seed:0,weather_type:0,weather_count:65535,steps:0,total_pain:0,total_heal:0,total_placed:0,total_removed:0,total_dropped:0,total_picked:0,total_used:0,total_wielded:0,total_crafted:0,times_laid:0,total_death:0};
+var player={brain:{gender:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0, days:0, noclip:0,seed:0,weather_type:0,weather_count:65535,steps:0,total_pain:0,total_heal:0,total_placed:0,total_removed:0,total_dropped:0,total_picked:0,total_used:0,total_wielded:0,total_crafted:0,times_laid:0,total_death:0,achieve:[]};
 var is_dead=false;
 //inventory: [(item id),(item amount)]; player.inv[10]=selected pointer
 //maps
@@ -2246,12 +2246,15 @@ const structures_slip=[
 [-1,-1,40,-1,-1],],//Shrine
 ];
 
-function new_save(){
+function new_save(_name,is_creative,seed){
 	paused=1;
-	player={brain:{gender:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0, days:0, noclip:0,seed:(Math.floor(Math.random()*0xffffffff)),weather_type:0,weather_count:65536,steps:0,total_pain:0,total_heal:0,total_placed:0,total_removed:0,total_dropped:0,total_picked:0,total_used:0,total_wielded:0,total_crafted:0,times_laid:0,total_death:0};
-	player.name=prompt("Name?","Alex");
+	player={brain:{gender:0.0, dysphoria:1, mode:1}, name:"Alex", x:1, y:1, health:20, strength:1, inv:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],0], creative:0, tainted:0, days:0, noclip:0,seed:0,weather_type:0,weather_count:65536,steps:0,total_pain:0,total_heal:0,total_placed:0,total_removed:0,total_dropped:0,total_picked:0,total_used:0,total_wielded:0,total_crafted:0,times_laid:0,total_death:0,achieve:[]};
+	/*player.name=prompt("Name?","Alex");*/
+	player.name=_name;
 	player.name=(player.name=="")?"Alex":player.name;
-	player.creative=(confirm("Enable Creative?"))?1:0;
+	//player.creative=(confirm("Enable Creative?"))?1:0;
+	player.creative=is_creative;
+	player.seed=(Math.floor(Math.random()*0xffffffff));
 	player.brain.gender=Math.floor(Math.random()*65535)%2;
 	player.brain.dysphoria=(Math.floor(Math.random()*65535)%10==0)?1:0;
 	pages=[{

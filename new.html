@@ -1,0 +1,24 @@
+<html>
+<head>
+<title>Mouse Simulator 2D Save Creation</title>
+</head>
+<body>
+<center>
+<p>Player Name:<input type="text" id="player_name" value="Alex"></input></p>
+<p>Seed:<input type="text" id="seed"></input></p>
+<p>Game Mode:</p>
+<select name="Game Mode" id="game_mode">
+	<option value="0">Survival</option>
+	<option value="1">Creative</option>
+</select>
+</br>
+<button onclick="_go()">Go</button>
+</center>
+</body>
+<script>
+document.getElementById("seed").value=Math.floor(Math.random()*0xffffffff);
+function _go(){
+	window.location="./mouse.html?--new-save&"+escape(document.getElementById("player_name").value)+"&"+document.getElementById("game_mode").value+"&"+document.getElementById("seed").value;
+}
+</script>
+</html>

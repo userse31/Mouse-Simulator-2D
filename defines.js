@@ -48,6 +48,14 @@ const key_words=[
 	"iPod",
 ];
 
+const ACHIEVE_FOREST=[
+{id:"",title:"",disc:""},
+];
+
+const ACHIEVE_ADVENTURE=[
+["",""]
+];
+
 //Map size
 const MAX_MAP_SIZE_NEG=-64;
 const MAX_MAP_SIZE_POS=63;
@@ -123,13 +131,14 @@ const CRAFTING="craft";
 const TITLE="title";
 
 //debugging
-const DEBUG_RANDOM_TICK=false;
-const SHOW_KEYCODE=false;
-const SHOW_HITSCAN=false;
-const SHOW_HITSCAN_EFFECT=false;
-const SHOW_NODES=false;
-const TILE_MAP=false;
-const FORCE_RAIN=false;
+//change to "var" so that these can be modified.
+var DEBUG_RANDOM_TICK=false;
+var SHOW_KEYCODE=false;
+var SHOW_HITSCAN=false;
+var SHOW_HITSCAN_EFFECT=false;
+var SHOW_NODES=false;
+var TILE_MAP=false;
+var FORCE_RAIN=false;
 
 //weather
 const W_CLEAR=0;
