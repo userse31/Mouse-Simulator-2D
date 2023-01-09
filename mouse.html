@@ -33,12 +33,15 @@ The GNU General Public License is published by the "Free Software Foundation, In
 <script src="./hashmap.js"></script>
 <script src="./resources.js"></script>
 <script>
-//Mouse Simulator 2D v0.57
+//Mouse Simulator 2D v0.58
 /*
-Bug fixes.
-More switches!
-Proper page for creating a new save.
-New achievements!
+Fishing loot table changes.
+Sleeping while raining or thundering forces weather to go clear.
+New mechanism for exporting saves.
+Stale oven pizza! Find it in the Slip!
+Missing texture applied when trying to load non-existant textures.
+Fixed spelling mistake. Now "Leaf" instead of "Leave".
+Added descriptions for crafting recipies.
 */
 //autoconfig
 var saves=window.localStorage;
@@ -268,6 +271,9 @@ function write_1bit(pos,val,id,mix_r,mix_g,mix_b){
 var rain_ctr=0;
 
 function get_font(val,x,y){
+	if(font[val]===undefined){
+		val=T_MISSING;
+	}
 	if(!((FORCE_RAIN||player.weather_type!=W_CLEAR)&&pages[cur_page].metadata.layer==0&&val==0)){
 		for(var i=0;i<64;i++){
 			//alert(font[val].b[i]);
@@ -737,13 +743,6 @@ function struct_copy_slip(struct_id,offset_x,offset_y,do_decay,decay_rate=-1){
 			if(hit_bounds(offset_x+x,offset_y+y)){
 				continue;
 			}
-			//alert(typeof structures_slip[struct_id].special);
-			/*if((typeof structures_slip[struct_id].special)=="Function"){
-				alert(0);
-			}*/
-			/*if(char_value(offset_x+x,offset_y+y)!=0 && fill_nonzero==0){
-				continue;
-			}*/
 			if(do_decay&&(rand32()/0xffffffff)<decay_rate){
 				continue;
 			}
@@ -1136,6 +1135,10 @@ switch(standing_on){
 		if(!(tick_hour()>=NIGHT_START_HOUR && tick_hour()<=NIGHT_END_HOUR)){
 			dem_ann.textContent="You can only sleep at day.";
 		}else{
+			if(player.weather_type!=W_CLEAR){
+				player.weather_type=0;
+				player.weather_count=16384+Math.floor(Math.random()*65536);
+			}
 			tick1=12*(256*16);
 			dem_ann.textContent="Slept and skipped to night."
 			player.strength=1;//Player strength reset after sleeping.
@@ -1268,6 +1271,9 @@ switch(standing_on){
 			player.inv[player.inv[10]][0]=0;
 			player.inv[player.inv[10]][1]=0;
 		}
+		break;
+	case T_PIZZA:
+		pick_up_tile(I_PIZZA);
 		break;
 	default:
 		if(player.creative==1){
@@ -2572,11 +2578,25 @@ switch(player.inv[player.inv[10]][0]){//item id
         	if(player.health>=20){
             		break;
         	}
-			heal_player(5);
+			heal_player(1);
 		if(player.health>20 && player.creative==0){
             		player.health=20;
         	}
 		player.creative==1 ? 0 : player.inv[player.inv[10]][1]--;
+		player.total_used++;
+		break;
+	case I_PIZZA://Stale Oven Pizza
+		if(player.health<=100){
+			heal_player(40);
+		}
+		for(var i=0;i<pages[cur_page].entities.length;i++){
+			if(pages[cur_page].entities[i].id==1){
+				if(pages[cur_page].entities[i].brain.hostile==1){
+					pages[cur_page].entities[i].health=0;
+				}
+			}
+		}
+		player.creative==1?0:player.inv[player.inv[10]][1]--;
 		player.total_used++;
 		break;
 	/*case 52://statue
@@ -5007,15 +5027,23 @@ function _import(){
 	game_state=GAMING;
 	dem_ann.textContent="Loaded. Size:"+compressed_save.length+" bytes.";
 }
+
 function _export(){
 	if(game_state==TITLE){
 		dem_ann.textContent="Please load a save.";
 		return;
 	}
-	if(confirm("This will end your session.")){
-		document.write(LZUTF8.compress(JSON.stringify([cur_page,player,pages,tick1]),{outputEncoding:"Base64"}));
-	}
+	var save_export=LZUTF8.compress(JSON.stringify([cur_page,player,pages,tick1]),{outputEncoding:"Base64"});
+	var tmp_link=document.createElement("a");
+	//tmp_link.setAttribute("href","data:text/plain;,charset=utf-8,"+encodeURIComponent(save_export));
+	tmp_link.setAttribute("href","data:text/plain;,"+encodeURIComponent(save_export));
+	tmp_link.setAttribute("download","save.m2d");
+	tmp_link.style.display="none";
+	document.body.appendChild(tmp_link);
+	tmp_link.click();
+	document.body.removeChild(tmp_link);
 }
+
 function __new(){
 	if(!confirm("Destroy current unsaved progress?")){
 		return;

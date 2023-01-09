@@ -1617,17 +1617,38 @@ b:
 "01222210"+
 "00111100"+
 "00000000",
-c:[255,255,255, 0,0,0, 0xe0,0x9d,0x37,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+c:[255,255,255, 0,0,0, 0xe0,0x9d,0x37, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0]
 },
-
-
-
-
-
+//126, Stale Oven Pizza
+{
+b:
+"01111110"+
+"01111110"+
+"01223210"+
+"01322210"+
+"00122100"+
+"00123100"+
+"00011000"+
+"00000000",
+c:[255,255,255, 0xb7,0x8b,0x43, 255,255,0, 255,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0]
+},
+//127, Missing Texture
+{
+b:
+"00001111"+
+"00001111"+
+"00001111"+
+"00001111"+
+"11110000"+
+"11110000"+
+"11110000"+
+"11110000",
+c:[0,0,0, 255,0,255, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0]
+}
 ];
 
 const properties={
-walkable:[0,2,6,7,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40,43,44,45,46,47,48,49,50,51,52,54,68,73,77,78,79,80,81,82,83,84,86,87,88,89,92,95,96,100,23,T_T_GATE_ON,T_T_GATE_OFF,T_COMPOSTER,T_CAP4,T_CAP3,T_CAP2,T_CAP1,T_CAP0,T_BUTTON_OFF,T_BUTTON_ON,T_LAMP],
+walkable:[0,2,6,7,9,10,11,13,14,15,16,17,24,28,29,30,31,32,38,40,43,44,45,46,47,48,49,50,51,52,54,68,73,77,78,79,80,81,82,83,84,86,87,88,89,92,95,96,100,23,T_T_GATE_ON,T_T_GATE_OFF,T_COMPOSTER,T_CAP4,T_CAP3,T_CAP2,T_CAP1,T_CAP0,T_BUTTON_OFF,T_BUTTON_ON,T_LAMP,T_PIZZA],
 not_spawnable:[2,28,29,30,31,32,43,68,73,88,89,86,87,77,78,79,80,81,82,83,84,8,23,T_GATE_OFF,T_GATE_ON,T_COMPOSTER,T_CAP4,T_CAP3,T_CAP2,T_CAP1,T_CAP0,T_BUTTON_OFF,T_BUTTON_ON,T_LAMP],
 burnable:[12,13,14,15,18,24,28,42,43,45,46,47,48,49,50,51,72,74,75,76,100,23,T_BEDDING],
 bangable:[18,42,43,12,5,93,94,97,72,74,75,76,101],
@@ -1656,8 +1677,8 @@ cat:[
 ]};
 
 const fishing_loot={
-treasure:[I_BOW,I_ARROW,I_CYAN_THING,I_IRON,I_COPPER,],
-junk:[I_BRANCH,I_STRING,I_LEAVES,I_BOWL,I_STONE,I_GRASS,I_SAPLING],
+treasure:[I_CYAN_THING,I_IRON,I_COPPER],
+junk:[I_BRANCH,I_STRING,I_LEAVES,I_ARROW,I_STONE],
 fish:[I_FISH],
 };
 const fishing_chances=[
@@ -1758,6 +1779,7 @@ const item_char=[
 123,//fish,88
 124,//Oil,89
 125,//Lamp,90
+126,//Pizza,91
 ];
 
 const item_names=[
@@ -1771,7 +1793,7 @@ const item_names=[
 "Stick",
 "String",
 "Sapling",
-"Leaves",
+"Leaf",
 "Bowl",
 "Mushroom Stew",
 "Carpet",
@@ -1852,80 +1874,99 @@ const item_names=[
 "Fish",
 "Oil",
 "Lamp",
+"Stale Oven Pizza",
 ];
 //crafting
 const recipies=[
 {//sapling to stick+leaves
 input_id:[I_SAPLING],
-output:[[I_STICK,3],[I_LEAVES,3]]
+output:[[I_STICK,3],[I_LEAVES,3]],
+desc:"1 Sapling -> 3 Sticks and 3 Leaves"
 },
 {//branch to stick+leaves
 input_id:[I_BRANCH],
-output:[[I_STICK,3],[I_LEAVES,3]]
+output:[[I_STICK,3],[I_LEAVES,3]],
+desc:"1 Branch -> 3 Sticks and 3 Leaves"
 },
 {//hay to string
 input_id:[I_HAY],
-output:[[I_STRING,3]]
+output:[[I_STRING,3]],
+desc:"1 Hay -> 3 String"
 },
 {//2 sticks + 1 string to fence
 input_id:[I_STICK,0,I_STRING,0,I_STICK,0],
-output:[[I_FENCE,3]]
+output:[[I_FENCE,3]],
+desc:"2 Sticks + 1 String -> 3 Fence"
 },
 {//2 sticks + 1 string to fence
 input_id:[0,I_STICK,0,I_STRING,0,I_STICK],
-output:[[I_FENCE,3]]
+output:[[I_FENCE,3]],
+desc:"2 Sticks + 1 String -> 3 Fence"
 },
 {//2 string + 1 leaves to bowl
 input_id:[I_STRING,0,I_LEAVES,0,I_STRING,0],
-output:[[I_BOWL,1]]
+output:[[I_BOWL,1]],
+desc:"2 String + 1 Leaf -> 1 Bowl"
 },
 {//2 string + 1 leaves to bowl
 input_id:[0,I_STRING,0,I_LEAVES,0,I_STRING],
-output:[[I_BOWL,1]]
+output:[[I_BOWL,1]],
+desc:"2 String + 1 Leaf -> 1 Bowl"
 },
 {//bowl + brown mushroom to mushroom stew
 input_id:[0,0,I_BROWN_MUSHROOM,0,I_BOWL,0],
-output:[[I_BOWL,1]]
+output:[[I_BOWL,1]],
+desc:"Bowl + Brown Mushroom -> Mushroom Stew"
 },
 {//bowl + brown mushroom to mushroom stew
 input_id:[I_BROWN_MUSHROOM,0,I_BOWL,0,0,0],
-output:[[I_MUSHROOM_STEW,1]]
+output:[[I_MUSHROOM_STEW,1]],
+desc:"Bowl + Brown Mushroom -> Mushroom Stew"
 },
 {//4 grass to hay
 input_id:[I_GRASS,I_GRASS,I_GRASS,I_GRASS,0,0],
-output:[[I_HAY,1]]
+output:[[I_HAY,1]],
+desc:"4 Grass -> Hay"
 },
 {//4 grass to hay
 input_id:[0,0,I_GRASS,I_GRASS,I_GRASS,I_GRASS],
-output:[[I_HAY,1]]
+output:[[I_HAY,1]],
+desc:"4 Grass -> Hay"
 },
 {//4 string + 2 hay to carpet
 input_id:[I_STRING,I_STRING,I_HAY,I_HAY,I_STRING,I_STRING],
-output:[[I_CARPET,1]]
+output:[[I_CARPET,1]],
+desc:"4 String + 2 Hay -> Carpet"
 },
 {//bow
 input_id:[I_STICK,0,I_STRING,I_STICK,I_STICK,0],
-output:[[I_BOW,1]]
+output:[[I_BOW,1]],
+desc:"3 Sticks + 1 String -> 1 Bow"
 },
 {//bow
 input_id:[0,I_STICK,I_STICK,I_STRING,0,I_STICK],
-output:[[I_BOW,1]]
+output:[[I_BOW,1]],
+desc:"3 Sticks + 1 String -> 1 Bow"
 },
 {//bow+stick to bow and spindle
 input_id:[I_BOW,I_STICK,0,0,0,0],
-output:[[I_BOW_AND_SPINDLE,1]]
+output:[[I_BOW_AND_SPINDLE,1]],
+desc:"Bow + Stick -> Bow and Spindle"
 },
 {//bow and spindle+hay to amber and bow and spindle
 input_id:[I_BOW_AND_SPINDLE,I_HAY,0,0,0,0],
-output:[[I_BOW_AND_SPINDLE,1],[I_AMBER,5]]
+output:[[I_BOW_AND_SPINDLE,1],[I_AMBER,5]],
+desc:"Bow and Spindle + Hay -> Bow and Spindle + Amber"
 },
 {//2 sticks+iron to spear.
 input_id:[I_IRON,0,I_STICK,0,I_STICK,0],
-output:[[I_SPEAR,1]]
+output:[[I_SPEAR,1]],
+desc:"2 Sticks + Iron -> Spear"
 },
 {//2 sticks+iron to spear.
 input_id:[0,I_IRON,0,I_STICK,0,I_STICK],
-output:[[I_SPEAR,1]]
+output:[[I_SPEAR,1]],
+desc:"2 Sticks + Iron -> Spear"
 },
 /*{//Spear+Red Mushroom to Poisonous Spear.
 input_id:[I_SPEAR,I_RED_MUSHROOM,0,0,0,0],
@@ -1933,231 +1974,288 @@ output:[[I_POISONOUS_SPEAR,1]]
 },*/
 {//Iron+Red mushroom+stick+paper to arrow
 input_id:[I_IRON,I_RED_MUSHROOM,I_STICK,I_PAPER,0,0],
-output:[[I_ARROW,16]]
+output:[[I_ARROW,16]],
+desc:"Iron + Red Mushroom + Stick + Paper -> 16 Arrows"
 },
 {//6 sticks to door.
 input_id:[I_STICK,I_STICK,I_STICK,I_STICK,I_STICK,I_STICK],
-output:[[I_DOOR,1]]
+output:[[I_DOOR,1]],
+desc:"6 Sticks -> Door"
 },
 {//6 hay to hay bail.
 input_id:[I_HAY,I_HAY,I_HAY,I_HAY,I_HAY,I_HAY],
-output:[[I_HAY_BAIL,1]]
+output:[[I_HAY_BAIL,1]],
+desc:"6 Hay -> Hay Bail"
 },
 {//hay bail to 6 hay.
 input_id:[I_HAY_BAIL],
-output:[[I_HAY,6]]
+output:[[I_HAY,6]],
+desc:"Hay Bail -> 6 Hay"
 },
 {//Walnut fruit to walnut stone and peels
 input_id:[I_W_FRUIT],
-output:[[I_W_STONE,1],[I_W_PEELS,1]]
+output:[[I_W_STONE,1],[I_W_PEELS,1]],
+desc:"Walnut Fruit -> Walnut Stone and Peels"
 },
 {//Brown mushroom+red mushroom to Bone meal
 input_id:[I_BROWN_MUSHROOM,0,I_LEAVES,0,I_RED_MUSHROOM,0],
-output:[[I_BONE_MEAL,3]]
+output:[[I_BONE_MEAL,3]],
+desc:"Brown and Red Mushroom + leaves -> 3 Bone Meal"
 },
 {//Brown mushroom+red mushroom to Bone meal
 input_id:[0,I_BROWN_MUSHROOM,0,I_LEAVES,0,I_RED_MUSHROOM],
-output:[[I_BONE_MEAL,3]]
+output:[[I_BONE_MEAL,3]],
+desc:"Brown and Red Mushroom + leaves -> 3 Bone Meal"
 },
 {//Brown mushroom+red mushroom to Bone meal
 input_id:[I_RED_MUSHROOM,0,I_LEAVES,0,I_BROWN_MUSHROOM,0],
-output:[[I_BONE_MEAL,3]]
+output:[[I_BONE_MEAL,3]],
+desc:"Brown and Red Mushroom + leaves -> 3 Bone Meal"
 },
 {//Brown mushroom+red mushroom to Bone meal
 input_id:[0,I_RED_MUSHROOM,0,I_LEAVES,0,I_BROWN_MUSHROOM],
-output:[[I_BONE_MEAL,3]]
+output:[[I_BONE_MEAL,3]],
+desc:"Brown and Red Mushroom + leaves -> 3 Bone Meal"
 },
 {//stone+5 leaves to 3 Fibers+stone
 input_id:[I_STONE,I_LEAVES,I_LEAVES,I_LEAVES,I_LEAVES,I_LEAVES],
-output:[[I_STONE,1],[I_FIBERS,3]]
+output:[[I_STONE,1],[I_FIBERS,3]],
+desc:"Stone + 5 Leaves -> 3 Fibers + Stone"
 },
 {//6 fibers to paper
 input_id:[I_FIBERS,I_FIBERS,I_FIBERS,I_FIBERS,I_FIBERS,I_FIBERS],
-output:[[I_PAPER,1]]
+output:[[I_PAPER,1]],
+desc:"6 Fibers -> Paper"
 },
 {//3 Paper+String to book
 input_id:[I_STRING,I_PAPER,I_PAPER,I_PAPER,0,0],
-output:[[I_BOOK,1]]
+output:[[I_BOOK,1]],
+desc:"3 Paper + String -> Book"
 },
 {//4 MDF+2 Books to Bookshelf
 input_id:[I_MDF,I_MDF,I_BOOK,I_BOOK,I_MDF,I_MDF],
 output:[[I_BOOKSHELF,1]],
+desc:"4 MDF + 2 Books -> Bookshelf"
 },
 {//1 meat+amber to cooked meat.
 input_id:[I_MEAT,I_AMBER,0,0,0,0],
 output:[[I_COOKED_MEAT,1]],
+desc:"1 Meat + Amber -> Cooked Meat"
 },
 {//6 iron to iron wall
 input_id:[I_IRON,I_IRON,I_IRON,I_IRON,I_IRON,I_IRON],
 output:[[I_IRON_WALL,1]],
+desc:"6 Iron -> Iron Wall"
 },
 {//iron wall to 6 iron
 input_id:[I_IRON_WALL],
 output:[[I_IRON,6]],
+desc:"Iron Wall -> 6 Iron"
 },
 {//6 copper to copper wall
 input_id:[I_COPPER,I_COPPER,I_COPPER,I_COPPER,I_COPPER,I_COPPER],
 output:[[I_COPPER_WALL,1]],
+desc:"6 Copper -> Copper Wall"
 },
 {//copper wall to 6 copper
 input_id:[I_COPPER_WALL],
 output:[[I_COPPER,6]],
+desc:"Copper Wall -> 6 Copper"
 },
 {//Amber+Bowl of Water+Brown Mushroom+Red Mushroom to Suspicious Stew
 input_id:[I_BROWN_MUSHROOM,I_RED_MUSHROOM,I_BOWL_OF_WATER,I_CYAN_THING,I_AMBER,0],
 output:[[I_SUS_STEW,1]],
+desc:"Amber + Bowl of Water + Brown Mushroom + Red Mushroom -> Suspicious Stew"
 },
 {//Amber+Bowl of Water+Brown Mushroom+Red Mushroom to Suspicious Stew
 input_id:[I_RED_MUSHROOM,I_BROWN_MUSHROOM,I_BOWL_OF_WATER,I_CYAN_THING,I_AMBER,0],
 output:[[I_SUS_STEW,1]],
+desc:"Amber + Bowl of Water + Brown Mushroom + Red Mushroom -> Suspicious Stew"
 },
 {//Amber+2 Sticks to Camp Fire
 input_id:[I_AMBER,I_STICK,I_STICK,0,0,0],
 output:[[I_CAMP_FIRE,1]],
+desc:"Amber + 2 Sticks -> Camp Fire"
 },
 {//stone+stick to sawdust+stone
 input_id:[I_STONE,I_STICK,0,0,0,0],
-output:[[I_SAW_DUST,3],[I_STONE,1]]
+output:[[I_SAW_DUST,3],[I_STONE,1]],
+desc:"Stone + Stick -> Sawdust + Stone"
 },
 {//stone+fence to sawdust+stone
 input_id:[I_STONE,I_FENCE,0,0,0,0],
-output:[[I_SAW_DUST,3],[I_STONE,1]]
+output:[[I_SAW_DUST,3],[I_STONE,1]],
+desc:"Stone + Fence -> Sawdust + Stone"
 },
 {//stone+bowl to sawdust+stone
 input_id:[I_STONE,I_BOWL,0,0,0,0],
-output:[[I_SAW_DUST,3],[I_STONE,1]]
+output:[[I_SAW_DUST,3],[I_STONE,1]],
+desc:"Stone + Bowl -> Sawdust + Stone"
 },
 {//stone+door to sawdust+stone
 input_id:[I_STONE,I_DOOR,0,0,0,0],
-output:[[I_SAW_DUST,3],[I_STONE,1]]
+output:[[I_SAW_DUST,3],[I_STONE,1]],
+desc:"Stone + Door -> Sawdust + Stone"
 },
 {//Bowl of Water+fibers+sawdust to bowl+mdf puddy
 input_id:[I_BOWL_OF_WATER,I_FIBERS,I_SAW_DUST,0,0,0],
-output:[[I_BOWL,1],[I_MDF_PUDDY,1]]
+output:[[I_BOWL,1],[I_MDF_PUDDY,1]],
+desc:"Bowl of Water + Fibers + Sawdust -> Bowl + MDF Puddy"
 },
 {//Bowl of Water+fibers+sawdust to bowl+mdf puddy
 input_id:[I_BOWL_OF_WATER,I_SAW_DUST,I_FIBERS,0,0,0],
-output:[[I_BOWL,1],[I_MDF_PUDDY,1]]
+output:[[I_BOWL,1],[I_MDF_PUDDY,1]],
+desc:"Bowl of Water + Fibers + Sawdust -> Bowl + MDF Puddy"
 },
 {//Stone+iron to Grind Stone
 input_id:[I_STONE,0,I_IRON,0,0,0],
-output:[[I_GRIND_STONE,1]]
+output:[[I_GRIND_STONE,1]],
+desc:"Stone + Iron -> Grind Stone"
 },
 {//MDF+walnut peels to Green Stained MDF
 input_id:[I_MDF,I_W_PEELS,0,0,0,0],
-output:[[I_GREEN_MDF,1]]
+output:[[I_GREEN_MDF,1]],
+desc:"MDF + Walnut Peels -> Green Stained MDF"
 },
 {//MDF+walnut peels to Red Stained MDF
 input_id:[I_MDF,I_RED_MUSHROOM,0,0,0,0],
-output:[[I_RED_MDF,1]]
+output:[[I_RED_MDF,1]],
+desc:"MDF + Red Musroom -> Red Stained MDF"
 },
 {//MDF+Cyan thing to Cyan Stained MDF
 input_id:[I_MDF,I_CYAN_THING,0,0,0,0],
-output:[[I_CYAN_MDF,1]]
+output:[[I_CYAN_MDF,1]],
+desc:"MDF + Cyan Thing -> Cyan Stained MDF"
 },
 {//2 copper to 5 wire
 input_id:[I_COPPER,I_COPPER,0,0,0,0],
-output:[[I_COPPER_WIRE,5]]
+output:[[I_COPPER_WIRE,5]],
+desc:"2 Copper -> 5 Wire"
 },
 {//wire+stick to 1 switch
 input_id:[I_COPPER_WIRE,I_STICK,0,0,0,0],
-output:[[I_SWITCH,1]]
+output:[[I_SWITCH,1]],
+desc:"Wire + Stick -> Switch"
 },
 {//wire+stick to 1 switch
 input_id:[I_STICK,I_COPPER_WIRE,0,0,0,0],
-output:[[I_SWITCH,1]]
+output:[[I_SWITCH,1]],
+desc:"Wire + Stick -> Switch"
 },
 {//wire+cyan thing to 1 not gate
 input_id:[I_COPPER_WIRE,I_CYAN_THING,0,0,0,0],
-output:[[I_NOT_GATE,1]]
+output:[[I_NOT_GATE,1]],
+desc:"Wire + Cyan Thing -> Not Gate"
 },
 {//wire+cyan thing to 1 not gate
 input_id:[I_CYAN_THING,I_COPPER_WIRE,0,0,0,0],
-output:[[I_NOT_GATE,1]]
+output:[[I_NOT_GATE,1]],
+desc:"Wire + Cyan Thing -> Not Gate"
 },
 {//wire+copper wall to 1 gate
 input_id:[I_COPPER_WIRE,I_COPPER_WALL,0,0,0,0],
-output:[[I_GATE,1]]
+output:[[I_GATE,1]],
+desc:"Wire + Copper Wall -> Gate"
 },
 {//wire+copper wall to 1 gate
 input_id:[I_COPPER_WALL,I_COPPER_WIRE,0,0,0,0],
-output:[[I_GATE,1]]
+output:[[I_GATE,1]],
+desc:"Wire + Copper Wall -> Gate"
 },
 {//4wire to 1 wire jumper
 input_id:[I_COPPER_WIRE,I_COPPER_WIRE,I_COPPER_WIRE,I_COPPER_WIRE,0,0],
-output:[[I_WIRE_JUMPER,1]]
+output:[[I_WIRE_JUMPER,1]],
+desc:"4 Wire -> Wire Jumper"
 },
 {//4 iron+1 stick+1 paper to pump
 input_id:[I_IRON,I_IRON,I_STICK,I_PAPER,I_IRON,I_IRON],
-output:[[I_PUMP,1]]
+output:[[I_PUMP,1]],
+desc:"4 Iron + 1 Stick + 1 Paper -> Pump"
 },
 {//4 iron+1 stick+1 paper to pump
 input_id:[I_IRON,I_IRON,I_PAPER,I_STICK,I_IRON,I_IRON],
-output:[[I_PUMP,1]]
+output:[[I_PUMP,1]],
+desc:"4 Iron + 1 Stick + 1 Paper -> Pump"
 },
 {//2 iron+1 stick to fan
 input_id:[I_IRON,0,I_STICK,0,I_IRON,0],
-output:[[I_FAN,1]]
+output:[[I_FAN,1]],
+desc:"2 Iron + 1 Stick -> Fan"
 },
 {//2 iron+1 stick to fan
 input_id:[0,I_IRON,0,I_STICK,0,I_IRON],
-output:[[I_FAN,1]]
+output:[[I_FAN,1]],
+desc:"2 Iron + 1 Stick -> Fan"
 },
 {//thread to 32 string
 input_id:[I_THREAD],
-output:[[I_STRING,32]]
+output:[[I_STRING,32]],
+desc:"Thread -> 32 String"
 },
 {//Napkin+Hay to bedding 51
 input_id:[I_NAPKIN,I_HAY,0,0,0,0],
-output:[[I_BEDDING,1]]
+output:[[I_BEDDING,1]],
+desc:"Napkin + Hay -> Bedding"
 },
 {//wire+glass+iron to Vacuum Tube
 input_id:[I_COPPER_WIRE,I_GLASS,I_IRON,0,0,0],
-output:[[I_VACUUM_TUBE,1]]
+output:[[I_VACUUM_TUBE,1]],
+desc:"Wire + Glass + Iron -> Vacuum Tube"
 },
 {//Vacuum Tube+Wire+Iron Wall+Cyan thing+Fan to Microwave Cannon
 input_id:[I_VACUUM_TUBE,I_COPPER_WIRE,I_IRON_WALL,I_CYAN_THING,I_FAN,0],
-output:[[I_MICROWAVE_CANNON,1]]
+output:[[I_MICROWAVE_CANNON,1]],
+desc:"Vacuum Tube + Wire + Iron Wall + Cyan Thing + Fan -> Microwave Cannon"
 },
 {//3 Vacuum Tubes+Iron+Copper Wire+MDF to Clock Radio
 input_id:[I_VACUUM_TUBE,I_VACUUM_TUBE,I_VACUUM_TUBE,I_IRON,I_COPPER_WIRE,I_MDF],
-output:[[I_CLOCK_RADIO,1]]
+output:[[I_CLOCK_RADIO,1]],
+desc:"3 Vacuum Tubes + Iron + Copper Wire + MDF -> Clock Radio"
 },
 {//wire+not gate to 1 T gate
 input_id:[I_COPPER_WIRE,I_NOT_GATE,0,0,0,0],
-output:[[I_T_GATE,1]]
+output:[[I_T_GATE,1]],
+desc:"Wire + Not Gate -> T Gate"
 },
 {//wire+not gate to 1 T gate
 input_id:[I_NOT_GATE,I_COPPER_WIRE,0,0,0,0],
-output:[[I_T_GATE,1]]
+output:[[I_T_GATE,1]],
+desc:"Wire + Not Gate -> T Gate"
 },
 {//Cyan thing+red mdf+copper wall+iron wall to raygun
 input_id:[I_CYAN_THING,I_RED_MDF,I_COPPER_WALL,I_IRON_WALL,0,0],
-output:[[I_RAYGUN,1]]
+output:[[I_RAYGUN,1]],
+desc:"Cyan Thing + Red MDF + Copper Wall + Iron Wall -> Raygun"
 },
 {//red mushroom+brown mushroom+bonemeal+bowl to composter
 input_id:[I_RED_MUSHROOM,I_BROWN_MUSHROOM,I_BONE_MEAL,I_BOWL,0,0],
-output:[[I_COMPOSTER,1]]
+output:[[I_COMPOSTER,1]],
+desc:"Red Mushroom + Brown Mushroom + Bonemeal + bowl -> Composter"
 },
 {//red mushroom+brown mushroom+bonemeal+bowl to composter
 input_id:[I_BROWN_MUSHROOM,I_RED_MUSHROOM,I_BONE_MEAL,I_BOWL,0,0],
-output:[[I_COMPOSTER,1]]
+output:[[I_COMPOSTER,1]],
+desc:"Red Mushroom + Brown Mushroom + Bonemeal + bowl -> Composter"
 },
 {//Copper wire to ring
 input_id:[I_COPPER_WIRE],
-output:[[I_RING,1]]
+output:[[I_RING,1]],
+desc:"Copper Wire -> Ring"
 },
 {//stick+string+red mushroom to fishing rod
 input_id:[I_STICK,0,I_STRING,0,I_RED_MUSHROOM,0],
-output:[[I_FISH_ROD,1]]
+output:[[I_FISH_ROD,1]],
+desc:"Stick + String + Red Mushroom -> Fishing Rod"
 },
 {//Cooked meat to oil
 input_id:[I_COOKED_MEAT],
-output:[[I_OIL,1]]
+output:[[I_OIL,1]],
+desc:"Cooked Meat -> Oil"
 },
 {//glass+iron+string+oil to lamp
 input_id:[I_IRON,I_GLASS,I_STRING,I_OIL,0,0],
-output:[[I_LAMP,1]]
+output:[[I_LAMP,1]],
+desc:"Glass + Iron + String + Oil -> Lamp"
 },
 ];
 
@@ -2211,8 +2309,8 @@ const struct_slip=[
 {weight:0.3,tries:2,sub:[4,4],id:1,decay:true,decay_rate:0.75},//broken chair seat
 {weight:0.3,tries:2,sub:[4,4],id:2,decay:true,decay_rate:0.75},//broken chair head
 {weight:0.3,tries:1,sub:[5,3],id:3,decay:true,decay_rate:0.25},//shreaded cushions
-{weight:0.2,tries:1,sub:[4,4],id:4,decay:true,decay_rate:0.10},
-//shreaded pillow, cushion, mattress, etc...
+{weight:0.2,tries:1,sub:[4,4],id:4,decay:true,decay_rate:0.10},//shreaded pillow, cushion, mattress, etc...
+{weight:0.2,tries:1,sub:[0,0],id:5,decay:false,decay_rate:0},//Stale oven pizza
 ];
 //pages[cur_page].map[player.y][player.x]
 const structures_slip=[
@@ -2244,6 +2342,9 @@ const structures_slip=[
 [40,65,64,65,40],
 [-1,40,65,40,-1],
 [-1,-1,40,-1,-1],],//Shrine
+
+[[126]],
+
 ];
 
 function new_save(_name,is_creative,seed){
@@ -2346,6 +2447,7 @@ const splashes=[
 "Bypasses GoGuardian!",
 "If you can run local HTML files, you can run this!",
 "Contact your local middle school autist to obtain Mouse Simulator 2D!",
+"Keeps you off your phone!",
 
 "Chef Excellence Approved!",
 "DRM Lacking!",

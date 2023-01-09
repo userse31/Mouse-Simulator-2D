@@ -48,13 +48,8 @@ const key_words=[
 	"iPod",
 ];
 
-const ACHIEVE_FOREST=[
-{id:"",title:"",disc:""},
-];
-
-const ACHIEVE_ADVENTURE=[
-["",""]
-];
+//Stale oven pizza
+const HEALTH_HEAL=40;
 
 //Map size
 const MAX_MAP_SIZE_NEG=-64;
@@ -95,7 +90,7 @@ const P_RIGHT=3;
 const RAIN_TICK=16;
 
 //thunder
-const THUN_DAMAGE=10;
+const THUN_DAMAGE=5;
 const THUN_DECAY=1;
 const THUN_CHAR=106;//T_PLASMA
 
@@ -278,6 +273,7 @@ const I_FISH_ROD=87;
 const I_FISH=88;
 const I_OIL=89;
 const I_LAMP=90;
+const I_PIZZA=91;
 
 //tile id's
 const T_WHITE=0;
@@ -407,3 +403,5 @@ const T_FISH_BOBBER=122;
 const T_FISH=123;
 const T_OIL=124;
 const T_LAMP=125;
+const T_PIZZA=126;
+const T_MISSING=127;

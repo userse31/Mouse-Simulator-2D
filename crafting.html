@@ -8,6 +8,7 @@
 <br/>
 <button onclick="dec_ptr()"><--</button>
 <button onclick="inc_ptr()">--></button>
+<p id="desc"></p>
 </center>
 </body>
 <script src="./defines.js"></script>
@@ -100,21 +101,35 @@ function draw_recipe(){
 		get_font(item_char[recipies[recipe_ptr].input_id[5]]);
 		recipies[recipe_ptr].input_id[5]!=0?craft.putImageData(char,8,16):0;
 	}
+		var out_len=recipies[recipe_ptr].output.length;
 		get_font(item_char[recipies[recipe_ptr].output[0][0]]);
 		recipies[recipe_ptr].output[0][0]!=0?craft.putImageData(char,8*3,0):0;
+		if(out_len==1){
+			return;
+		}
 		get_font(item_char[recipies[recipe_ptr].output[1][0]]);
 		recipies[recipe_ptr].output[1][0]!=0?craft.putImageData(char,8*3,8):0;
+		if(out_len==2){
+			return;
+		}
 		get_font(item_char[recipies[recipe_ptr].output[2][0]]);
 		recipies[recipe_ptr].output[2][0]!=0?craft.putImageData(char,8*3,16):0;
 }
 draw_recipe();
+write_desc();
+function write_desc(){
+	document.getElementById("desc").textContent=recipies[recipe_ptr].desc;
+}
+
 function inc_ptr(){
 	recipe_ptr=(recipe_ptr>=recipies.length)?0:recipe_ptr+1;
 	draw_recipe();
+	write_desc();
 }
 function dec_ptr(){
 	recipe_ptr=(recipe_ptr<=0)?(recipies.length-1):recipe_ptr-1;
 	draw_recipe();
+	write_desc();
 }
 </script>
 </html>
