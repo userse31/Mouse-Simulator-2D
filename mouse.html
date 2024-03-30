@@ -33,15 +33,10 @@ The GNU General Public License is published by the "Free Software Foundation, In
 <script src="./hashmap.js"></script>
 <script src="./resources.js"></script>
 <script>
-//Mouse Simulator 2D v0.58
+//Mouse Simulator 2D v0.59
 /*
-Fishing loot table changes.
-Sleeping while raining or thundering forces weather to go clear.
-New mechanism for exporting saves.
-Stale oven pizza! Find it in the Slip!
-Missing texture applied when trying to load non-existant textures.
-Fixed spelling mistake. Now "Leaf" instead of "Leave".
-Added descriptions for crafting recipies.
+Removed ability to craft the raygun. That seemed too overpowered!
+Removed some cringe, exchanging it out for OTHER cringe.
 */
 //autoconfig
 var saves=window.localStorage;
@@ -49,6 +44,7 @@ var cga=document.getElementById("cga");
 var dem_ann=document.getElementById("demonic_announcer");
 var CUR_RAND=0;
 var SHOW_DOTS_ON=0;
+var craft_ptr=0;
 function srand32(x){
 	CUR_RAND=x;
 }
@@ -56,6 +52,21 @@ function rand32(){
 	CUR_RAND=(CUR_RAND*1609+1)%0xffffffff;
 	return CUR_RAND;
 }
+function enforce_sanctions(){
+	switch(window.navigator.language){
+		case "uk-UA":
+			//alert("Ukraine");
+			window.location="https://youtu.be/RP0_8J7uxhs?si=4FIoyhfSpW7zJIfd"
+			break;
+		case "he-IL":
+			//alert("Israel");
+			window.location="https://youtu.be/pELWd_C5-kQ?si=dPTOa7GZyzd8nxxo"
+			break;
+		default:
+			break;
+	}
+}
+enforce_sanctions();
 function autoconfig(){
 	saves.getItem("_bigger")=="t" ? set_scaling(3) : set_scaling(2);
 }
@@ -180,40 +191,43 @@ if(_sfx.paused==false){
 }
 	switch(sound){
 		case "raygun_bang":
-			_sfx.src="./sounds/raygun_bang.wav";
+			_sfx.src="./sounds/raygun_bang.ogg";
 			break;
 		case "raygun_cooldown":
-			_sfx.src="./sounds/raygun_cooldown.wav";
+			_sfx.src="./sounds/raygun_cooldown.ogg";
 			break;
 		case "player_damaged":
-			switch(Math.floor(Math.random()*65535)%2){
+			switch(Math.floor(Math.random()*65535)%3){
 				case 0:
-					_sfx.src="./sounds/squeak0.wav";
+					_sfx.src="./sounds/squeak0.ogg";
 					break;
 				case 1:
-					_sfx.src="./sounds/squeak1.wav";
+					_sfx.src="./sounds/squeak1.ogg";
+					break;
+				case 2:
+					_sfx.src="./sounds/squeak2.ogg";
 					break;
 			}
 			break;
 		case "magnatron_warmup":
-			_sfx.src="./sounds/magnatron_warmup.wav";
+			_sfx.src="./sounds/magnatron_warmup.ogg";
 			break;
 		case "magnatron_conduct":
-			_sfx.src="./sounds/magnatron_conducting.wav";
+			_sfx.src="./sounds/magnatron_conducting.ogg";
 			break;
 		case "emi":
 			switch(Math.floor(Math.random()*65535)%4){
 				case 0:
-					_sfx.src="./sounds/emi0.wav";
+					_sfx.src="./sounds/emi0.ogg";
 					break;
 				case 1:
-					_sfx.src="./sounds/emi1.wav";
+					_sfx.src="./sounds/emi1.ogg";
 					break;
 				case 2:
-					_sfx.src="./sounds/emi2.wav";
+					_sfx.src="./sounds/emi2.ogg";
 					break;
 				case 3:
-					_sfx.src="./sounds/emi3.wav";
+					_sfx.src="./sounds/emi3.ogg";
 					break;
 			}
 			break;
@@ -276,7 +290,6 @@ function get_font(val,x,y){
 	}
 	if(!((FORCE_RAIN||player.weather_type!=W_CLEAR)&&pages[cur_page].metadata.layer==0&&val==0)){
 		for(var i=0;i<64;i++){
-			//alert(font[val].b[i]);
 			if(hit_bounds(x,y)){
 				return;
 			}
@@ -289,6 +302,16 @@ function get_font(val,x,y){
 			}
 			write_1bit(i,font[T_RAIN0+rain_ctr].b[i],T_RAIN0+rain_ctr,light_map[y][x][0],light_map[y][x][1],light_map[y][x][2]);
 		}	
+	}
+	return val;
+}
+
+function get_font_fullbright(val){
+	if(font[val]===undefined){
+		val=T_MISSING;
+	}
+	for(var i=0;i<64;i++){
+		write_1bit(i,font[val].b[i],val,1,1,1);
 	}
 	return val;
 }
@@ -451,13 +474,10 @@ function clear_canvas(){
 	ctx.clearRect(0,0,320,200);
 }
 
-/*var craft_cur_x=0;
-var craft_cur_y=0;
 function draw_crafting(){
-	var craft_input=[-1,-1,-1,-1,-1,-1];
-	var craft_output=[0,0,0];
+	var craft_sel;
 	ctx.fillText("Crafting:",2,10);
-	get_font(T_CRAFT_SPACE);
+	get_font_fullbright(T_CRAFT_SPACE);
 	//input
 	ctx.putImageData(char,1*8,2*8);//craft_input[0]
 	ctx.putImageData(char,2*8,2*8);//craft_input[1]
@@ -470,29 +490,43 @@ function draw_crafting(){
 	ctx.putImageData(char,4*8,3*8);//craft_output[1]
 	ctx.putImageData(char,4*8,4*8);//craft_output[2]
 	//arrow
-	get_font(T_CRAFT_ARROW);
+	get_font_fullbright(T_CRAFT_ARROW,1,1);
 	ctx.putImageData(char,3*8,3*8);
-	//inventory
-	ctx.fillText("Inventory:",2,60);
-	get_font(item_char[player.inv[0][0]]);//inventory slot 0;
-	ctx.putImageData(char,1*8,8*8);
-	get_font(item_char[player.inv[0][0]]);//inventory slot 0;
-	ctx.putImageData(char,1*8,8*8);
-	get_font(item_char[player.inv[0][0]]);//inventory slot 0;
-	ctx.putImageData(char,1*8,8*8);
-	get_font(item_char[player.inv[0][0]]);//inventory slot 0;
-	ctx.putImageData(char,1*8,8*8);
-	get_font(item_char[player.inv[0][0]]);//inventory slot 0;
-	ctx.putImageData(char,1*8,8*8);
-	get_font(item_char[player.inv[0][0]]);//inventory slot 0;
-	ctx.putImageData(char,1*8,8*8);
-	get_font(item_char[player.inv[0][0]]);//inventory slot 0;
-	ctx.putImageData(char,1*8,8*8);
-}
+	//recipe input
+	if(recipies[craft_ptr].input_id.length==1){
+		get_font_fullbright(item_char[recipies[craft_ptr].input_id[0]]);
+		ctx.putImageData(char,1*8,2*8);
+	}else{
+		get_font_fullbright(item_char[recipies[craft_ptr].input_id[0]]);
+		recipies[craft_ptr].input_id[0]!=0?ctx.putImageData(char,1*8,2*8):0;
 
-function crafting_mouse_action(x,y){
-	//alert([x,y]);
-}*/
+		get_font_fullbright(item_char[recipies[craft_ptr].input_id[1]]);
+		recipies[craft_ptr].input_id[1]!=0?ctx.putImageData(char,2*8,2*8):0;
+
+		get_font_fullbright(item_char[recipies[craft_ptr].input_id[2]]);
+		recipies[craft_ptr].input_id[2]!=0?ctx.putImageData(char,1*8,3*8):0;
+		
+		get_font_fullbright(item_char[recipies[craft_ptr].input_id[3]]);
+		recipies[craft_ptr].input_id[3]!=0?ctx.putImageData(char,2*8,3*8):0;
+		
+		get_font_fullbright(item_char[recipies[craft_ptr].input_id[4]]);
+		recipies[craft_ptr].input_id[4]!=0?ctx.putImageData(char,1*8,4*8):0;
+
+		get_font_fullbright(item_char[recipies[craft_ptr].input_id[5]]);
+		recipies[craft_ptr].input_id[5]!=0?ctx.putImageData(char,2*8,4*8):0;
+		}
+	//recipe output
+		get_font_fullbright(item_char[recipies[craft_ptr].output[0][0]]);
+		ctx.putImageData(char,4*8,2*8);
+		if(recipies[craft_ptr].output.length>=2){
+		get_font_fullbright(item_char[recipies[craft_ptr].output[1][0]]);
+		ctx.putImageData(char,4*8,3*8);
+		}
+		if(recipies[craft_ptr].output.length==3){
+		get_font_fullbright(item_char[recipies[craft_ptr].output[0][0]]);
+		ctx.putImageData(char,4*8,4*8);
+		}
+}
 
 function rtc(days=player.days){
 	return {year:Math.floor(days/YEAR_LEN),month:Math.floor(days/MONTH_LEN)%MONTH_MOD,monthlets:days%MONTHLET_MOD,weekday:days%WEEK_MOD};
@@ -2702,67 +2736,79 @@ if(paused==1){
 	_sfx.pause();
 	return;
 }
-/*switch(key){
+switch(key){
 	case 67://c,crafting
-		game_state=CRAFTING;
+		if(game_state==CRAFTING){
+			game_state=GAMING;
+			break;
+		}
+		if(game_state==GAMING){
+			game_state=CRAFTING;
+		}
 		break;
 	case 27://esc,escape
 		game_state=GAMING;
 		break;
 }
-switch(game_state){
-	case GAMING:
-		break;
-	case CRAFTING:
-		return;
-		break;
-}*/
-switch(key){
-    case 87://up,w
-	last_dir="up";
-	if(hit_bounds(player.x,player.y-1)){
-		off_edge("up");
-		player.steps++;
+//crafting screen
+if(game_state==CRAFTING){
+	switch(key){
+		case 65://left,a
+			craft_ptr=(craft_ptr<=0)?(recipies.length-1):craft_ptr-1;
+			break;
+		case 68://right,d
+			craft_ptr=(craft_ptr>=recipies.length)?0:craft_ptr+1;
+			break;
+
 	}
-	if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x,player.y-1) || !player.noclip&&!is_walkable(char_value(player.x,player.y-1)))){
-        	player.y-=1;
-		player.steps++;
-        }
-        return;
-    case 83://down, s
-	last_dir="down";
-	if(hit_bounds(player.x,player.y+1)){
-		off_edge("down");
-		player.steps++;
-	}
-        if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x,player.y+1) || !player.noclip&&!is_walkable(char_value(player.x,player.y+1)))){
-        	player.y+=1;
-		player.steps++;
-        }
-        return;
-    case 65://left, a
-	last_dir="left";
-	if(hit_bounds(player.x-1,player.y)){
-		off_edge("left");
-		player.steps++;
-	}
-        if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x-1,player.y) || !player.noclip&&!is_walkable(char_value(player.x-1,player.y)))){
-        	player.x-=1;
-		player.steps++;
-        }
-        return;
-    case 68://right, d
-	last_dir="right";
-	if(hit_bounds(player.x+1,player.y)){
-		off_edge("right");
-		player.steps++;
-	}
-        if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x+1,player.y) || !player.noclip&&!is_walkable(char_value(player.x+1,player.y)))){
-        	player.x+=1;
-		player.steps++;
-        }
-        return;
 }
+if(game_state==GAMING){
+	switch(key){
+	    case 87://up,w
+		last_dir="up";
+		if(hit_bounds(player.x,player.y-1)){
+			off_edge("up");
+			player.steps++;
+		}
+		if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x,player.y-1) || !player.noclip&&!is_walkable(char_value(player.x,player.y-1)))){
+	        	player.y-=1;
+			player.steps++;
+	        }
+	        return;
+	    case 83://down, s
+		last_dir="down";
+		if(hit_bounds(player.x,player.y+1)){
+			off_edge("down");
+			player.steps++;
+		}
+	        if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x,player.y+1) || !player.noclip&&!is_walkable(char_value(player.x,player.y+1)))){
+	        	player.y+=1;
+			player.steps++;
+	        }
+	        return;
+	    case 65://left, a
+		last_dir="left";
+		if(hit_bounds(player.x-1,player.y)){
+			off_edge("left");
+			player.steps++;
+		}
+	        if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x-1,player.y) || !player.noclip&&!is_walkable(char_value(player.x-1,player.y)))){
+	        	player.x-=1;
+			player.steps++;
+	        }
+	        return;
+	    case 68://right, d
+		last_dir="right";
+		if(hit_bounds(player.x+1,player.y)){
+			off_edge("right");
+			player.steps++;
+		}
+	        if(!(hit_bounds(player.x,player.y) || hit_bounds(player.x+1,player.y) || !player.noclip&&!is_walkable(char_value(player.x+1,player.y)))){
+	        	player.x+=1;
+			player.steps++;
+	        }
+	        return;
+	}
 //attack
 switch(key){
    case 38:
@@ -2863,6 +2909,7 @@ switch(key){
         dem_ann.textContent="Stop there criminal!";
         cheats();
         break;
+}
 }
 }
 
@@ -4814,17 +4861,24 @@ if(is_dead){
 switch(game_state){
 	case GAMING:
 		break;
-	case TITLE:
-	default:
-		title_screen();
-		return;
-	/*case CRAFTING:
+	case CRAFTING:
 		craft_cur_x=0;
 		craft_cur_y=0;
 		clear_canvas();
 		draw_crafting();
-		return;*/
+		return;
+	case TITLE:
+	default:
+		title_screen();
+		return;
+	case CRAFTING:
+		craft_cur_x=0;
+		craft_cur_y=0;
+		clear_canvas();
+		draw_crafting();
+		return;
 }
+
 //Entity and npc cleanup
 for(var i=0;i<pages[cur_page].entities.length;i++){
 	switch(pages[cur_page].entities[i].id){
